@@ -1,104 +1,125 @@
 /**
- * Frontend framework options
+ * Project type options
  */
-export type Frontend =
-  | "React"
-  | "Vue.js"
+export type ProjectType =
+  | "E-Commerce"
+  | "SaaS"
+  | "CMS"
+  | "Social Network"
+  | "Portfolio";
+
+/**
+ * Platform options
+ */
+export type Platform = "Web" | "Desktop" | "Mobile";
+
+/**
+ * Frontend type options
+ */
+export type FrontendType = "SPA" | "SSR" | "Both";
+
+/**
+ * Frontend framework options for SPA
+ */
+export type SPAFramework =
+  | "React.js"
   | "Angular"
+  | "Vue.js"
   | "Svelte"
-  | "Next.js"
-  | "Nuxt.js"
-  | "None (backend-only)";
+  | "Ember.js"
+  | "Backbone.js"
+  | "Mithril.js"
+  | "Preact"
+  | "Solid.js"
+  | "Alpine.js"
+  | "Lit"
+  | "Meteor.js"
+  | "Knockout.js"
+  | "Dojo Toolkit"
+  | "Ext JS"
+  | "Avalonia"
+  | "Blazor WebAssembly"
+  | "Flutter Web"
+  | "OpenSilver"
+  | "Uno Platform";
 
 /**
- * UI framework options
+ * Backend language options
  */
-export type UIFramework =
-  | "Material UI"
-  | "Chakra UI"
-  | "Shadcn UI"
-  | "Tailwind CSS"
-  | "Vuetify"
-  | "Angular Material"
-  | "Svelte Material UI"
-  | "None";
+export type BackendLanguage =
+  | "JavaScript / TypeScript"
+  | "Python"
+  | "Java"
+  | "PHP"
+  | "Ruby"
+  | "Go"
+  | "Other";
 
 /**
- * Backend framework options
+ * Backend framework options for JavaScript/TypeScript
  */
-export type Backend =
+export type JSBackendFramework =
   | "Express.js"
+  | "Koa.js"
   | "NestJS"
   | "Fastify"
-  | "Serverless Functions"
-  | "None (frontend-only)";
+  | "Hapi.js"
+  | "Sails.js"
+  | "Feathers.js"
+  | "LoopBack"
+  | "Total.js"
+  | "AdonisJS"
+  | "Meteor.js"
+  | "ActionHero.js";
 
 /**
- * Database options
+ * Database type options
  */
-export type Database = "PostgreSQL" | "MySQL" | "MongoDB" | "SQLite" | "None";
+export type DatabaseType =
+  | "SQL"
+  | "Document-Oriented Databases"
+  | "Key-Value Stores"
+  | "Column-Oriented Databases"
+  | "Graph Databases"
+  | "Time-Series Databases"
+  | "Object-Oriented Databases"
+  | "Hierarchical Databases"
+  | "Network Databases"
+  | "Cloud Databases"
+  | "Multi-Model Databases"
+  | "NewSQL Databases";
 
 /**
- * ORM/ODM options
+ * SQL Database options
  */
-export type ORM = "Prisma" | "TypeORM" | "Sequelize" | "Mongoose" | "None";
+export type SQLDatabase =
+  | "MySQL"
+  | "PostgreSQL"
+  | "Oracle Database"
+  | "Microsoft SQL Server"
+  | "IBM Db2";
 
 /**
- * Authentication options
+ * Framework with enabled flag for display
  */
-export type Authentication =
-  | "Email/Password"
-  | "OAuth 2.0"
-  | "JWT"
-  | "Auth0"
-  | "Firebase Authentication"
-  | "None";
-
-/**
- * Feature options
- */
-export type Feature =
-  | "rbac" // Role-based access control
-  | "pricing" // Pricing/Subscription model
-  | "api-docs" // API Documentation
-  | "docker" // Docker setup
-  | "ci-cd" // CI/CD setup
-  | "linting" // ESLint and Prettier
-  | "testing"; // Testing setup
-
-/**
- * Deployment options
- */
-export type Deployment =
-  | "Vercel"
-  | "Netlify"
-  | "AWS"
-  | "GCP"
-  | "Azure"
-  | "Digital Ocean"
-  | "Heroku"
-  | "Self-hosted"
-  | "None";
-
-/**
- * Package manager options
- */
-export type PackageManager = "npm" | "yarn" | "pnpm";
+export interface FrameworkOption {
+  id: string;
+  name: string;
+  enabled: boolean;
+}
 
 /**
  * Project configuration
  */
-export interface Config {
+export interface ProjectConfig {
   projectName: string;
   projectDescription: string;
-  packageManager: PackageManager;
-  useTypeScript: boolean;
-  frontend: Frontend;
-  uiFramework?: UIFramework;
-  backend: Backend;
-  database?: Database;
-  orm?: ORM;
-  authentication?: Authentication;
-  features?: Feature[];
-  deployment: Deployment;
+  projectType: ProjectType;
+  platform: Platform;
+  frontendType: FrontendType;
+  frontendFramework: SPAFramework;
+  backendLanguage: BackendLanguage;
+  backendFramework: JSBackendFramework;
+  databaseType: DatabaseType;
+  database: SQLDatabase;
 }

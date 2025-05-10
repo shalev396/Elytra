@@ -1,0 +1,9 @@
+export { getProjectInfo } from "./01-projectInfo";
+export { getProjectType } from "./02-projectType";
+export { getPlatform } from "./03-platform";
+export { getFrontendType } from "./04-frontendType";
+export { getFrontendFramework } from "./05-frontendFramework";
+export { getBackendLanguage } from "./06-backendLanguage";
+export { getBackendFramework } from "./07-backendFramework";
+export { getDatabaseType } from "./08-databaseType";
+export { getDatabase } from "./09-database";

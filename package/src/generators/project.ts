@@ -1,203 +1,106 @@
-import fs from "fs";
+import fs from "fs-extra";
 import path from "path";
 import chalk from "chalk";
 import { execSync } from "child_process";
-import { Config } from "../types";
+import { ProjectConfig } from "../types";
 import { generateFrontend } from "./frontend";
 import { generateBackend } from "./backend";
 import { generateDatabase } from "./database";
-import { generateFeatures } from "./features";
+import { logger } from "../utils/logger";
 
 /**
  * Generate a complete project based on configuration
  */
 export async function generateProject(
-  config: Config,
+  config: ProjectConfig,
   targetDir: string
 ): Promise<void> {
+  logger.header("Generating Project Structure");
+
   try {
     // Create project directory
-    fs.mkdirSync(targetDir, { recursive: true });
+    fs.ensureDirSync(targetDir);
 
     console.log(chalk.blue("📁 Creating project structure..."));
 
     // Generate the basic project structure
-    generateBaseStructure(config, targetDir);
+    await generateProjectRoot(config, targetDir);
 
     // Generate frontend
-    if (config.frontend !== "None (backend-only)") {
-      console.log(chalk.blue(`🎨 Setting up ${config.frontend} frontend...`));
-      await generateFrontend(config, path.join(targetDir, "frontend"));
-    }
+    console.log(
+      chalk.blue(`🎨 Setting up ${config.frontendFramework} frontend...`)
+    );
+    await generateFrontend(config, targetDir);
 
     // Generate backend
-    if (config.backend !== "None (frontend-only)") {
-      console.log(chalk.blue(`⚙️ Setting up ${config.backend} backend...`));
-      await generateBackend(config, path.join(targetDir, "backend"));
-    }
+    console.log(
+      chalk.blue(`⚙️ Setting up ${config.backendFramework} backend...`)
+    );
+    await generateBackend(config, targetDir);
 
     // Generate database configuration
-    if (config.database && config.database !== "None") {
-      console.log(chalk.blue(`🗄️ Configuring ${config.database} database...`));
-      await generateDatabase(
-        config,
-        config.backend !== "None (frontend-only)"
-          ? path.join(targetDir, "backend")
-          : targetDir
-      );
-    }
-
-    // Generate additional features
-    if (config.features && config.features.length > 0) {
-      console.log(chalk.blue("✨ Adding additional features..."));
-      await generateFeatures(config, targetDir);
-    }
-
-    // Generate root files
-    generateRootFiles(config, targetDir);
+    console.log(chalk.blue(`🗄️ Configuring ${config.database} database...`));
+    await generateDatabase(config, targetDir);
 
     // Initialize git repository
     console.log(chalk.blue("🔄 Initializing git repository..."));
     initGitRepository(targetDir);
 
-    console.log(chalk.green("✅ Project structure created successfully!"));
+    logger.success(`Project generated successfully at ${targetDir}`);
   } catch (error) {
-    console.error(chalk.red("❌ Error generating project:"));
-    console.error(error);
+    logger.error("Failed to generate project", error);
     throw error;
   }
 }
 
 /**
- * Generate the base structure for the project
+ * Generate the project root structure
  */
-function generateBaseStructure(config: Config, targetDir: string): void {
-  // Create directories
-  const directories = ["frontend", "backend", "docs"];
-
-  // Only create directories if needed
-  if (config.frontend === "None (backend-only)") {
-    directories.splice(directories.indexOf("frontend"), 1);
-  }
-
-  if (config.backend === "None (frontend-only)") {
-    directories.splice(directories.indexOf("backend"), 1);
-  }
-
-  // Create each directory
-  directories.forEach((dir) => {
-    const dirPath = path.join(targetDir, dir);
-    fs.mkdirSync(dirPath, { recursive: true });
-    console.log(chalk.gray(`Created directory: ${dir}`));
-  });
-}
-
-/**
- * Generate root files for the project
- */
-function generateRootFiles(config: Config, targetDir: string): void {
-  // Generate package.json
-  const packageJson = {
-    name: config.projectName.toLowerCase().replace(/\s+/g, "-"),
-    version: "0.1.0",
-    description: config.projectDescription,
-    private: true,
-    scripts: {
-      start: 'echo "Please check individual package scripts"',
-    },
-    workspaces: ["frontend", "backend"],
-    author: "",
-    license: "MIT",
-  };
-
-  // Adjust workspaces based on configuration
-  if (config.frontend === "None (backend-only)") {
-    packageJson.workspaces = packageJson.workspaces.filter(
-      (ws) => ws !== "frontend"
-    );
-  }
-
-  if (config.backend === "None (frontend-only)") {
-    packageJson.workspaces = packageJson.workspaces.filter(
-      (ws) => ws !== "backend"
-    );
-  }
-
-  // Write package.json
-  fs.writeFileSync(
-    path.join(targetDir, "package.json"),
-    JSON.stringify(packageJson, null, 2)
-  );
-  console.log(chalk.gray("Created package.json"));
-
-  // Generate README.md
-  const readmeContent = `# ${config.projectName}
+async function generateProjectRoot(
+  config: ProjectConfig,
+  targetDir: string
+): Promise<void> {
+  try {
+    // Create project README.md
+    const readmeContent = `# ${config.projectName}
 
 ${config.projectDescription}
 
-## Getting Started
-
-### Prerequisites
-
-- Node.js (v14+)
-- ${config.packageManager}
-${config.database && config.database !== "None" ? `- ${config.database}\n` : ""}
-
-### Installation
-
-1. Clone this repository
-\`\`\`bash
-git clone <repository-url>
-cd ${config.projectName.toLowerCase().replace(/\s+/g, "-")}
-\`\`\`
-
-2. Install dependencies
-\`\`\`bash
-${config.packageManager} install
-\`\`\`
-
-3. Start development servers
-\`\`\`bash
-# In separate terminals:
-${
-  config.frontend !== "None (backend-only)"
-    ? `# Frontend\n${config.packageManager} --filter=frontend run dev\n\n`
-    : ""
-}${
-    config.backend !== "None (frontend-only)"
-      ? `# Backend\n${config.packageManager} --filter=backend run dev`
-      : ""
-  }
-\`\`\`
-
 ## Project Structure
 
-\`\`\`
-${config.projectName.toLowerCase().replace(/\s+/g, "-")}/
-${
-  config.frontend !== "None (backend-only)"
-    ? "├── frontend/                # Frontend application\n"
-    : ""
-}${
-    config.backend !== "None (frontend-only)"
-      ? "├── backend/                 # Backend application\n"
-      : ""
-  }├── docs/                    # Documentation
-├── package.json              # Root package.json
-└── README.md                 # This file
+- \`frontend/\`: ${config.frontendFramework} frontend application
+- \`backend/\`: ${config.backendFramework} backend application
+- \`database/\`: ${config.database} database configuration
+
+## Getting Started
+
+### Frontend
+
+\`\`\`bash
+cd frontend
+npm install
+npm start
 \`\`\`
 
-## License
+### Backend
 
-This project is licensed under the MIT License
+\`\`\`bash
+cd backend
+npm install
+npm start
+\`\`\`
+
+## Technologies
+
+- Frontend: ${config.frontendFramework}
+- Backend: ${config.backendFramework}
+- Database: ${config.database}
 `;
 
-  // Write README.md
-  fs.writeFileSync(path.join(targetDir, "README.md"), readmeContent);
-  console.log(chalk.gray("Created README.md"));
+    fs.writeFileSync(path.join(targetDir, "README.md"), readmeContent);
 
-  // Generate .gitignore
-  const gitignoreContent = `# Dependencies
+    // Create .gitignore
+    const gitignoreContent = `# Dependencies
 node_modules/
 .pnp/
 .pnp.js
@@ -209,8 +112,6 @@ coverage/
 build/
 dist/
 out/
-.next/
-.nuxt/
 
 # Misc
 .DS_Store
@@ -224,18 +125,37 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Editor directories and files
+# IDE
 .idea/
 .vscode/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
+*.swp
+*.swo
 `;
 
-  // Write .gitignore
-  fs.writeFileSync(path.join(targetDir, ".gitignore"), gitignoreContent);
-  console.log(chalk.gray("Created .gitignore"));
+    fs.writeFileSync(path.join(targetDir, ".gitignore"), gitignoreContent);
+
+    // Create package.json for the project root
+    const packageJsonContent = {
+      name: config.projectName,
+      version: "0.1.0",
+      description: config.projectDescription,
+      private: true,
+      scripts: {
+        start:
+          'echo "Please cd into frontend or backend directory to start the respective applications"',
+      },
+    };
+
+    fs.writeFileSync(
+      path.join(targetDir, "package.json"),
+      JSON.stringify(packageJsonContent, null, 2)
+    );
+
+    logger.success("Project root structure generated");
+  } catch (error) {
+    logger.error("Failed to generate project root structure", error);
+    throw error;
+  }
 }
 
 /**

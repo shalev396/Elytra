@@ -1,9 +1,19 @@
 import chalk from "chalk";
-import { promptUser } from "./prompts";
-import { generateProject } from "../generators/project";
-import { Config } from "../types";
+import { ProjectConfig } from "../types";
+import { generateProject } from "../generators";
 import path from "path";
 import fs from "fs";
+import {
+  getProjectInfo,
+  getProjectType,
+  getPlatform,
+  getFrontendType,
+  getFrontendFramework,
+  getBackendLanguage,
+  getBackendFramework,
+  getDatabaseType,
+  getDatabase,
+} from "../steps";
 
 interface CreateOptions {
   template?: string;
@@ -15,7 +25,7 @@ interface CreateOptions {
  */
 export async function createProject(options: CreateOptions): Promise<void> {
   try {
-    let config: Config;
+    let config: ProjectConfig;
 
     if (options.config) {
       // Load configuration from file
@@ -29,8 +39,17 @@ export async function createProject(options: CreateOptions): Promise<void> {
         process.exit(1);
       }
 
-      const configContent = fs.readFileSync(configPath, "utf-8");
-      config = JSON.parse(configContent);
+      try {
+        const configContent = fs.readFileSync(configPath, "utf-8");
+        config = JSON.parse(configContent);
+      } catch (error: unknown) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        console.error(
+          chalk.red(`❌ Error parsing configuration file: ${errorMessage}`)
+        );
+        process.exit(1);
+      }
     } else if (options.template) {
       // Load template from file
       const templatePath = path.resolve(process.cwd(), options.template);
@@ -41,8 +60,17 @@ export async function createProject(options: CreateOptions): Promise<void> {
         process.exit(1);
       }
 
-      const templateContent = fs.readFileSync(templatePath, "utf-8");
-      config = JSON.parse(templateContent);
+      try {
+        const templateContent = fs.readFileSync(templatePath, "utf-8");
+        config = JSON.parse(templateContent);
+      } catch (error: unknown) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        console.error(
+          chalk.red(`❌ Error parsing template file: ${errorMessage}`)
+        );
+        process.exit(1);
+      }
     } else {
       // Prompt user for configuration
       console.log(
@@ -50,7 +78,58 @@ export async function createProject(options: CreateOptions): Promise<void> {
           "🔍 Please answer the following questions to set up your project:"
         )
       );
-      config = await promptUser();
+
+      // Creating a partial config object that will be built up step by step
+      let partialConfig: Partial<ProjectConfig> = {};
+
+      // Get all configuration steps, passing the current config to each step
+      partialConfig = {
+        ...partialConfig,
+        ...(await getProjectInfo()),
+      };
+
+      partialConfig = {
+        ...partialConfig,
+        ...(await getProjectType(partialConfig)),
+      };
+
+      partialConfig = {
+        ...partialConfig,
+        ...(await getPlatform(partialConfig)),
+      };
+
+      partialConfig = {
+        ...partialConfig,
+        ...(await getFrontendType(partialConfig)),
+      };
+
+      partialConfig = {
+        ...partialConfig,
+        ...(await getFrontendFramework(partialConfig)),
+      };
+
+      partialConfig = {
+        ...partialConfig,
+        ...(await getBackendLanguage(partialConfig)),
+      };
+
+      partialConfig = {
+        ...partialConfig,
+        ...(await getBackendFramework(partialConfig)),
+      };
+
+      partialConfig = {
+        ...partialConfig,
+        ...(await getDatabaseType(partialConfig)),
+      };
+
+      partialConfig = {
+        ...partialConfig,
+        ...(await getDatabase(partialConfig)),
+      };
+
+      // Convert the partial config to a full config
+      config = partialConfig as ProjectConfig;
     }
 
     // Create project directory
@@ -70,7 +149,7 @@ export async function createProject(options: CreateOptions): Promise<void> {
     console.log(chalk.white(`  cd ${config.projectName}`));
     console.log(chalk.white(`  npm install`));
     console.log(chalk.white(`  npm run dev`));
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(chalk.red("❌ An error occurred:"));
     console.error(error);
     process.exit(1);

@@ -1,297 +1,92 @@
-import fs from "fs";
+import fs from "fs-extra";
 import path from "path";
-import chalk from "chalk";
-import { Config } from "../types";
+import { ProjectConfig, SQLDatabase } from "../types";
+import { logger } from "../utils/logger";
 
 /**
  * Generate database configuration based on user selection
+ * Copies appropriate database templates to the user's project
+ *
+ * @param config - The project configuration containing database selection
+ * @param targetDir - The target directory where the database files will be generated
  */
 export async function generateDatabase(
-  config: Config,
+  config: ProjectConfig,
   targetDir: string
 ): Promise<void> {
-  if (!config.database || config.database === "None") {
-    return;
-  }
+  logger.header("Generating Database");
 
-  console.log(chalk.blue(`Configuring ${config.database} database...`));
-
-  // Create necessary directories
-  const srcDir = path.join(targetDir, "src");
-  fs.mkdirSync(path.join(srcDir, "models"), { recursive: true });
-
-  // Generate database configuration based on selection
-  switch (config.database) {
-    case "PostgreSQL":
-      await generatePostgresConfig(config, targetDir);
-      break;
-    case "MySQL":
-      await generateMySQLConfig(config, targetDir);
-      break;
-    case "MongoDB":
-      await generateMongoDBConfig(config, targetDir);
-      break;
-    case "SQLite":
-      await generateSQLiteConfig(config, targetDir);
-      break;
-    default:
-      throw new Error(`Unsupported database: ${config.database}`);
-  }
-
-  // Generate ORM/ODM configuration if selected
-  if (config.orm && config.orm !== "None") {
-    console.log(chalk.blue(`Configuring ${config.orm}...`));
-
-    switch (config.orm) {
-      case "Prisma":
-        await generatePrismaConfig(config, targetDir);
-        break;
-      case "TypeORM":
-        // @ts-ignore - will implement proper parameters later
-        await generateTypeORMConfig(config, targetDir);
-        break;
-      case "Sequelize":
-        // @ts-ignore - will implement proper parameters later
-        await generateSequelizeConfig(config, targetDir);
-        break;
-      case "Mongoose":
-        // @ts-ignore - will implement proper parameters later
-        await generateMongooseConfig(config, targetDir);
-        break;
-      default:
-        throw new Error(`Unsupported ORM/ODM: ${config.orm}`);
-    }
-  }
-
-  console.log(chalk.green(`Database configuration generated successfully!`));
-}
-
-/**
- * Generate PostgreSQL configuration
- */
-async function generatePostgresConfig(
-  // Will use in future implementation
-  _config: Config,
-  targetDir: string
-): Promise<void> {
-  // To be implemented
-  console.log(chalk.yellow("PostgreSQL configuration not yet implemented"));
-
-  // Add a sample .env file with PostgreSQL configuration
-  const envContent = `# Database Configuration
-DATABASE_URL=postgresql://postgres:password@localhost:5432/mydatabase
-`;
-
-  fs.writeFileSync(path.join(targetDir, ".env.example"), envContent);
-}
-
-/**
- * Generate MySQL configuration
- */
-async function generateMySQLConfig(
-  // Will use in future implementation
-  _config: Config,
-  targetDir: string
-): Promise<void> {
-  // To be implemented
-  console.log(chalk.yellow("MySQL configuration not yet implemented"));
-
-  // Add a sample .env file with MySQL configuration
-  const envContent = `# Database Configuration
-DATABASE_URL=mysql://root:password@localhost:3306/mydatabase
-`;
-
-  fs.writeFileSync(path.join(targetDir, ".env.example"), envContent);
-}
-
-/**
- * Generate MongoDB configuration
- */
-async function generateMongoDBConfig(
-  // Will use in future implementation
-  _config: Config,
-  targetDir: string
-): Promise<void> {
-  // To be implemented
-  console.log(chalk.yellow("MongoDB configuration not yet implemented"));
-
-  // Add a sample .env file with MongoDB configuration
-  const envContent = `# Database Configuration
-MONGODB_URI=mongodb://localhost:27017/mydatabase
-`;
-
-  fs.writeFileSync(path.join(targetDir, ".env.example"), envContent);
-}
-
-/**
- * Generate SQLite configuration
- */
-async function generateSQLiteConfig(
-  // Will use in future implementation
-  _config: Config,
-  targetDir: string
-): Promise<void> {
-  // To be implemented
-  console.log(chalk.yellow("SQLite configuration not yet implemented"));
-
-  // Add a sample .env file with SQLite configuration
-  const envContent = `# Database Configuration
-DATABASE_URL=sqlite:./database.sqlite
-`;
-
-  fs.writeFileSync(path.join(targetDir, ".env.example"), envContent);
-}
-
-/**
- * Generate Prisma configuration
- */
-async function generatePrismaConfig(
-  config: Config,
-  targetDir: string
-): Promise<void> {
-  // To be implemented
-  console.log(chalk.yellow("Prisma configuration not yet implemented"));
-
-  // Create prisma directory
-  const prismaDir = path.join(targetDir, "prisma");
-  fs.mkdirSync(prismaDir, { recursive: true });
-
-  // Generate a basic schema.prisma file
-  let schemaContent = `// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-generator client {
-  provider = "prisma-client-js"
-}
-
-datasource db {
-`;
-
-  // Add database provider based on selection
-  switch (config.database) {
-    case "PostgreSQL":
-      schemaContent += `  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
-// Define your models here
-model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}`;
-      break;
-    case "MySQL":
-      schemaContent += `  provider = "mysql"
-  url      = env("DATABASE_URL")
-}
-
-// Define your models here
-model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}`;
-      break;
-    case "SQLite":
-      schemaContent += `  provider = "sqlite"
-  url      = env("DATABASE_URL")
-}
-
-// Define your models here
-model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}`;
-      break;
-    case "MongoDB":
-      schemaContent += `  provider = "mongodb"
-  url      = env("DATABASE_URL")
-}
-
-// Define your models here
-model User {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}`;
-      break;
-    default:
-      throw new Error(`Unsupported database for Prisma: ${config.database}`);
-  }
-
-  // Write schema.prisma file
-  fs.writeFileSync(path.join(prismaDir, "schema.prisma"), schemaContent);
-
-  // Update package.json to include Prisma dependencies
   try {
-    const packageJsonPath = path.join(targetDir, "package.json");
-    if (fs.existsSync(packageJsonPath)) {
-      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
+    const { projectType, database } = config;
 
-      // Add Prisma dependencies
-      packageJson.devDependencies = packageJson.devDependencies || {};
-      packageJson.devDependencies["prisma"] = "^5.0.0";
+    // Define template paths
+    const templateBase = path.join(__dirname, "..", "templates");
+    const projectTypeDir = projectType.toLowerCase().replace(/\s+/g, "-");
 
-      packageJson.dependencies = packageJson.dependencies || {};
-      packageJson.dependencies["@prisma/client"] = "^5.0.0";
-
-      // Add Prisma scripts
-      packageJson.scripts = packageJson.scripts || {};
-      packageJson.scripts["db:generate"] = "prisma generate";
-      packageJson.scripts["db:migrate"] = "prisma migrate dev";
-      packageJson.scripts["db:studio"] = "prisma studio";
-
-      // Write updated package.json
-      fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
-    }
-  } catch (error) {
-    console.warn(
-      chalk.yellow(
-        "Warning: Could not update package.json with Prisma dependencies"
-      )
+    // Build the path to the database template
+    const templateDir = path.join(
+      templateBase,
+      projectTypeDir,
+      "db",
+      getDatabaseId(database)
     );
+
+    // Create database directory in the target project
+    const dbDir = path.join(targetDir, "database");
+
+    // Check if template exists
+    if (!fs.existsSync(templateDir)) {
+      // For now, copy placeholder file
+      const placeholderPath = path.join(
+        templateBase,
+        `${getDatabaseId(database)}.txt`
+      );
+
+      // Create database directory
+      fs.ensureDirSync(dbDir);
+
+      // Write placeholder content if real template doesn't exist
+      if (fs.existsSync(placeholderPath)) {
+        const content = fs.readFileSync(placeholderPath, "utf-8");
+        fs.writeFileSync(path.join(dbDir, "README.md"), content);
+        logger.success(`Generated database configuration for ${database}`);
+      } else {
+        // Create a simple README if no placeholder exists
+        fs.writeFileSync(
+          path.join(dbDir, "README.md"),
+          `# ${database} Database\n\nThis is a placeholder for the ${database} database configuration.`
+        );
+        logger.warn(`No template found for ${database}. Created placeholder.`);
+      }
+
+      return;
+    }
+
+    // Copy template files to the target directory
+    fs.copySync(templateDir, dbDir);
+
+    logger.success(`Generated database configuration for ${database}`);
+  } catch (error) {
+    logger.error("Failed to generate database configuration", error);
+    throw error;
   }
 }
 
 /**
- * Generate TypeORM configuration
+ * Get database ID from the database name
+ * Converts a database name to a standardized ID format
+ *
+ * @param database - The SQL database name
+ * @returns A lowercase, hyphen-separated ID for the database
  */
-async function generateTypeORMConfig(): Promise<void> {
-// Commenting out unused parameters for now; will be used in future implementation
-// config: Config,
-// targetDir: string
-  // To be implemented
-  console.log(chalk.yellow("TypeORM configuration not yet implemented"));
-}
+function getDatabaseId(database: SQLDatabase): string {
+  const idMap: Record<SQLDatabase, string> = {
+    MySQL: "mysql",
+    PostgreSQL: "postgresql",
+    "Oracle Database": "oracle",
+    "Microsoft SQL Server": "sqlserver",
+    "IBM Db2": "db2",
+  };
 
-/**
- * Generate Sequelize configuration
- */
-async function generateSequelizeConfig(): Promise<void> {
-// Commenting out unused parameters for now; will be used in future implementation
-// config: Config,
-// targetDir: string
-  // To be implemented
-  console.log(chalk.yellow("Sequelize configuration not yet implemented"));
-}
-
-/**
- * Generate Mongoose configuration
- */
-async function generateMongooseConfig(): Promise<void> {
-// Commenting out unused parameters for now; will be used in future implementation
-// config: Config,
-// targetDir: string
-  // To be implemented
-  console.log(chalk.yellow("Mongoose configuration not yet implemented"));
+  return idMap[database] || database.toLowerCase().replace(/\s+/g, "-");
 }

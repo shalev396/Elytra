@@ -1,175 +1,89 @@
-import fs from "fs";
+import fs from "fs-extra";
 import path from "path";
-import chalk from "chalk";
-import { Config } from "../types";
+import { ProjectConfig, SPAFramework } from "../types";
+import { logger } from "../utils/logger";
 
 /**
- * Generate frontend code based on configuration
+ * Copy the frontend files from templates to project directory
  */
 export async function generateFrontend(
-  config: Config,
+  config: ProjectConfig,
   targetDir: string
 ): Promise<void> {
-  // Create frontend directory if it doesn't exist
-  fs.mkdirSync(targetDir, { recursive: true });
+  logger.header("Generating Frontend");
 
-  console.log(chalk.blue(`Generating ${config.frontend} frontend...`));
+  try {
+    const { projectType, platform, frontendType, frontendFramework } = config;
 
-  // Generate frontend based on selected framework
-  switch (config.frontend) {
-    case "React":
-      await generateReactFrontend(config, targetDir);
-      break;
-    case "Vue.js":
-      await generateVueFrontend(config, targetDir);
-      break;
-    case "Angular":
-      // @ts-ignore - will implement proper parameters later
-      await generateAngularFrontend(config, targetDir);
-      break;
-    case "Svelte":
-      // @ts-ignore - will implement proper parameters later
-      await generateSvelteFrontend(config, targetDir);
-      break;
-    case "Next.js":
-      // @ts-ignore - will implement proper parameters later
-      await generateNextFrontend(config, targetDir);
-      break;
-    case "Nuxt.js":
-      // @ts-ignore - will implement proper parameters later
-      await generateNuxtFrontend(config, targetDir);
-      break;
-    default:
-      throw new Error(`Unsupported frontend framework: ${config.frontend}`);
+    // Define template paths
+    const templateBase = path.join(__dirname, "..", "templates");
+    const projectTypeDir = projectType.toLowerCase().replace(/\s+/g, "-");
+    const platformDir = platform.toLowerCase();
+    const frontendTypeDir = frontendType.toLowerCase();
+
+    // Build the path to the framework template
+    const templateDir = path.join(
+      templateBase,
+      projectTypeDir,
+      platformDir,
+      "frontend",
+      frontendTypeDir,
+      getFrameworkId(frontendFramework)
+    );
+
+    // Create frontend directory in the target project
+    const frontendDir = path.join(targetDir, "frontend");
+
+    // Check if template exists
+    if (!fs.existsSync(templateDir)) {
+      // For now, just create a placeholder README
+      fs.ensureDirSync(frontendDir);
+      fs.writeFileSync(
+        path.join(frontendDir, "README.md"),
+        `# ${frontendFramework} Frontend\n\nThis is a placeholder for the ${frontendFramework} frontend implementation.`
+      );
+      logger.warn(
+        `No template found for ${frontendFramework}. Created placeholder.`
+      );
+      return;
+    }
+
+    // Copy template files to the target directory
+    fs.copySync(templateDir, frontendDir);
+
+    logger.success(`Generated frontend with ${frontendFramework}`);
+  } catch (error) {
+    logger.error("Failed to generate frontend", error);
+    throw error;
   }
-
-  console.log(chalk.green(`Frontend generated successfully!`));
 }
 
 /**
- * Generate React frontend
+ * Get framework ID from the framework name
  */
-async function generateReactFrontend(
-  config: Config,
-  targetDir: string
-): Promise<void> {
-  // To be implemented
-  console.log(chalk.yellow("React frontend generation not yet implemented"));
-
-  // Create a basic package.json
-  const packageJson: {
-    name: string;
-    version: string;
-    private: boolean;
-    scripts: Record<string, string>;
-    dependencies: Record<string, string>;
-  } = {
-    name: "frontend",
-    version: "0.1.0",
-    private: true,
-    scripts: {
-      start: "react-scripts start",
-      build: "react-scripts build",
-      test: "react-scripts test",
-      eject: "react-scripts eject",
-    },
-    dependencies: {
-      react: "^18.2.0",
-      "react-dom": "^18.2.0",
-      "react-scripts": "5.0.1",
-    },
+function getFrameworkId(framework: SPAFramework): string {
+  const idMap: Record<SPAFramework, string> = {
+    "React.js": "react",
+    Angular: "angular",
+    "Vue.js": "vue",
+    Svelte: "svelte",
+    "Ember.js": "ember",
+    "Backbone.js": "backbone",
+    "Mithril.js": "mithril",
+    Preact: "preact",
+    "Solid.js": "solid",
+    "Alpine.js": "alpine",
+    Lit: "lit",
+    "Meteor.js": "meteor",
+    "Knockout.js": "knockout",
+    "Dojo Toolkit": "dojo",
+    "Ext JS": "extjs",
+    Avalonia: "avalonia",
+    "Blazor WebAssembly": "blazor",
+    "Flutter Web": "flutter",
+    OpenSilver: "opensilver",
+    "Uno Platform": "uno",
   };
 
-  // Add UI framework dependencies if selected
-  if (config.uiFramework === "Tailwind CSS") {
-    packageJson.dependencies["tailwindcss"] = "^3.3.0";
-    packageJson.dependencies["postcss"] = "^8.4.23";
-    packageJson.dependencies["autoprefixer"] = "^10.4.14";
-  }
-
-  // Write package.json
-  fs.writeFileSync(
-    path.join(targetDir, "package.json"),
-    JSON.stringify(packageJson, null, 2)
-  );
-}
-
-/**
- * Generate Vue frontend
- */
-async function generateVueFrontend(
-  _config: Config,
-  targetDir: string
-): Promise<void> {
-  // To be implemented
-  console.log(chalk.yellow("Vue frontend generation not yet implemented"));
-
-  // Create a basic package.json
-  const packageJson = {
-    name: "frontend",
-    version: "0.1.0",
-    private: true,
-    scripts: {
-      dev: "vite",
-      build: "vite build",
-      preview: "vite preview",
-    },
-    dependencies: {
-      vue: "^3.3.4",
-    },
-    devDependencies: {
-      "@vitejs/plugin-vue": "^4.2.3",
-      vite: "^4.4.0",
-    },
-  };
-
-  // Write package.json
-  fs.writeFileSync(
-    path.join(targetDir, "package.json"),
-    JSON.stringify(packageJson, null, 2)
-  );
-}
-
-/**
- * Generate Angular frontend
- */
-async function generateAngularFrontend(): Promise<void> {
-  // Commenting out unused parameters for now; will be used in future implementation
-  // config: Config,
-  // targetDir: string
-  // To be implemented
-  console.log(chalk.yellow("Angular frontend generation not yet implemented"));
-}
-
-/**
- * Generate Svelte frontend
- */
-async function generateSvelteFrontend(): Promise<void> {
-  // Commenting out unused parameters for now; will be used in future implementation
-  // config: Config,
-  // targetDir: string
-  // To be implemented
-  console.log(chalk.yellow("Svelte frontend generation not yet implemented"));
-}
-
-/**
- * Generate Next.js frontend
- */
-async function generateNextFrontend(): Promise<void> {
-  // Commenting out unused parameters for now; will be used in future implementation
-  // config: Config,
-  // targetDir: string
-  // To be implemented
-  console.log(chalk.yellow("Next.js frontend generation not yet implemented"));
-}
-
-/**
- * Generate Nuxt.js frontend
- */
-async function generateNuxtFrontend(): Promise<void> {
-  // Commenting out unused parameters for now; will be used in future implementation
-  // config: Config,
-  // targetDir: string
-  // To be implemented
-  console.log(chalk.yellow("Nuxt.js frontend generation not yet implemented"));
+  return idMap[framework] || framework.toLowerCase().replace(/\s+|\.js$/g, "");
 }

@@ -1,165 +1,97 @@
-import fs from "fs";
+import fs from "fs-extra";
 import path from "path";
-import chalk from "chalk";
-import { Config } from "../types";
+import { ProjectConfig, JSBackendFramework } from "../types";
+import { logger } from "../utils/logger";
 
 /**
- * Generate backend code based on configuration
+ * Copy the backend files from templates to project directory
  */
 export async function generateBackend(
-  config: Config,
+  config: ProjectConfig,
   targetDir: string
 ): Promise<void> {
-  // Create backend directory if it doesn't exist
-  fs.mkdirSync(targetDir, { recursive: true });
+  logger.header("Generating Backend");
 
-  console.log(chalk.blue(`Generating ${config.backend} backend...`));
+  try {
+    const { projectType, backendLanguage, backendFramework } = config;
 
-  // Generate backend based on selected framework
-  switch (config.backend) {
-    case "Express.js":
-      await generateExpressBackend(config, targetDir);
-      break;
-    case "NestJS":
-      // @ts-ignore - will implement proper parameters later
-      await generateNestBackend(config, targetDir);
-      break;
-    case "Fastify":
-      // @ts-ignore - will implement proper parameters later
-      await generateFastifyBackend(config, targetDir);
-      break;
-    case "Serverless Functions":
-      // @ts-ignore - will implement proper parameters later
-      await generateServerlessBackend(config, targetDir);
-      break;
-    default:
-      throw new Error(`Unsupported backend framework: ${config.backend}`);
+    // Define template paths
+    const templateBase = path.join(__dirname, "..", "templates");
+    const projectTypeDir = projectType.toLowerCase().replace(/\s+/g, "-");
+    const backendLanguageDir = backendLanguage
+      .toLowerCase()
+      .replace(/\s+\/\s+/g, "-");
+
+    // Build the path to the framework template
+    const templateDir = path.join(
+      templateBase,
+      projectTypeDir,
+      "backend",
+      backendLanguageDir,
+      getFrameworkId(backendFramework)
+    );
+
+    // Create backend directory in the target project
+    const backendDir = path.join(targetDir, "backend");
+
+    // Check if template exists
+    if (!fs.existsSync(templateDir)) {
+      // For now, copy placeholder file
+      const placeholderPath = path.join(
+        templateBase,
+        `${getFrameworkId(backendFramework)}.txt`
+      );
+
+      // Create backend directory
+      fs.ensureDirSync(backendDir);
+
+      // Write placeholder content if real template doesn't exist
+      if (fs.existsSync(placeholderPath)) {
+        const content = fs.readFileSync(placeholderPath, "utf-8");
+        fs.writeFileSync(path.join(backendDir, "README.md"), content);
+        logger.success(`Generated backend with ${backendFramework}`);
+      } else {
+        // Create a simple README if no placeholder exists
+        fs.writeFileSync(
+          path.join(backendDir, "README.md"),
+          `# ${backendFramework} Backend\n\nThis is a placeholder for the ${backendFramework} backend implementation.`
+        );
+        logger.warn(
+          `No template found for ${backendFramework}. Created placeholder.`
+        );
+      }
+
+      return;
+    }
+
+    // Copy template files to the target directory
+    fs.copySync(templateDir, backendDir);
+
+    logger.success(`Generated backend with ${backendFramework}`);
+  } catch (error) {
+    logger.error("Failed to generate backend", error);
+    throw error;
   }
-
-  console.log(chalk.green(`Backend generated successfully!`));
 }
 
 /**
- * Generate Express.js backend
+ * Get framework ID from the framework name
  */
-async function generateExpressBackend(
-  config: Config,
-  targetDir: string
-): Promise<void> {
-  // To be implemented
-  console.log(
-    chalk.yellow("Express.js backend generation not yet implemented")
-  );
-
-  // Create the src directory
-  const srcDir = path.join(targetDir, "src");
-  fs.mkdirSync(srcDir, { recursive: true });
-
-  // Create a basic package.json
-  const packageJson: {
-    name: string;
-    version: string;
-    private: boolean;
-    scripts: Record<string, string>;
-    dependencies: Record<string, string>;
-    devDependencies: Record<string, string>;
-  } = {
-    name: "backend",
-    version: "0.1.0",
-    private: true,
-    scripts: {
-      start: "node dist/index.js",
-      dev: "nodemon src/index.js",
-      build: "tsc",
-    },
-    dependencies: {
-      express: "^4.18.2",
-      cors: "^2.8.5",
-      dotenv: "^16.3.1",
-    },
-    devDependencies: {
-      nodemon: "^3.0.1",
-    },
+function getFrameworkId(framework: JSBackendFramework): string {
+  const idMap: Record<JSBackendFramework, string> = {
+    "Express.js": "express",
+    "Koa.js": "koa",
+    NestJS: "nestjs",
+    Fastify: "fastify",
+    "Hapi.js": "hapi",
+    "Sails.js": "sails",
+    "Feathers.js": "feathers",
+    LoopBack: "loopback",
+    "Total.js": "total",
+    AdonisJS: "adonis",
+    "Meteor.js": "meteor",
+    "ActionHero.js": "actionhero",
   };
 
-  // Add TypeScript if selected
-  if (config.useTypeScript) {
-    packageJson.devDependencies["typescript"] = "^5.1.6";
-    packageJson.devDependencies["@types/express"] = "^4.17.17";
-    packageJson.devDependencies["@types/cors"] = "^2.8.13";
-    packageJson.devDependencies["@types/node"] = "^20.4.5";
-    packageJson.scripts["dev"] = "nodemon --exec ts-node src/index.ts";
-    packageJson.devDependencies["ts-node"] = "^10.9.1";
-  }
-
-  // Write package.json
-  fs.writeFileSync(
-    path.join(targetDir, "package.json"),
-    JSON.stringify(packageJson, null, 2)
-  );
-
-  // Create a basic index file
-  const indexFileName = config.useTypeScript ? "index.ts" : "index.js";
-  const indexFileContent = `${
-    config.useTypeScript
-      ? 'import express from "express";\nimport cors from "cors";\nimport dotenv from "dotenv";\n\n'
-      : 'const express = require("express");\nconst cors = require("cors");\nconst dotenv = require("dotenv");\n\n'
-  }// Load environment variables
-dotenv.config();
-
-const app = express();
-const port = process.env.PORT || 3000;
-
-// Middleware
-app.use(cors());
-app.use(express.json());
-
-// Routes
-app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to the API' });
-});
-
-// Start server
-app.listen(port, () => {
-  console.log(\`Server running on port \${port}\`);
-});
-${config.useTypeScript ? "\nexport default app;" : "\nmodule.exports = app;"}`;
-
-  // Write index file
-  fs.writeFileSync(path.join(srcDir, indexFileName), indexFileContent);
-}
-
-/**
- * Generate NestJS backend
- */
-async function generateNestBackend(): Promise<void> {
-// Commenting out unused parameters for now; will be used in future implementation
-// config: Config,
-// targetDir: string
-  // To be implemented
-  console.log(chalk.yellow("NestJS backend generation not yet implemented"));
-}
-
-/**
- * Generate Fastify backend
- */
-async function generateFastifyBackend(): Promise<void> {
-// Commenting out unused parameters for now; will be used in future implementation
-// config: Config,
-// targetDir: string
-  // To be implemented
-  console.log(chalk.yellow("Fastify backend generation not yet implemented"));
-}
-
-/**
- * Generate Serverless backend
- */
-async function generateServerlessBackend(): Promise<void> {
-// Commenting out unused parameters for now; will be used in future implementation
-// config: Config,
-// targetDir: string
-  // To be implemented
-  console.log(
-    chalk.yellow("Serverless backend generation not yet implemented")
-  );
+  return idMap[framework] || framework.toLowerCase().replace(/\s+|\.js$/g, "");
 }
