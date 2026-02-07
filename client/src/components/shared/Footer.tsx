@@ -1,15 +1,15 @@
-import { Link } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { app, assets } from "@/data";
-import { pathTo, ROUTES } from "@/router/routes";
-import { useLanguage } from "@/hooks/useLanguage";
+import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { app, assets } from '@/data';
+import { pathTo, ROUTES } from '@/router/routes';
+import { useLanguage } from '@/hooks/useLanguage';
 
 const footerLinks = [
-  { to: ROUTES.LEGAL.TERMS, key: "terms" as const },
-  { to: ROUTES.LEGAL.PRIVACY, key: "privacy" as const },
-  { to: ROUTES.FEATURES, key: "features" as const },
-  { to: ROUTES.PRICING, key: "pricing" as const },
-  { to: ROUTES.DOCS, key: "documentation" as const },
+  { to: ROUTES.LEGAL.TERMS, key: 'terms' as const },
+  { to: ROUTES.LEGAL.PRIVACY, key: 'privacy' as const },
+  { to: ROUTES.FEATURES, key: 'features' as const },
+  { to: ROUTES.PRICING, key: 'pricing' as const },
+  { to: ROUTES.DOCS, key: 'documentation' as const },
 ] as const;
 
 export default function Footer() {
@@ -39,19 +39,17 @@ export default function Footer() {
             ))}
           </nav>
           {/* Disclaimer */}
-          <span className="text-center">
-            {t("footer.madeWithLove", { name: app.name })}
-          </span>
+          <span className="text-center">{t('footer.madeWithLove', { name: app.name })}</span>
           {/* Logo + copyright */}
           <div className="flex flex-col items-center gap-2 sm:flex-row sm:gap-2 sm:gap-x-6">
             <Link
               to={pathTo(ROUTES.HOME, language)}
               className="flex items-center gap-2 font-medium text-foreground transition-colors hover:text-primary"
-              aria-label={t("nav.homeAria")}
+              aria-label={t('nav.homeAria')}
             >
               <LogoIcon className="size-8 shrink-0" />
             </Link>
-            <span>{t("footer.copyright", { year, name: app.name })}</span>
+            <span>{t('footer.copyright', { year, name: app.name })}</span>
           </div>
         </div>
       </div>

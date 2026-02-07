@@ -1,9 +1,9 @@
-import { Separator } from "@/components/ui/separator";
-import { LandingHero } from "@/components/pages/landing/LandingHero";
-import { LandingBenefits } from "@/components/pages/landing/LandingBenefits";
-import { LandingFeatures } from "@/components/pages/landing/LandingFeatures";
-import { LandingTech } from "@/components/pages/landing/LandingTech";
-import { LandingCta } from "@/components/pages/landing/LandingCta";
+import { Separator } from '@/components/ui/separator';
+import { LandingHero } from '@/components/pages/landing/LandingHero';
+import { LandingBenefits } from '@/components/pages/landing/LandingBenefits';
+import { LandingFeatures } from '@/components/pages/landing/LandingFeatures';
+import { LandingTech } from '@/components/pages/landing/LandingTech';
+import { LandingCta } from '@/components/pages/landing/LandingCta';
 
 export default function LandingPage() {
   return (

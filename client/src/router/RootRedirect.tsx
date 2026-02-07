@@ -1,5 +1,5 @@
-import { Navigate, useLocation } from "react-router-dom";
-import { getDefaultLanguage } from "@/i18n/config";
+import { Navigate, useLocation } from 'react-router-dom';
+import { getDefaultLanguage } from '@/i18n/config';
 
 /**
  * Smart redirect that detects user's preferred language

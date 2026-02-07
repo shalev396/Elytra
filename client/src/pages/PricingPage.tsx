@@ -1,19 +1,19 @@
-import { Link } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { GradientText } from "@/components/animations/text/GradientText";
-import { FadeContent } from "@/components/animations/FadeContent";
-import { ElectricBorder } from "@/components/animations/ElectricBorder";
-import { Check } from "lucide-react";
-import { pathTo, ROUTES } from "@/router/routes";
-import { useLanguage } from "@/hooks/useLanguage";
+import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { GradientText } from '@/components/animations/text/GradientText';
+import { FadeContent } from '@/components/animations/FadeContent';
+import { ElectricBorder } from '@/components/animations/ElectricBorder';
+import { Check } from 'lucide-react';
+import { pathTo, ROUTES } from '@/router/routes';
+import { useLanguage } from '@/hooks/useLanguage';
 
 export default function PricingPage() {
   const { t } = useTranslation();
   const { language } = useLanguage();
 
-  const plans = ["free", "pro", "enterprise"] as const;
+  const plans = ['free', 'pro', 'enterprise'] as const;
 
   return (
     <div className="min-h-svh">
@@ -21,18 +21,17 @@ export default function PricingPage() {
         <FadeContent>
           <div className="mb-16 text-center">
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-              <GradientText>{t("pricing.title")}</GradientText>{" "}
-              {t("pricing.titleHighlight")}
+              <GradientText>{t('pricing.title')}</GradientText> {t('pricing.titleHighlight')}
             </h1>
             <p className="text-muted-foreground mx-auto mt-6 max-w-2xl text-lg">
-              {t("pricing.subtitle")}
+              {t('pricing.subtitle')}
             </p>
           </div>
         </FadeContent>
 
         <div className="grid gap-8 lg:grid-cols-3">
           {plans.map((planKey, index) => {
-            const isPro = planKey === "pro";
+            const isPro = planKey === 'pro';
 
             return (
               <FadeContent key={planKey} delay={index * 100}>
@@ -45,9 +44,7 @@ export default function PricingPage() {
                     </div>
                     <Card>
                       <CardHeader className="text-center">
-                        <CardTitle className="text-2xl">
-                          {t(`pricing.${planKey}.name`)}
-                        </CardTitle>
+                        <CardTitle className="text-2xl">{t(`pricing.${planKey}.name`)}</CardTitle>
                         <div className="mt-4">
                           <span className="text-4xl font-bold">
                             {t(`pricing.${planKey}.price`)}
@@ -84,13 +81,9 @@ export default function PricingPage() {
                 ) : (
                   <Card className="relative">
                     <CardHeader className="text-center">
-                      <CardTitle className="text-2xl">
-                        {t(`pricing.${planKey}.name`)}
-                      </CardTitle>
+                      <CardTitle className="text-2xl">{t(`pricing.${planKey}.name`)}</CardTitle>
                       <div className="mt-4">
-                        <span className="text-4xl font-bold">
-                          {t(`pricing.${planKey}.price`)}
-                        </span>
+                        <span className="text-4xl font-bold">{t(`pricing.${planKey}.price`)}</span>
                         <span className="text-muted-foreground text-sm">
                           /{t(`pricing.${planKey}.period`)}
                         </span>

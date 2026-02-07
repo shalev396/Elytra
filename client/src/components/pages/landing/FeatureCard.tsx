@@ -1,6 +1,6 @@
-import type { LucideIcon } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import type { LucideIcon } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 interface FeatureCardProps {
   icon: LucideIcon;
@@ -9,14 +9,9 @@ interface FeatureCardProps {
   className?: string;
 }
 
-export function FeatureCard({
-  icon: Icon,
-  title,
-  description,
-  className,
-}: FeatureCardProps) {
+export function FeatureCard({ icon: Icon, title, description, className }: FeatureCardProps) {
   return (
-    <Card className={cn("group relative h-full", className)}>
+    <Card className={cn('group relative h-full', className)}>
       <CardContent className="flex h-full flex-col p-6 sm:p-8">
         <div className="mb-5 flex items-center">
           <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-all duration-200 group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-primary/10 sm:size-16">

@@ -1,14 +1,14 @@
-import { Link } from "react-router-dom";
-import { useSelector } from "react-redux";
-import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
-import { app, assets } from "@/data";
-import { ModeToggle } from "@/components/ui/mode-toggle";
-import { LanguageSwitcher } from "@/components/ui/language-switcher";
-import { UserMenu } from "@/components/shared/UserMenu";
-import { selectIsAuthenticated } from "@/store/userSlice";
-import { pathTo, ROUTES } from "@/router/routes";
-import { useLanguage } from "@/hooks/useLanguage";
+import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui/button';
+import { app, assets } from '@/data';
+import { ModeToggle } from '@/components/ui/mode-toggle';
+import { LanguageSwitcher } from '@/components/ui/language-switcher';
+import { UserMenu } from '@/components/shared/UserMenu';
+import { selectIsAuthenticated } from '@/store/userSlice';
+import { pathTo, ROUTES } from '@/router/routes';
+import { useLanguage } from '@/hooks/useLanguage';
 
 export default function NavBar() {
   const { t } = useTranslation();
@@ -22,7 +22,7 @@ export default function NavBar() {
         <Link
           to={pathTo(ROUTES.HOME, language)}
           className="flex items-center gap-2 font-semibold transition-colors duration-200 hover:text-primary"
-          aria-label={t("nav.homeAria")}
+          aria-label={t('nav.homeAria')}
         >
           <LogoIcon className="size-8 shrink-0" />
           <span className="text-xl">{app.name}</span>
@@ -33,9 +33,7 @@ export default function NavBar() {
             <UserMenu />
           ) : (
             <Button asChild size="sm">
-              <Link to={pathTo(ROUTES.AUTH.SIGNUP, language)}>
-                {t("nav.getStarted")}
-              </Link>
+              <Link to={pathTo(ROUTES.AUTH.SIGNUP, language)}>{t('nav.getStarted')}</Link>
             </Button>
           )}
           <div className="ml-1 flex items-center gap-1">

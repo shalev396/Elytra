@@ -4,6 +4,6 @@
  * To change the icon, replace favicon-light.svg and favicon-dark.svg in public/.
  */
 export const FAVICON = {
-  light: "/favicon-light.svg",
-  dark: "/favicon-dark.svg",
+  light: '/favicon-light.svg',
+  dark: '/favicon-dark.svg',
 } as const;

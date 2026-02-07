@@ -1,16 +1,16 @@
-import { Outlet } from "react-router-dom";
-import { Link, useParams } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { Card } from "@/components/ui/card";
-import NavBar from "@/components/shared/NavBar";
-import Footer from "@/components/shared/Footer";
-import { app } from "@/data";
-import { pathTo, ROUTES } from "@/router/routes";
+import { Outlet } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { Card } from '@/components/ui/card';
+import NavBar from '@/components/shared/NavBar';
+import Footer from '@/components/shared/Footer';
+import { app } from '@/data';
+import { pathTo, ROUTES } from '@/router/routes';
 
 export function AuthLayout() {
   const { t } = useTranslation();
   const { lng } = useParams<{ lng: string }>();
-  const language = lng ?? "en";
+  const language = lng ?? 'en';
 
   return (
     <div className="min-h-svh flex flex-col bg-background">
@@ -34,30 +34,26 @@ export function AuthLayout() {
                 <div className="relative flex flex-col items-center justify-center p-10 text-white w-full">
                   <div className="space-y-6 text-center">
                     <div className="space-y-2 transform transition-transform hover:scale-105 duration-300">
-                      <h2 className="text-5xl font-bold tracking-tight">
-                        {app.name}
-                      </h2>
-                      <p className="text-xl text-blue-100">
-                        {t("auth.login.description")}
-                      </p>
+                      <h2 className="text-5xl font-bold tracking-tight">{app.name}</h2>
+                      <p className="text-xl text-blue-100">{t('auth.login.description')}</p>
                     </div>
                     <div className="mt-12 space-y-4 text-left max-w-md mx-auto">
                       <div className="flex items-start gap-3 group">
                         <div className="shrink-0 w-2 h-2 rounded-full bg-white mt-2 group-hover:scale-150 transition-transform duration-300" />
                         <p className="text-blue-50 group-hover:text-white transition-colors">
-                          {t("auth.login.feature1")}
+                          {t('auth.login.feature1')}
                         </p>
                       </div>
                       <div className="flex items-start gap-3 group">
                         <div className="shrink-0 w-2 h-2 rounded-full bg-white mt-2 group-hover:scale-150 transition-transform duration-300" />
                         <p className="text-blue-50 group-hover:text-white transition-colors">
-                          {t("auth.login.feature2")}
+                          {t('auth.login.feature2')}
                         </p>
                       </div>
                       <div className="flex items-start gap-3 group">
                         <div className="shrink-0 w-2 h-2 rounded-full bg-white mt-2 group-hover:scale-150 transition-transform duration-300" />
                         <p className="text-blue-50 group-hover:text-white transition-colors">
-                          {t("auth.login.feature3")}
+                          {t('auth.login.feature3')}
                         </p>
                       </div>
                     </div>
@@ -69,19 +65,19 @@ export function AuthLayout() {
 
           {/* Terms & Privacy - Below Card */}
           <p className="mt-6 text-center text-xs text-muted-foreground px-6">
-            {t("auth.login.agreeTo")}{" "}
+            {t('auth.login.agreeTo')}{' '}
             <Link
               to={pathTo(ROUTES.LEGAL.TERMS, language)}
               className="text-primary underline underline-offset-4 hover:no-underline focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
             >
-              {t("auth.login.termsOfService")}
-            </Link>{" "}
-            {t("auth.login.and")}{" "}
+              {t('auth.login.termsOfService')}
+            </Link>{' '}
+            {t('auth.login.and')}{' '}
             <Link
               to={pathTo(ROUTES.LEGAL.PRIVACY, language)}
               className="text-primary underline underline-offset-4 hover:no-underline focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
             >
-              {t("auth.login.privacyPolicy")}
+              {t('auth.login.privacyPolicy')}
             </Link>
             .
           </p>

@@ -1,5 +1,5 @@
-import { useTheme } from "@/components/theme-context";
-import { FAVICON } from "@/data/favicon";
+import { useTheme } from '@/components/theme-context';
+import { FAVICON } from '@/data/favicon';
 
 /**
  * Renders the app logo from the same SVGs used as favicon (single source of truth).
@@ -7,14 +7,6 @@ import { FAVICON } from "@/data/favicon";
  */
 export function LogoIcon({ className }: { className?: string }) {
   const { theme } = useTheme();
-  const src = theme === "dark" ? FAVICON.dark : FAVICON.light;
-  return (
-    <img
-      src={src}
-      alt=""
-      className={className}
-      width={24}
-      height={24}
-    />
-  );
+  const src = theme === 'dark' ? FAVICON.dark : FAVICON.light;
+  return <img src={src} alt="" className={className} width={24} height={24} />;
 }

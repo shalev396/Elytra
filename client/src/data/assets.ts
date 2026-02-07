@@ -1,5 +1,5 @@
-import { LogoIcon } from "@/components/ui/LogoIcon";
-import { FAVICON } from "./favicon";
+import { LogoIcon } from '@/components/ui/LogoIcon';
+import { FAVICON } from './favicon';
 
 export const assets = {
   LogoIcon,

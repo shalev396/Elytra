@@ -1,13 +1,13 @@
-import { lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
-import { LanguageLayout } from "@/router/LanguageLayout";
-import { RootRedirect } from "@/router/RootRedirect";
-import { homeRoutes } from "@/router/HomeRouter";
-import { authRoutes } from "@/router/AuthRouter";
-import { appRoutes } from "@/router/AppRouter";
-import { legalRoutes } from "@/router/LegalRouter";
+import { lazy, Suspense } from 'react';
+import { Routes, Route } from 'react-router-dom';
+import { LanguageLayout } from '@/router/LanguageLayout';
+import { RootRedirect } from '@/router/RootRedirect';
+import { homeRoutes } from '@/router/HomeRouter';
+import { authRoutes } from '@/router/AuthRouter';
+import { appRoutes } from '@/router/AppRouter';
+import { legalRoutes } from '@/router/LegalRouter';
 
-const NotFoundPage = lazy(() => import("@/pages/NotFoundPage"));
+const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 
 function PageLoader() {
   return (

@@ -1,5 +1,5 @@
-import type { LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import type { LucideIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface TechCardProps {
   icon: LucideIcon;
@@ -8,17 +8,12 @@ interface TechCardProps {
   className?: string;
 }
 
-export function TechCard({
-  icon: Icon,
-  title,
-  description,
-  className,
-}: TechCardProps) {
+export function TechCard({ icon: Icon, title, description, className }: TechCardProps) {
   return (
     <div
       className={cn(
-        "group flex flex-col items-center gap-3 rounded-xl border bg-card p-4 text-center transition-[border-color,box-shadow,transform] duration-200 hover:border-primary/50 hover:shadow-md sm:p-6",
-        className
+        'group flex flex-col items-center gap-3 rounded-xl border bg-card p-4 text-center transition-[border-color,box-shadow,transform] duration-200 hover:border-primary/50 hover:shadow-md sm:p-6',
+        className,
       )}
     >
       {/* Icon container - no color transition to avoid theme-switch blink */}
@@ -28,9 +23,7 @@ export function TechCard({
 
       {/* Text content - no transition-colors so theme change updates instantly */}
       <div className="flex flex-col gap-1">
-        <h3 className="text-sm font-semibold group-hover:text-primary sm:text-base">
-          {title}
-        </h3>
+        <h3 className="text-sm font-semibold group-hover:text-primary sm:text-base">{title}</h3>
         <p className="text-xs text-muted-foreground sm:text-sm">{description}</p>
       </div>
     </div>

@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
 export function ShinyText({
   children,
-  className = "",
+  className = '',
 }: {
   children: React.ReactNode;
   className?: string;
@@ -11,8 +11,8 @@ export function ShinyText({
     <span
       className={`inline-block bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_auto] bg-clip-text text-transparent animate-[shine_3s_linear_infinite] ${className}`}
       style={{
-        WebkitTextFillColor: "transparent",
-        WebkitBackgroundClip: "text",
+        WebkitTextFillColor: 'transparent',
+        WebkitBackgroundClip: 'text',
       }}
     >
       {children}

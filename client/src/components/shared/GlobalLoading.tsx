@@ -1,10 +1,12 @@
-import { useSelector } from "react-redux";
-import { selectIsGlobalLoading } from "@/store/uiSlice";
+import { useSelector } from 'react-redux';
+import { selectIsGlobalLoading } from '@/store/uiSlice';
 
 export function GlobalLoading() {
   const isLoading = useSelector(selectIsGlobalLoading);
 
-  if (!isLoading) return null;
+  if (!isLoading) {
+    return null;
+  }
 
   return (
     <div

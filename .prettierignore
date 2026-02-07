@@ -1,0 +1,12 @@
+dist
+build
+coverage
+node_modules
+.next
+.out
+*.min.*
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+client/dist
+client/node_modules

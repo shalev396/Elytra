@@ -13,7 +13,6 @@ npm install
 npm run dev
 ```
 
-
 ## Customize app name and branding
 
 Edit **`src/data/`** (e.g. `app.ts`, `assets.ts`, `favicon.ts`) to change app name, links, contact emails, and assets to your liking.

@@ -1,11 +1,11 @@
-import { lazy } from "react";
-import { Route } from "react-router-dom";
-import { ProtectedRoute } from "@/router/ProtectedRoute";
-import { DashboardLayout } from "@/components/layouts/DashboardLayout";
-import { ROUTES } from "@/router/routes";
+import { lazy } from 'react';
+import { Route } from 'react-router-dom';
+import { ProtectedRoute } from '@/router/ProtectedRoute';
+import { DashboardLayout } from '@/components/layouts/DashboardLayout';
+import { ROUTES } from '@/router/routes';
 
-const DashboardPage = lazy(() => import("@/pages/DashboardPage"));
-const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
+const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
+const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
 
 export const appRoutes = (
   <Route

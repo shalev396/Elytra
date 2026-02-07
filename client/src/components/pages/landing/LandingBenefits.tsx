@@ -1,17 +1,17 @@
-import { useTranslation } from "react-i18next";
-import { CardContent } from "@/components/ui/card";
-import { GradientText } from "@/components/animations/text/GradientText";
-import { FadeContent } from "@/components/animations/FadeContent";
-import { BounceCards, BounceCard } from "@/components/ui/bounce-cards";
-import { Zap, Search, Smartphone } from "lucide-react";
+import { useTranslation } from 'react-i18next';
+import { CardContent } from '@/components/ui/card';
+import { GradientText } from '@/components/animations/text/GradientText';
+import { FadeContent } from '@/components/animations/FadeContent';
+import { BounceCards, BounceCard } from '@/components/ui/bounce-cards';
+import { Zap, Search, Smartphone } from 'lucide-react';
 
 export function LandingBenefits() {
   const { t } = useTranslation();
 
   const benefits = [
-    { icon: Zap, key: "instant" },
-    { icon: Search, key: "seo" },
-    { icon: Smartphone, key: "responsive" },
+    { icon: Zap, key: 'instant' },
+    { icon: Search, key: 'seo' },
+    { icon: Smartphone, key: 'responsive' },
   ] as const;
 
   return (
@@ -19,7 +19,7 @@ export function LandingBenefits() {
       <section className="container mx-auto px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         <div className="mb-8 text-center sm:mb-12">
           <h2 className="text-xl font-bold tracking-tight sm:text-2xl md:text-3xl">
-            <GradientText>{t("landing.benefits.title")}</GradientText>
+            <GradientText>{t('landing.benefits.title')}</GradientText>
           </h2>
         </div>
         <BounceCards>

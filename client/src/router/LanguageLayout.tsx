@@ -1,7 +1,7 @@
-import { useEffect } from "react";
-import { Outlet, useParams, useNavigate, useLocation } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { isValidLanguage, getDefaultLanguage } from "@/i18n/config";
+import { useEffect } from 'react';
+import { Outlet, useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { isValidLanguage, getDefaultLanguage } from '@/i18n/config';
 
 /**
  * Layout component that wraps all routes and handles language detection
@@ -18,12 +18,9 @@ export function LanguageLayout() {
     // If no language in URL, redirect to default language
     if (!lng) {
       const defaultLang = getDefaultLanguage();
-      navigate(
-        `/${defaultLang}${location.pathname}${location.search}${location.hash}`,
-        {
-          replace: true,
-        }
-      );
+      void navigate(`/${defaultLang}${location.pathname}${location.search}${location.hash}`, {
+        replace: true,
+      });
       return;
     }
 
@@ -33,18 +30,15 @@ export function LanguageLayout() {
       // When /:lng matches an invalid language (e.g., /auth/callback where lng="auth"),
       // we need to preserve the entire original path including the invalid "language" part
       // The pathname is already complete (e.g., "/auth/callback"), just add the language prefix
-      navigate(
-        `/${defaultLang}${location.pathname}${location.search}${location.hash}`,
-        {
-          replace: true,
-        }
-      );
+      void navigate(`/${defaultLang}${location.pathname}${location.search}${location.hash}`, {
+        replace: true,
+      });
       return;
     }
 
     // If language is valid but different from current i18n language, change it
     if (i18n.language !== lng) {
-      i18n.changeLanguage(lng);
+      void i18n.changeLanguage(lng);
     }
   }, [lng, i18n, navigate, location]);
 

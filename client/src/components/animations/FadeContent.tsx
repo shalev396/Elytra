@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 
 interface FadeContentProps {
   children: React.ReactNode;
@@ -8,39 +8,44 @@ interface FadeContentProps {
   delay?: number;
 }
 
-export function FadeContent({
-  children,
-  className = "",
-  delay = 0,
-}: FadeContentProps) {
+export function FadeContent({ children, className = '', delay = 0 }: FadeContentProps) {
   const [isVisible, setIsVisible] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const hasBeenVisibleRef = useRef(false);
 
   useEffect(() => {
-    if (hasBeenVisibleRef.current) return;
+    if (hasBeenVisibleRef.current) {
+      return;
+    }
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !hasBeenVisibleRef.current) {
+        const entry = entries[0];
+        if (entry?.isIntersecting && !hasBeenVisibleRef.current) {
           hasBeenVisibleRef.current = true;
-          setTimeout(() => setIsVisible(true), delay);
+          setTimeout(() => {
+            setIsVisible(true);
+          }, delay);
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.1 },
     );
 
     const el = ref.current;
-    if (el) observer.observe(el);
+    if (el) {
+      observer.observe(el);
+    }
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+    };
   }, [delay]);
 
   return (
     <div
       ref={ref}
       className={`transition-[transform,opacity] duration-1000 ${
-        isVisible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
+        isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
       } ${className}`}
     >
       {children}

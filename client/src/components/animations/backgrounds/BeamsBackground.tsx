@@ -1,24 +1,25 @@
-"use client";
+'use client';
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from 'react';
 
 interface BeamsBackgroundProps {
   className?: string;
   children?: React.ReactNode;
 }
 
-export function BeamsBackground({
-  className = "",
-  children,
-}: BeamsBackgroundProps) {
+export function BeamsBackground({ className = '', children }: BeamsBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      return;
+    }
 
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      return;
+    }
 
     const setCanvasSize = () => {
       canvas.width = canvas.offsetWidth * window.devicePixelRatio;
@@ -27,15 +28,15 @@ export function BeamsBackground({
     };
 
     setCanvasSize();
-    window.addEventListener("resize", setCanvasSize);
+    window.addEventListener('resize', setCanvasSize);
 
-    const beams: Array<{
+    const beams: {
       x: number;
       y: number;
       height: number;
       speed: number;
       opacity: number;
-    }> = [];
+    }[] = [];
     const numBeams = 8;
 
     for (let i = 0; i < numBeams; i++) {
@@ -53,12 +54,7 @@ export function BeamsBackground({
       ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
 
       beams.forEach((beam) => {
-        const gradient = ctx.createLinearGradient(
-          beam.x,
-          beam.y,
-          beam.x,
-          beam.y + beam.height
-        );
+        const gradient = ctx.createLinearGradient(beam.x, beam.y, beam.x, beam.y + beam.height);
         gradient.addColorStop(0, `rgba(139, 92, 246, 0)`);
         gradient.addColorStop(0.5, `rgba(139, 92, 246, ${beam.opacity})`);
         gradient.addColorStop(1, `rgba(139, 92, 246, 0)`);
@@ -69,9 +65,7 @@ export function BeamsBackground({
         beam.y += beam.speed;
         if (beam.y > canvas.offsetHeight) {
           beam.y = -beam.height;
-          beam.x =
-            (canvas.offsetWidth / numBeams) *
-            Math.floor(Math.random() * numBeams);
+          beam.x = (canvas.offsetWidth / numBeams) * Math.floor(Math.random() * numBeams);
         }
       });
 
@@ -81,17 +75,14 @@ export function BeamsBackground({
     animate();
 
     return () => {
-      window.removeEventListener("resize", setCanvasSize);
+      window.removeEventListener('resize', setCanvasSize);
       cancelAnimationFrame(animationId);
     };
   }, []);
 
   return (
     <div className={`relative ${className}`}>
-      <canvas
-        ref={canvasRef}
-        className="pointer-events-none absolute inset-0 h-full w-full"
-      />
+      <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 h-full w-full" />
       {children}
     </div>
   );

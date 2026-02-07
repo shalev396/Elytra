@@ -1,6 +1,6 @@
-import { createSlice } from "@reduxjs/toolkit";
-import type { PayloadAction } from "@reduxjs/toolkit";
-import type { RootState } from "./index";
+import { createSlice } from '@reduxjs/toolkit';
+import type { PayloadAction } from '@reduxjs/toolkit';
+import type { RootState } from './index';
 
 interface UiState {
   isGlobalLoading: boolean;
@@ -11,7 +11,7 @@ const initialState: UiState = {
 };
 
 const uiSlice = createSlice({
-  name: "ui",
+  name: 'ui',
   initialState,
   reducers: {
     setGlobalLoading: (state, action: PayloadAction<boolean>) => {
@@ -26,11 +26,9 @@ const uiSlice = createSlice({
   },
 });
 
-export const { setGlobalLoading, showGlobalLoading, hideGlobalLoading } =
-  uiSlice.actions;
+export const { setGlobalLoading, showGlobalLoading, hideGlobalLoading } = uiSlice.actions;
 
 // Selectors
-export const selectIsGlobalLoading = (state: RootState) =>
-  state.ui.isGlobalLoading;
+export const selectIsGlobalLoading = (state: RootState) => state.ui.isGlobalLoading;
 
 export default uiSlice.reducer;

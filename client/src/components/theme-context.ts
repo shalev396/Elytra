@@ -1,25 +1,25 @@
-import { createContext, useContext } from "react";
+import { createContext, useContext } from 'react';
 
-export type Theme = "dark" | "light";
+export type Theme = 'dark' | 'light';
 
-export type ThemeProviderState = {
+export interface ThemeProviderState {
   theme: Theme;
   setTheme: (theme: Theme) => void;
-};
+}
 
 export const initialState: ThemeProviderState = {
-  theme: "light",
+  theme: 'light',
   setTheme: () => null,
 };
 
-export const ThemeProviderContext =
-  createContext<ThemeProviderState>(initialState);
+export const ThemeProviderContext = createContext<ThemeProviderState | undefined>(undefined);
 
 export function useTheme(): ThemeProviderState {
   const context = useContext(ThemeProviderContext);
 
-  if (context === undefined)
-    throw new Error("useTheme must be used within a ThemeProvider");
+  if (context === undefined) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
 
   return context;
 }

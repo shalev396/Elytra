@@ -1,47 +1,36 @@
-import type { FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Field,
   FieldDescription,
   FieldGroup,
   FieldLabel,
   FieldSeparator,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { pathTo, ROUTES } from "@/router/routes";
-import { useLanguage } from "@/hooks/useLanguage";
+} from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { pathTo, ROUTES } from '@/router/routes';
+import { useLanguage } from '@/hooks/useLanguage';
 
-export function LoginForm({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { language } = useLanguage();
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     // TODO: Implement actual login logic with Cognito
-    console.log("Login form submitted");
     // Temporary: bypass auth and go to dashboard
-    navigate(pathTo(ROUTES.DASHBOARD, language));
+    void navigate(pathTo(ROUTES.DASHBOARD, language));
   };
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
+    <div className={cn('flex flex-col gap-6', className)} {...props}>
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">{t("auth.login.title")}</CardTitle>
-          <CardDescription>{t("auth.login.description")}</CardDescription>
+          <CardTitle className="text-xl">{t('auth.login.title')}</CardTitle>
+          <CardDescription>{t('auth.login.description')}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit}>
@@ -54,7 +43,7 @@ export function LoginForm({
                       fill="currentColor"
                     />
                   </svg>
-                  {t("auth.login.loginWithApple")}
+                  {t('auth.login.loginWithApple')}
                 </Button>
                 <Button variant="outline" type="button">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -63,42 +52,40 @@ export function LoginForm({
                       fill="currentColor"
                     />
                   </svg>
-                  {t("auth.login.loginWithGoogle")}
+                  {t('auth.login.loginWithGoogle')}
                 </Button>
               </Field>
               <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
-                {t("auth.login.orContinueWith")}
+                {t('auth.login.orContinueWith')}
               </FieldSeparator>
               <Field>
-                <FieldLabel htmlFor="email">{t("auth.login.email")}</FieldLabel>
+                <FieldLabel htmlFor="email">{t('auth.login.email')}</FieldLabel>
                 <Input
                   id="email"
                   type="email"
-                  placeholder={t("auth.login.emailPlaceholder")}
+                  placeholder={t('auth.login.emailPlaceholder')}
                   required
                 />
               </Field>
               <Field>
-                <FieldLabel htmlFor="password">
-                  {t("auth.login.password")}
-                </FieldLabel>
+                <FieldLabel htmlFor="password">{t('auth.login.password')}</FieldLabel>
                 <Input id="password" type="password" required />
                 <Link
                   to={pathTo(ROUTES.AUTH.FORGOT_PASSWORD, language)}
                   className="mt-1 block text-sm underline-offset-4 transition-colors duration-200 hover:text-primary hover:underline"
                 >
-                  {t("auth.login.forgotPassword")}
+                  {t('auth.login.forgotPassword')}
                 </Link>
               </Field>
               <Field>
-                <Button type="submit">{t("auth.login.submit")}</Button>
+                <Button type="submit">{t('auth.login.submit')}</Button>
                 <FieldDescription className="text-center">
-                  {t("auth.login.noAccount")}{" "}
+                  {t('auth.login.noAccount')}{' '}
                   <Link
                     to={pathTo(ROUTES.AUTH.SIGNUP, language)}
                     className="transition-colors duration-200 hover:text-primary"
                   >
-                    {t("auth.login.signUp")}
+                    {t('auth.login.signUp')}
                   </Link>
                 </FieldDescription>
               </Field>
@@ -107,19 +94,19 @@ export function LoginForm({
         </CardContent>
       </Card>
       <FieldDescription className="px-6 text-center">
-        {t("auth.login.agreeTo")}{" "}
+        {t('auth.login.agreeTo')}{' '}
         <Link
           to={pathTo(ROUTES.LEGAL.TERMS, language)}
           className="transition-colors duration-200 hover:text-primary"
         >
-          {t("auth.login.termsOfService")}
-        </Link>{" "}
-        {t("auth.login.and")}{" "}
+          {t('auth.login.termsOfService')}
+        </Link>{' '}
+        {t('auth.login.and')}{' '}
         <Link
           to={pathTo(ROUTES.LEGAL.PRIVACY, language)}
           className="transition-colors duration-200 hover:text-primary"
         >
-          {t("auth.login.privacyPolicy")}
+          {t('auth.login.privacyPolicy')}
         </Link>
         .
       </FieldDescription>

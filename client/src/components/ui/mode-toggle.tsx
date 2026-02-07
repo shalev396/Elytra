@@ -1,14 +1,14 @@
-import { Moon, Sun } from "lucide-react";
-import { useTranslation } from "react-i18next";
+import { Moon, Sun } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useTheme } from "@/components/theme-context";
+} from '@/components/ui/dropdown-menu';
+import { useTheme } from '@/components/theme-context';
 
 export function ModeToggle() {
   const { setTheme } = useTheme();
@@ -24,24 +24,25 @@ export function ModeToggle() {
         >
           <Sun className="h-4 w-4 scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
           <Moon className="absolute h-4 w-4 scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
-          <span className="sr-only">{t("aria.toggleTheme")}</span>
+          <span className="sr-only">{t('aria.toggleTheme')}</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        className="bg-background border-border text-foreground"
-      >
+      <DropdownMenuContent align="end" className="bg-background border-border text-foreground">
         <DropdownMenuItem
-          onClick={() => setTheme("light")}
+          onClick={() => {
+            setTheme('light');
+          }}
           className="cursor-pointer focus:bg-muted focus:text-foreground"
         >
-          {t("theme.light")}
+          {t('theme.light')}
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={() => setTheme("dark")}
+          onClick={() => {
+            setTheme('dark');
+          }}
           className="cursor-pointer focus:bg-muted focus:text-foreground"
         >
-          {t("theme.dark")}
+          {t('theme.dark')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import { cn } from "@/lib/utils";
+import { useRef, useState } from 'react';
+import { cn } from '@/lib/utils';
 
 interface SpotlightCardProps {
   children: React.ReactNode;
@@ -10,14 +10,16 @@ interface SpotlightCardProps {
 export function SpotlightCard({
   children,
   className,
-  spotlightColor = "rgba(var(--primary-rgb), 0.3)",
+  spotlightColor = 'rgba(var(--primary-rgb), 0.3)',
 }: SpotlightCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return;
+    if (!cardRef.current) {
+      return;
+    }
     const rect = cardRef.current.getBoundingClientRect();
     setMousePosition({
       x: e.clientX - rect.left,
@@ -29,12 +31,13 @@ export function SpotlightCard({
     <div
       ref={cardRef}
       onMouseMove={handleMouseMove}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className={cn(
-        "group relative overflow-hidden rounded-lg border bg-card",
-        className
-      )}
+      onMouseEnter={() => {
+        setIsHovered(true);
+      }}
+      onMouseLeave={() => {
+        setIsHovered(false);
+      }}
+      className={cn('group relative overflow-hidden rounded-lg border bg-card', className)}
     >
       {isHovered && (
         <div

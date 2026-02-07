@@ -1,30 +1,28 @@
-import { Link, useParams } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { pathTo, ROUTES } from "@/router/routes";
-import { FadeContent } from "@/components/animations/FadeContent";
+import { Link, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { pathTo, ROUTES } from '@/router/routes';
+import { FadeContent } from '@/components/animations/FadeContent';
 
 export default function TermsOfServicePage() {
   const { t } = useTranslation();
   const { lng } = useParams<{ lng: string }>();
-  const language = lng ?? "en";
+  const language = lng ?? 'en';
   const sections = [
-    "section1",
-    "section2",
-    "section3",
-    "section4",
-    "section5",
-    "section6",
+    'section1',
+    'section2',
+    'section3',
+    'section4',
+    'section5',
+    'section6',
   ] as const;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-3xl">{t("legal.terms.title")}</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          {t("legal.terms.lastUpdated")}
-        </p>
+        <CardTitle className="text-3xl">{t('legal.terms.title')}</CardTitle>
+        <p className="text-sm text-muted-foreground">{t('legal.terms.lastUpdated')}</p>
       </CardHeader>
       <CardContent className="prose prose-neutral dark:prose-invert max-w-none">
         <Separator className="my-6" />
@@ -44,7 +42,7 @@ export default function TermsOfServicePage() {
 
         <div className="text-center">
           <Link to={pathTo(ROUTES.LEGAL.PRIVACY, language)} className="text-sm hover:underline">
-            {t("footer.privacy")}
+            {t('footer.privacy')}
           </Link>
         </div>
       </CardContent>

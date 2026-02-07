@@ -1,15 +1,27 @@
-import { createSlice } from "@reduxjs/toolkit";
-import type { PayloadAction } from "@reduxjs/toolkit";
-import type { User, AccessTokenPayload } from "@/types";
-import type { RootState } from "./index";
+import { createSlice } from '@reduxjs/toolkit';
+import type { PayloadAction } from '@reduxjs/toolkit';
+import type { User, AccessTokenPayload } from '@/types';
+import type { RootState } from './index';
 
 interface UserState {
   user: User | null;
   refreshToken: string | null;
 }
 
-const REFRESH_TOKEN_KEY = "refreshToken";
-const ACCESS_TOKEN_KEY = "accessToken";
+const REFRESH_TOKEN_KEY = 'refreshToken';
+const ACCESS_TOKEN_KEY = 'accessToken';
+
+function isAccessTokenPayload(value: unknown): value is AccessTokenPayload {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'id' in value &&
+    'email' in value &&
+    'name' in value &&
+    'isAuthenticated' in value &&
+    typeof (value as AccessTokenPayload).isAuthenticated === 'boolean'
+  );
+}
 
 const initialState: UserState = {
   user: null,
@@ -17,7 +29,7 @@ const initialState: UserState = {
 };
 
 const userSlice = createSlice({
-  name: "user",
+  name: 'user',
   initialState,
   reducers: {
     setUser: (state, action: PayloadAction<User | null>) => {
@@ -28,7 +40,7 @@ const userSlice = createSlice({
       action: PayloadAction<{
         accessToken: AccessTokenPayload;
         refreshToken: string;
-      }>
+      }>,
     ) => {
       const { accessToken, refreshToken } = action.payload;
 
@@ -63,12 +75,12 @@ const userSlice = createSlice({
       const accessTokenStr = sessionStorage.getItem(ACCESS_TOKEN_KEY);
       if (accessTokenStr) {
         try {
-          const accessToken: AccessTokenPayload = JSON.parse(accessTokenStr);
-          if (accessToken.isAuthenticated) {
+          const parsed: unknown = JSON.parse(accessTokenStr);
+          if (isAccessTokenPayload(parsed) && parsed.isAuthenticated) {
             state.user = {
-              id: accessToken.id,
-              email: accessToken.email,
-              name: accessToken.name,
+              id: parsed.id,
+              email: parsed.email,
+              name: parsed.name,
             };
           }
         } catch {
@@ -80,22 +92,25 @@ const userSlice = createSlice({
   },
 });
 
-export const { setUser, setTokens, logout, loadFromStorage } =
-  userSlice.actions;
+export const { setUser, setTokens, logout, loadFromStorage } = userSlice.actions;
 
 // Selectors
 export const selectUser = (state: RootState) => state.user.user;
-export const selectIsAuthenticated = (state: RootState) =>
-  state.user.user !== null;
+export const selectIsAuthenticated = (state: RootState) => state.user.user !== null;
 export const selectAccessToken = (): string | null => {
   const accessTokenStr = sessionStorage.getItem(ACCESS_TOKEN_KEY);
-  if (!accessTokenStr) return null;
+  if (!accessTokenStr) {
+    return null;
+  }
 
   try {
-    const accessToken: AccessTokenPayload = JSON.parse(accessTokenStr);
+    const parsed: unknown = JSON.parse(accessTokenStr);
+    if (!isAccessTokenPayload(parsed)) {
+      return null;
+    }
     // Return a simple token string representation
     // In real implementation, this would be the actual JWT token string
-    return JSON.stringify(accessToken);
+    return JSON.stringify(parsed);
   } catch {
     return null;
   }

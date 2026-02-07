@@ -1,38 +1,38 @@
-import { useEffect, useState } from "react";
-import { FAVICON } from "@/data/favicon";
-import type { Theme } from "./theme-context";
-import { ThemeProviderContext } from "./theme-context";
+import { useEffect, useState } from 'react';
+import { FAVICON } from '@/data/favicon';
+import type { Theme } from './theme-context';
+import { ThemeProviderContext } from './theme-context';
 
-type ThemeProviderProps = {
+interface ThemeProviderProps {
   children: React.ReactNode;
   storageKey?: string;
-};
+}
 
 function getSystemTheme(): Theme {
-  if (typeof window === "undefined") return "light";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
+  if (typeof window === 'undefined') {
+    return 'light';
+  }
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 function getStoredOrSystemTheme(storageKey: string): Theme {
   const stored = localStorage.getItem(storageKey);
-  if (stored === "light" || stored === "dark") return stored;
+  if (stored === 'light' || stored === 'dark') {
+    return stored;
+  }
   return getSystemTheme();
 }
 
 export function ThemeProvider({
   children,
-  storageKey = "elytra-ui-theme",
+  storageKey = 'elytra-ui-theme',
   ...props
 }: ThemeProviderProps) {
-  const [theme, setThemeState] = useState<Theme>(() =>
-    getStoredOrSystemTheme(storageKey),
-  );
+  const [theme, setThemeState] = useState<Theme>(() => getStoredOrSystemTheme(storageKey));
 
   useEffect(() => {
     const root = window.document.documentElement;
-    root.classList.remove("light", "dark");
+    root.classList.remove('light', 'dark');
     root.classList.add(theme);
   }, [theme]);
 
@@ -40,7 +40,7 @@ export function ThemeProvider({
   useEffect(() => {
     const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
     if (link) {
-      link.href = theme === "dark" ? FAVICON.dark : FAVICON.light;
+      link.href = theme === 'dark' ? FAVICON.dark : FAVICON.light;
     }
   }, [theme]);
 
@@ -54,9 +54,9 @@ export function ThemeProvider({
   const setTheme = (next: Theme) => {
     localStorage.setItem(storageKey, next);
     // Apply class immediately so the DOM updates in the same tick and avoids a flash/blink
-    const root = typeof document !== "undefined" ? document.documentElement : null;
+    const root = typeof document !== 'undefined' ? document.documentElement : null;
     if (root) {
-      root.classList.remove("light", "dark");
+      root.classList.remove('light', 'dark');
       root.classList.add(next);
     }
     setThemeState(next);
