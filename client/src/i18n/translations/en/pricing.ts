@@ -1,0 +1,51 @@
+export const pricing = {
+  title: "Simple,",
+  titleHighlight: "transparent pricing",
+  subtitle:
+    "Choose the plan that's right for you. All plans include access to the full codebase.",
+  free: {
+    name: "Free",
+    price: "$0",
+    period: "forever",
+    description: "Perfect for personal projects and learning",
+    cta: "Get Started",
+    badge: "",
+    features: [
+      "Full access to codebase",
+      "Community support",
+      "Basic documentation",
+      "Deploy to your own infrastructure",
+    ],
+  },
+  pro: {
+    name: "Pro",
+    price: "$20",
+    period: "per month",
+    description: "For professional developers and small teams",
+    badge: "Most Popular",
+    cta: "Get Started",
+    features: [
+      "Everything in Free",
+      "Priority support",
+      "Advanced examples",
+      "Private Discord channel",
+      "Monthly office hours",
+    ],
+  },
+  enterprise: {
+    name: "Enterprise",
+    price: "Custom",
+    period: "contact us",
+    description: "For organizations with specific needs",
+    cta: "Contact Sales",
+    badge: "",
+    features: [
+      "Everything in Pro",
+      "Custom integrations",
+      "Dedicated support",
+      "SLA guarantee",
+      "Training sessions",
+      "White-label options",
+    ],
+  },
+};
