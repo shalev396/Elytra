@@ -1,4 +1,10 @@
 export const auth = {
+  branded: {
+    description: 'Your full-stack serverless platform',
+    comingSoon: 'Coming soon',
+    confirmEmailSent:
+      "We've sent a confirmation link to your email address. Please click the link to verify your account.",
+  },
   login: {
     title: 'Welcome back',
     description: 'Login with your Apple or Google account',

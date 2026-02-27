@@ -43,10 +43,7 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          className="flex items-center gap-3 rounded-lg px-2 py-2 h-auto min-w-0 border border-transparent hover:border-border hover:bg-accent/50"
-        >
+        <Button variant="trigger" className="flex items-center gap-3 px-2 py-2">
           <Avatar className="h-8 w-8 shrink-0 ring-1 ring-border/20">
             <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
               {getInitials(user.name || user.email || 'U')}
@@ -68,13 +65,13 @@ export function UserMenu() {
             to={pathTo(ROUTES.DASHBOARD, language)}
             className="flex cursor-pointer items-center"
           >
-            <LayoutDashboard className="mr-2 h-4 w-4" />
+            <LayoutDashboard className="me-2 h-4 w-4" />
             {t('nav.dashboard')}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link to={pathTo(ROUTES.PROFILE, language)} className="flex cursor-pointer items-center">
-            <User className="mr-2 h-4 w-4" />
+            <User className="me-2 h-4 w-4" />
             {t('nav.myAccount')}
           </Link>
         </DropdownMenuItem>
@@ -82,7 +79,7 @@ export function UserMenu() {
           onClick={handleLogout}
           className="text-destructive focus:text-destructive cursor-pointer"
         >
-          <LogOut className="mr-2 h-4 w-4" />
+          <LogOut className="me-2 h-4 w-4" />
           {t('nav.logOut')}
         </DropdownMenuItem>
       </DropdownMenuContent>

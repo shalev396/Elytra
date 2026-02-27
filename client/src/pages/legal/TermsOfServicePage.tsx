@@ -4,11 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { pathTo, ROUTES } from '@/router/routes';
 import { FadeContent } from '@/components/animations/FadeContent';
+import { app } from '@/data';
 
 export default function TermsOfServicePage() {
   const { t } = useTranslation();
   const { lng } = useParams<{ lng: string }>();
   const language = lng ?? 'en';
+  const tVars = { privacyEmail: app.privacyEmail, repoUrl: app.repoUrl };
   const sections = [
     'section1',
     'section2',
@@ -33,7 +35,7 @@ export default function TermsOfServicePage() {
               <h2 className="text-2xl font-semibold mt-8 mb-4">
                 {t(`legal.terms.${section}.title`)}
               </h2>
-              <p className="mb-4">{t(`legal.terms.${section}.content`)}</p>
+              <p className="mb-4">{t(`legal.terms.${section}.content`, tVars)}</p>
             </section>
           </FadeContent>
         ))}

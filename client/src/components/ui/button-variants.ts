@@ -12,6 +12,10 @@ export const buttonVariants = cva(
           'border bg-background shadow-xs hover:bg-primary/5 hover:text-primary hover:border-primary/50 dark:bg-input/30 dark:border-input dark:hover:bg-primary/10',
         secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
         ghost: 'hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/10',
+        gradient:
+          'bg-linear-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700',
+        trigger:
+          'border border-transparent hover:border-border hover:bg-accent/50 rounded-lg h-auto min-w-0',
         link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {

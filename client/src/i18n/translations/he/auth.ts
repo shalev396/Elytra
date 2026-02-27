@@ -1,4 +1,10 @@
 export const auth = {
+  branded: {
+    description: 'הפלטפורמה שלך ללא שרת',
+    comingSoon: 'בקרוב',
+    confirmEmailSent:
+      'שלחנו קישור אישור לכתובת האימייל שלך. לחץ על הקישור כדי לאמת את חשבונך.',
+  },
   login: {
     title: 'ברוכים השבים',
     description: 'התחבר עם חשבון Apple או Google',

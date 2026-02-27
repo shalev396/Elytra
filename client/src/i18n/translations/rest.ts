@@ -1,7 +1,11 @@
 /** Rest of namespaces: landing, pricing, dashboard, notFound, auth, legal, featuresPage, profile, footer */
 
-/** Nested translation value: string, array of strings, or nested object (for i18next) */
-export type RestTranslationValue = string | string[] | { [key: string]: RestTranslationValue };
+/** Nested translation value: string, array of strings/objects, or nested object (for i18next) */
+export type RestTranslationValue =
+  | string
+  | string[]
+  | { [key: string]: RestTranslationValue }
+  | { [key: string]: RestTranslationValue }[];
 
 export type RestTranslations = Record<string, RestTranslationValue>;
 
@@ -112,12 +116,16 @@ const pricingEn = {
   pricing: {
     title: 'Simple,',
     titleHighlight: 'transparent pricing',
-    subtitle:
-      "Choose the plan that's right for you. All plans include access to the full codebase.",
+    subtitle: "Choose the plan that's right for you.",
+    monthly: 'Monthly',
+    yearly: 'Yearly',
+    yearlyDiscount: 'Save 20%',
     free: {
       name: 'Free',
       price: '$0',
+      priceYearly: '$0',
       period: 'forever',
+      periodYearly: 'forever',
       description: 'Perfect for personal projects and learning',
       cta: 'Get Started',
       badge: '',
@@ -131,7 +139,9 @@ const pricingEn = {
     pro: {
       name: 'Pro',
       price: '$20',
+      priceYearly: '$16',
       period: 'per month',
+      periodYearly: 'per month',
       description: 'For professional developers and small teams',
       badge: 'Most Popular',
       cta: 'Get Started',
@@ -146,7 +156,9 @@ const pricingEn = {
     enterprise: {
       name: 'Enterprise',
       price: 'Custom',
+      priceYearly: 'Custom',
       period: 'contact us',
+      periodYearly: 'contact us',
       description: 'For organizations with specific needs',
       cta: 'Contact Sales',
       badge: '',
@@ -158,6 +170,34 @@ const pricingEn = {
         'Training sessions',
         'White-label options',
       ],
+    },
+    faq: {
+      title: 'Frequently Asked Questions',
+      items: [
+        {
+          question: 'What is the right plan for me?',
+          answer:
+            'The Free plan is ideal for personal projects and learning. Pro adds priority support and advanced examples. Enterprise is for teams that need custom integrations and SLA guarantees.',
+        },
+        {
+          question: 'Can I change plans later?',
+          answer: 'Yes, you can upgrade or downgrade your plan at any time.',
+        },
+        {
+          question: 'What payment methods do you accept?',
+          answer: 'We accept all major payment methods.',
+        },
+        {
+          question: 'Is there a free trial?',
+          answer:
+            'The Free plan is free forever with no credit card required.',
+        },
+      ],
+    },
+    ctaSection: {
+      title: 'Ready to get started?',
+      description: 'Start building for free. No credit card required.',
+      button: 'Get Started Free',
     },
   },
 };
@@ -184,6 +224,12 @@ const notFoundEn = {
 
 const authEn = {
   auth: {
+    branded: {
+      description: 'Your full-stack serverless platform',
+      comingSoon: 'Coming soon',
+      confirmEmailSent:
+        "We've sent a confirmation link to your email address. Please click the link to verify your account.",
+    },
     login: {
       title: 'Welcome back',
       description: 'Login with your Apple or Google account',
@@ -253,70 +299,70 @@ const legalEn = {
   legal: {
     privacy: {
       title: 'Privacy Policy',
-      lastUpdated: 'Last updated: February 1, 2026',
+      lastUpdated: 'Last updated: February 27, 2026',
       section1: {
-        title: '1. Information We Collect',
+        title: '1. Open-Source Template',
         content:
-          'We collect information that you provide directly to us, including when you create an account, use our services, or communicate with us. This may include your name, email address, and other contact information.',
+          'Elytra is a free, open-source template released under the MIT License. This privacy policy describes how instances of Elytra may handle data. As this is a template, developers who deploy their own instances are responsible for implementing their own privacy practices and policies.',
       },
       section2: {
-        title: '2. How We Use Your Information',
+        title: '2. Information Collection',
         content:
-          'We use the information we collect to provide, maintain, and improve our services, to communicate with you, and to protect our users and services.',
+          'The Elytra template itself does not collect, store, or transmit any personal data. When deployed by a third party, the instance operator is solely responsible for any data collection, processing, and storage that occurs.',
       },
       section3: {
-        title: '3. Information Sharing',
+        title: '3. Third-Party Services',
         content:
-          'We do not sell your personal information. We may share your information with service providers who assist us in operating our services, subject to confidentiality agreements.',
+          'The template integrates with third-party services such as AWS Cognito for authentication. Any data processed by these services is governed by their respective privacy policies. Developers deploying Elytra should review and disclose the third-party services they use.',
       },
       section4: {
-        title: '4. Data Security',
+        title: '4. Cookies and Local Storage',
         content:
-          'We implement appropriate technical and organizational measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.',
+          'The template may use browser local storage or cookies for functionality such as theme preferences and language settings. These are stored locally on your device and are not transmitted to any server.',
       },
       section5: {
-        title: '5. Your Rights',
+        title: '5. No Warranty',
         content:
-          'You have the right to access, correct, or delete your personal information. You may also object to or restrict certain processing of your data.',
+          'This privacy policy is provided as a template for informational purposes only and does not constitute legal advice. Developers using Elytra should consult a legal professional to draft a privacy policy appropriate for their specific use case and jurisdiction.',
       },
       section6: {
-        title: '6. Contact Us',
+        title: '6. Contact',
         content:
-          'If you have questions about this Privacy Policy, please contact us at privacy@elytra.dev.',
+          'For questions about the Elytra open-source project, visit the GitHub repository at {{repoUrl}} or contact the maintainer at {{privacyEmail}}.',
       },
     },
     terms: {
       title: 'Terms of Service',
-      lastUpdated: 'Last updated: February 1, 2026',
+      lastUpdated: 'Last updated: February 27, 2026',
       section1: {
-        title: '1. Acceptance of Terms',
+        title: '1. MIT License',
         content:
-          'By accessing and using Elytra, you accept and agree to be bound by the terms and provision of this agreement.',
+          'Elytra is released under the MIT License. You are free to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of this software, subject to the conditions of the MIT License included in the project repository.',
       },
       section2: {
-        title: '2. Use License',
+        title: '2. Free to Use',
         content:
-          "Permission is granted to temporarily download one copy of the materials on Elytra's website for personal, non-commercial transitory viewing only.",
+          'This template is provided free of charge. You may use it for personal, commercial, or educational projects without restriction. Attribution is appreciated but not required beyond the license notice.',
       },
       section3: {
-        title: '3. Disclaimer',
+        title: '3. No Warranty',
         content:
-          "The materials on Elytra's website are provided on an 'as is' basis. Elytra makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties.",
+          'The software is provided "as is", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and noninfringement.',
       },
       section4: {
-        title: '4. Limitations',
+        title: '4. Limitation of Liability',
         content:
-          "In no event shall Elytra or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the materials on Elytra's website.",
+          'In no event shall the authors or copyright holders be liable for any claim, damages, or other liability, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software.',
       },
       section5: {
-        title: '5. Revisions',
+        title: '5. Contributions',
         content:
-          "The materials appearing on Elytra's website may include technical, typographical, or photographic errors. Elytra does not warrant that any of the materials on its website are accurate, complete, or current.",
+          'Contributions to Elytra are welcome and are subject to the same MIT License. By submitting a contribution, you agree that your work will be licensed under the same terms.',
       },
       section6: {
-        title: '6. Governing Law',
+        title: '6. Template Disclaimer',
         content:
-          'These terms and conditions are governed by and construed in accordance with the laws and you irrevocably submit to the exclusive jurisdiction of the courts in that location.',
+          'These terms apply to the Elytra template itself. If you deploy an application based on this template, you are responsible for providing your own terms of service appropriate for your product and jurisdiction.',
       },
     },
   },
@@ -328,9 +374,6 @@ const featuresPageEn = {
     titleHighlight: 'for modern apps',
     subtitle:
       'Everything you need to build production-ready serverless applications. No setup required.',
-    comingSoon: 'More features coming soon',
-    comingSoonDesc:
-      "We're constantly improving Elytra with new features, components, and integrations. Join our community to stay updated.",
   },
 };
 
@@ -495,11 +538,16 @@ const pricingHe = {
   pricing: {
     title: 'תמחור',
     titleHighlight: 'פשוט ושקוף',
-    subtitle: 'בחר את התוכנית המתאימה לך. כל התוכניות כוללות גישה לקוד המלא.',
+    subtitle: 'בחר את התוכנית המתאימה לך.',
+    monthly: 'חודשי',
+    yearly: 'שנתי',
+    yearlyDiscount: 'חסכו 20%',
     free: {
       name: 'חינם',
       price: '$0',
+      priceYearly: '$0',
       period: 'לתמיד',
+      periodYearly: 'לתמיד',
       description: 'מושלם לפרויקטים אישיים ולמידה',
       cta: 'התחל',
       badge: '',
@@ -508,7 +556,9 @@ const pricingHe = {
     pro: {
       name: 'מקצועי',
       price: '$20',
+      priceYearly: '$16',
       period: 'לחודש',
+      periodYearly: 'לחודש',
       description: 'למפתחים מקצועיים וצוותים קטנים',
       badge: 'הכי פופולרי',
       cta: 'התחל',
@@ -522,8 +572,10 @@ const pricingHe = {
     },
     enterprise: {
       name: 'ארגוני',
-      price: 'מותאם אישית',
+      price: 'מותאם\nאישית',
+      priceYearly: 'מותאם\nאישית',
       period: 'צור קשר',
+      periodYearly: 'צור קשר',
       description: 'לארגונים עם צרכים ספציפיים',
       cta: 'צור קשר למכירות',
       badge: '',
@@ -535,6 +587,33 @@ const pricingHe = {
         'מפגשי הדרכה',
         'אפשרויות white-label',
       ],
+    },
+    faq: {
+      title: 'שאלות נפוצות',
+      items: [
+        {
+          question: 'איזו תוכנית מתאימה לי?',
+          answer:
+            'התוכנית החינמית מתאימה לפרויקטים אישיים ולמידה. מקצועי מוסיף תמיכה עדיפה ודוגמאות מתקדמות. ארגוני מתאים לצוותים שצריכים אינטגרציות מותאמות וערבות SLA.',
+        },
+        {
+          question: 'אפשר לשנות תוכנית אחר כך?',
+          answer: 'כן, אפשר לשדרג או לשנמך את התוכנית בכל עת.',
+        },
+        {
+          question: 'אילו אמצעי תשלום אתם מקבלים?',
+          answer: 'אנו מקבלים את כל אמצעי התשלום הנפוצים.',
+        },
+        {
+          question: 'האם יש תקופת ניסיון חינם?',
+          answer: 'התוכנית החינמית היא חינמית לתמיד ללא צורך בכרטיס אשראי.',
+        },
+      ],
+    },
+    ctaSection: {
+      title: 'מוכנים להתחיל?',
+      description: 'התחילו לבנות בחינם. לא נדרש כרטיס אשראי.',
+      button: 'התחלה חינמית',
     },
   },
 };
@@ -557,6 +636,12 @@ const notFoundHe = {
 
 const authHe = {
   auth: {
+    branded: {
+      description: 'הפלטפורמה שלך ללא שרת',
+      comingSoon: 'בקרוב',
+      confirmEmailSent:
+        'שלחנו קישור אישור לכתובת האימייל שלך. לחץ על הקישור כדי לאמת את חשבונך.',
+    },
     login: {
       title: 'ברוכים השבים',
       description: 'התחבר עם חשבון Apple או Google',
@@ -626,70 +711,70 @@ const legalHe = {
   legal: {
     privacy: {
       title: 'מדיניות פרטיות',
-      lastUpdated: 'עודכן לאחרונה: 1 בפברואר 2026',
+      lastUpdated: 'עודכן לאחרונה: 27 בפברואר 2026',
       section1: {
-        title: '1. מידע שאנו אוספים',
+        title: '1. תבנית קוד פתוח',
         content:
-          'אנו אוספים מידע שאתה מספק לנו ישירות, כולל כאשר אתה יוצר חשבון, משתמש בשירותים שלנו, או מתקשר איתנו. זה עשוי לכלול את שמך, כתובת האימייל שלך ומידע ליצירת קשר נוסף.',
+          'Elytra היא תבנית חינמית בקוד פתוח שפורסמה תחת רישיון MIT. מדיניות פרטיות זו מתארת כיצד מופעים של Elytra עשויים לטפל בנתונים. מכיוון שזו תבנית, מפתחים שמפעילים מופעים משלהם אחראים ליישום נהלי ומדיניות הפרטיות שלהם.',
       },
       section2: {
-        title: '2. כיצד אנו משתמשים במידע שלך',
+        title: '2. איסוף מידע',
         content:
-          'אנו משתמשים במידע שאנו אוספים כדי לספק, לתחזק ולשפר את השירותים שלנו, לתקשר איתך, ולהגן על המשתמשים והשירותים שלנו.',
+          'תבנית Elytra עצמה אינה אוספת, מאחסנת או מעבירה נתונים אישיים כלשהם. כאשר היא מופעלת על ידי צד שלישי, מפעיל המופע אחראי באופן בלעדי לכל איסוף, עיבוד ואחסון נתונים שמתרחש.',
       },
       section3: {
-        title: '3. שיתוף מידע',
+        title: '3. שירותי צד שלישי',
         content:
-          'אנו לא מוכרים את המידע האישי שלך. אנו עשויים לשתף את המידע שלך עם ספקי שירות המסייעים לנו בהפעלת השירותים שלנו, בכפוף להסכמי סודיות.',
+          'התבנית משתלבת עם שירותי צד שלישי כמו AWS Cognito לאימות. כל נתון המעובד על ידי שירותים אלה כפוף למדיניות הפרטיות שלהם. מפתחים המפעילים את Elytra צריכים לבדוק ולחשוף את שירותי הצד השלישי שבהם הם משתמשים.',
       },
       section4: {
-        title: '4. אבטחת מידע',
+        title: '4. עוגיות ואחסון מקומי',
         content:
-          'אנו מיישמים אמצעי אבטחה טכניים וארגוניים מתאימים כדי להגן על המידע האישי שלך מפני גישה, שינוי, גילוי או השמדה לא מורשים.',
+          'התבנית עשויה להשתמש באחסון מקומי בדפדפן או בעוגיות לצורך פונקציונליות כמו העדפות ערכת נושא והגדרות שפה. אלה מאוחסנים באופן מקומי במכשיר שלך ואינם מועברים לשום שרת.',
       },
       section5: {
-        title: '5. הזכויות שלך',
+        title: '5. ללא אחריות',
         content:
-          'יש לך את הזכות לגשת, לתקן או למחוק את המידע האישי שלך. אתה יכול גם להתנגד או להגביל עיבוד מסוים של הנתונים שלך.',
+          'מדיניות פרטיות זו מסופקת כתבנית למטרות מידע בלבד ואינה מהווה ייעוץ משפטי. מפתחים המשתמשים ב-Elytra צריכים להתייעץ עם איש מקצוע משפטי כדי לנסח מדיניות פרטיות מתאימה למקרה השימוש ולתחום השיפוט שלהם.',
       },
       section6: {
-        title: '6. צור קשר',
+        title: '6. יצירת קשר',
         content:
-          'אם יש לך שאלות לגבי מדיניות פרטיות זו, אנא צור איתנו קשר בכתובת privacy@elytra.dev.',
+          'לשאלות לגבי פרויקט הקוד הפתוח Elytra, בקרו במאגר GitHub בכתובת {{repoUrl}} או צרו קשר עם המתחזק בכתובת {{privacyEmail}}.',
       },
     },
     terms: {
       title: 'תנאי שימוש',
-      lastUpdated: 'עודכן לאחרונה: 1 בפברואר 2026',
+      lastUpdated: 'עודכן לאחרונה: 27 בפברואר 2026',
       section1: {
-        title: '1. קבלת התנאים',
+        title: '1. רישיון MIT',
         content:
-          'על ידי גישה ושימוש ב-Elytra, אתה מקבל ומסכים להיות כפוף לתנאים והוראות של הסכם זה.',
+          'Elytra פורסמה תחת רישיון MIT. אתה רשאי להשתמש, להעתיק, לשנות, למזג, לפרסם, להפיץ, לתת רישיון משנה ו/או למכור עותקים של תוכנה זו, בכפוף לתנאי רישיון MIT הכלול במאגר הפרויקט.',
       },
       section2: {
-        title: '2. רישיון שימוש',
+        title: '2. חינמי לשימוש',
         content:
-          'ניתן רישיון להוריד זמנית עותק אחד של החומרים באתר Elytra לצפייה אישית ולא מסחרית בלבד.',
+          'תבנית זו מסופקת ללא תשלום. אתה רשאי להשתמש בה לפרויקטים אישיים, מסחריים או חינוכיים ללא הגבלה. מתן קרדיט מוערך אך אינו נדרש מעבר להודעת הרישיון.',
       },
       section3: {
-        title: '3. כתב ויתור',
+        title: '3. ללא אחריות',
         content:
-          "החומרים באתר Elytra מסופקים 'כמות שהם'. Elytra אינה נותנת אחריות כלשהי, מפורשת או משתמעת, ובזאת מוותרת על כל האחריות האחרות.",
+          'התוכנה מסופקת "כמות שהיא", ללא אחריות מכל סוג שהוא, מפורשת או משתמעת, כולל אך לא מוגבל לאחריות של סחירות, התאמה למטרה מסוימת ואי-הפרה.',
       },
       section4: {
-        title: '4. מגבלות',
+        title: '4. הגבלת אחריות',
         content:
-          'בשום מקרה Elytra או ספקיה לא יהיו אחראים לכל נזק (כולל, ללא הגבלה, נזקים בגין אובדן נתונים או רווח, או עקב הפרעה לעסק) הנובעים מהשימוש או מחוסר היכולת להשתמש בחומרים באתר Elytra.',
+          'בשום מקרה המחברים או בעלי זכויות היוצרים לא יהיו אחראים לכל תביעה, נזק או אחריות אחרת, בין אם בפעולת חוזה, עוולה או אחרת, הנובעת מהתוכנה או מהשימוש או עסקאות אחרות בתוכנה.',
       },
       section5: {
-        title: '5. תיקונים',
+        title: '5. תרומות',
         content:
-          'החומרים המופיעים באתר Elytra עשויים לכלול שגיאות טכניות, טיפוגרפיות או צילום. Elytra אינה מבטיחה שאף אחד מהחומרים באתר שלה מדויקים, שלמים או עדכניים.',
+          'תרומות ל-Elytra מתקבלות בברכה וכפופות לאותו רישיון MIT. על ידי הגשת תרומה, אתה מסכים שהעבודה שלך תורשה תחת אותם תנאים.',
       },
       section6: {
-        title: '6. חוק ממשל',
+        title: '6. הצהרת תבנית',
         content:
-          'תנאים אלה מוסדרים ומתפרשים בהתאם לחוקים ואתה מתחייב לסמכות השיפוט הבלעדית של בתי המשפט באותו מיקום.',
+          'תנאים אלה חלים על תבנית Elytra עצמה. אם אתה מפעיל יישום המבוסס על תבנית זו, אתה אחראי לספק תנאי שימוש משלך המתאימים למוצר שלך ולתחום השיפוט שלך.',
       },
     },
   },
@@ -700,9 +785,6 @@ const featuresPageHe = {
     title: 'תכונות עוצמתיות',
     titleHighlight: 'לאפליקציות מודרניות',
     subtitle: 'כל מה שצריך לבניית אפליקציות ללא שרת מוכנות לייצור. ללא התקנה נדרשת.',
-    comingSoon: 'תכונות נוספות בקרוב',
-    comingSoonDesc:
-      'אנחנו משפרים כל הזמן את Elytra עם תכונות, רכיבים ואינטגרציות חדשות. הצטרף לקהילה שלנו כדי להישאר מעודכן.',
   },
 };
 

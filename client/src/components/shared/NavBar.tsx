@@ -36,7 +36,7 @@ export default function NavBar() {
               <Link to={pathTo(ROUTES.AUTH.SIGNUP, language)}>{t('nav.getStarted')}</Link>
             </Button>
           )}
-          <div className="ml-1 flex items-center gap-1">
+          <div className="ms-1 flex items-center gap-1">
             <LanguageSwitcher />
             <ModeToggle />
           </div>

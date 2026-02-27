@@ -44,7 +44,8 @@ export default function SignUpPage() {
         </div>
         <Button
           type="submit"
-          className="w-full bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+          variant="gradient"
+          className="w-full"
         >
           {t('auth.signUp.submit')}
         </Button>

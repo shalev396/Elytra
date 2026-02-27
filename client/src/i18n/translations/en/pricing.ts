@@ -1,11 +1,16 @@
 export const pricing = {
   title: 'Simple,',
   titleHighlight: 'transparent pricing',
-  subtitle: "Choose the plan that's right for you. All plans include access to the full codebase.",
+  subtitle: "Choose the plan that's right for you.",
+  monthly: 'Monthly',
+  yearly: 'Yearly',
+  yearlyDiscount: 'Save 20%',
   free: {
     name: 'Free',
     price: '$0',
+    priceYearly: '$0',
     period: 'forever',
+    periodYearly: 'forever',
     description: 'Perfect for personal projects and learning',
     cta: 'Get Started',
     badge: '',
@@ -19,7 +24,9 @@ export const pricing = {
   pro: {
     name: 'Pro',
     price: '$20',
+    priceYearly: '$16',
     period: 'per month',
+    periodYearly: 'per month',
     description: 'For professional developers and small teams',
     badge: 'Most Popular',
     cta: 'Get Started',
@@ -34,7 +41,9 @@ export const pricing = {
   enterprise: {
     name: 'Enterprise',
     price: 'Custom',
+    priceYearly: 'Custom',
     period: 'contact us',
+    periodYearly: 'contact us',
     description: 'For organizations with specific needs',
     cta: 'Contact Sales',
     badge: '',
@@ -46,5 +55,35 @@ export const pricing = {
       'Training sessions',
       'White-label options',
     ],
+  },
+  faq: {
+    title: 'Frequently Asked Questions',
+    items: [
+      {
+        question: 'What is the right plan for me?',
+        answer:
+          'The Free plan is ideal for personal projects and learning. Pro adds priority support and advanced examples. Enterprise is for teams that need custom integrations and SLA guarantees.',
+      },
+      {
+        question: 'Can I change plans later?',
+        answer:
+          'Yes, you can upgrade or downgrade your plan at any time.',
+      },
+      {
+        question: 'What payment methods do you accept?',
+        answer:
+          'We accept all major payment methods.',
+      },
+      {
+        question: 'Is there a free trial?',
+        answer:
+          'The Free plan is free forever with no credit card required.',
+      },
+    ],
+  },
+  ctaSection: {
+    title: 'Ready to get started?',
+    description: 'Start building for free. No credit card required.',
+    button: 'Get Started Free',
   },
 };

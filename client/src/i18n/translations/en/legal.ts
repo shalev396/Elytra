@@ -1,70 +1,70 @@
 export const legal = {
   privacy: {
     title: 'Privacy Policy',
-    lastUpdated: 'Last updated: February 1, 2026',
+    lastUpdated: 'Last updated: February 27, 2026',
     section1: {
-      title: '1. Information We Collect',
+      title: '1. Open-Source Template',
       content:
-        'We collect information that you provide directly to us, including when you create an account, use our services, or communicate with us. This may include your name, email address, and other contact information.',
+        'Elytra is a free, open-source template released under the MIT License. This privacy policy describes how instances of Elytra may handle data. As this is a template, developers who deploy their own instances are responsible for implementing their own privacy practices and policies.',
     },
     section2: {
-      title: '2. How We Use Your Information',
+      title: '2. Information Collection',
       content:
-        'We use the information we collect to provide, maintain, and improve our services, to communicate with you, and to protect our users and services.',
+        'The Elytra template itself does not collect, store, or transmit any personal data. When deployed by a third party, the instance operator is solely responsible for any data collection, processing, and storage that occurs.',
     },
     section3: {
-      title: '3. Information Sharing',
+      title: '3. Third-Party Services',
       content:
-        'We do not sell your personal information. We may share your information with service providers who assist us in operating our services, subject to confidentiality agreements.',
+        'The template integrates with third-party services such as AWS Cognito for authentication. Any data processed by these services is governed by their respective privacy policies. Developers deploying Elytra should review and disclose the third-party services they use.',
     },
     section4: {
-      title: '4. Data Security',
+      title: '4. Cookies and Local Storage',
       content:
-        'We implement appropriate technical and organizational measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.',
+        'The template may use browser local storage or cookies for functionality such as theme preferences and language settings. These are stored locally on your device and are not transmitted to any server.',
     },
     section5: {
-      title: '5. Your Rights',
+      title: '5. No Warranty',
       content:
-        'You have the right to access, correct, or delete your personal information. You may also object to or restrict certain processing of your data.',
+        'This privacy policy is provided as a template for informational purposes only and does not constitute legal advice. Developers using Elytra should consult a legal professional to draft a privacy policy appropriate for their specific use case and jurisdiction.',
     },
     section6: {
-      title: '6. Contact Us',
+      title: '6. Contact',
       content:
-        'If you have questions about this Privacy Policy, please contact us at privacy@elytra.dev.',
+        'For questions about the Elytra open-source project, visit the GitHub repository at {{repoUrl}} or contact the maintainer at {{privacyEmail}}.',
     },
   },
   terms: {
     title: 'Terms of Service',
-    lastUpdated: 'Last updated: February 1, 2026',
+    lastUpdated: 'Last updated: February 27, 2026',
     section1: {
-      title: '1. Acceptance of Terms',
+      title: '1. MIT License',
       content:
-        'By accessing and using Elytra, you accept and agree to be bound by the terms and provision of this agreement.',
+        'Elytra is released under the MIT License. You are free to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of this software, subject to the conditions of the MIT License included in the project repository.',
     },
     section2: {
-      title: '2. Use License',
+      title: '2. Free to Use',
       content:
-        "Permission is granted to temporarily download one copy of the materials on Elytra's website for personal, non-commercial transitory viewing only.",
+        'This template is provided free of charge. You may use it for personal, commercial, or educational projects without restriction. Attribution is appreciated but not required beyond the license notice.',
     },
     section3: {
-      title: '3. Disclaimer',
+      title: '3. No Warranty',
       content:
-        "The materials on Elytra's website are provided on an 'as is' basis. Elytra makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties.",
+        'The software is provided "as is", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and noninfringement.',
     },
     section4: {
-      title: '4. Limitations',
+      title: '4. Limitation of Liability',
       content:
-        "In no event shall Elytra or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the materials on Elytra's website.",
+        'In no event shall the authors or copyright holders be liable for any claim, damages, or other liability, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software.',
     },
     section5: {
-      title: '5. Revisions',
+      title: '5. Contributions',
       content:
-        "The materials appearing on Elytra's website may include technical, typographical, or photographic errors. Elytra does not warrant that any of the materials on its website are accurate, complete, or current.",
+        'Contributions to Elytra are welcome and are subject to the same MIT License. By submitting a contribution, you agree that your work will be licensed under the same terms.',
     },
     section6: {
-      title: '6. Governing Law',
+      title: '6. Template Disclaimer',
       content:
-        'These terms and conditions are governed by and construed in accordance with the laws and you irrevocably submit to the exclusive jurisdiction of the courts in that location.',
+        'These terms apply to the Elytra template itself. If you deploy an application based on this template, you are responsible for providing your own terms of service appropriate for your product and jurisdiction.',
     },
   },
 };

@@ -18,14 +18,14 @@ export function AuthLayout() {
       <main className="flex-1 flex flex-col items-center justify-center py-12 px-4 pt-24">
         <div className="w-full max-w-5xl">
           <Card className="overflow-hidden border-border/50 shadow-2xl p-0">
-            <div className="grid md:grid-cols-2 min-h-[28rem]">
+            <div className="grid md:grid-cols-2 min-h-112">
               {/* Left - Form content */}
               <div className="p-6 md:p-10 space-y-6">
                 <Outlet />
               </div>
 
               {/* Right - Branded panel (desktop) */}
-              <div className="relative hidden md:flex bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800 overflow-hidden">
+              <div className="relative hidden md:flex bg-linear-to-br from-blue-600 via-purple-600 to-blue-800 overflow-hidden">
                 <div className="absolute inset-0 transition-transform duration-1000 hover:scale-110">
                   <div className="absolute top-0 -right-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob" />
                   <div className="absolute top-0 -left-4 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000" />
@@ -35,7 +35,7 @@ export function AuthLayout() {
                   <div className="space-y-6 text-center">
                     <div className="space-y-2 transform transition-transform hover:scale-105 duration-300">
                       <h2 className="text-5xl font-bold tracking-tight">{app.name}</h2>
-                      <p className="text-xl text-blue-100">{t('auth.login.description')}</p>
+                      <p className="text-xl text-blue-100">{t('auth.branded.description')}</p>
                     </div>
                     <div className="mt-12 space-y-4 text-left max-w-md mx-auto">
                       <div className="flex items-start gap-3 group">
@@ -84,18 +84,6 @@ export function AuthLayout() {
         </div>
       </main>
       <Footer />
-
-      <style>{`
-        @keyframes blob {
-          0% { transform: translate(0px, 0px) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-          100% { transform: translate(0px, 0px) scale(1); }
-        }
-        .animate-blob { animation: blob 7s infinite; }
-        .animation-delay-2000 { animation-delay: 2s; }
-        .animation-delay-4000 { animation-delay: 4s; }
-      `}</style>
     </div>
   );
 }

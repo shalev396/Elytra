@@ -19,7 +19,7 @@ export function FeatureCard({ icon: Icon, title, description, className }: Featu
           </div>
         </div>
         <div className="flex flex-1 flex-col">
-          <h3 className="mb-3 text-xl font-semibold leading-tight transition-colors duration-200 sm:text-2xl bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent group-hover:from-purple-400 group-hover:to-primary">
+          <h3 className="mb-3 text-xl font-semibold leading-tight transition-colors duration-200 sm:text-2xl bg-linear-to-r from-primary to-accent bg-clip-text text-transparent group-hover:from-accent group-hover:to-primary">
             {title}
           </h3>
           <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">

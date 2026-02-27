@@ -21,27 +21,19 @@ export function LanguageSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-9 w-9 text-foreground hover:bg-muted hover:text-foreground"
-        >
+        <Button variant="ghost" size="icon">
           <Globe className="h-4 w-4" />
           <span className="sr-only">{t('nav.selectLanguage')}</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="bg-background border-border text-foreground">
+      <DropdownMenuContent align="end">
         {availableLanguages.map((lang) => (
           <DropdownMenuItem
             key={lang}
             onClick={() => {
               changeLanguage(lang);
             }}
-            className={
-              language === lang
-                ? 'bg-primary/10 text-primary'
-                : 'focus:bg-muted focus:text-foreground'
-            }
+            className={language === lang ? 'bg-primary/10 text-primary' : undefined}
           >
             {LANGUAGE_LABELS[lang]}
           </DropdownMenuItem>
