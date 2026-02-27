@@ -49,7 +49,9 @@ export default function PricingPage() {
         <FadeContent delay={100}>
           <div className="mb-14 flex items-center justify-center gap-3">
             <button
-              onClick={() => { setBilling('monthly'); }}
+              onClick={() => {
+                setBilling('monthly');
+              }}
               className={`rounded-full px-5 py-2 text-sm font-medium transition-colors ${
                 billing === 'monthly'
                   ? 'bg-primary text-primary-foreground'
@@ -59,7 +61,9 @@ export default function PricingPage() {
               {t('pricing.monthly')}
             </button>
             <button
-              onClick={() => { setBilling('yearly'); }}
+              onClick={() => {
+                setBilling('yearly');
+              }}
               className={`rounded-full px-5 py-2 text-sm font-medium transition-colors ${
                 billing === 'yearly'
                   ? 'bg-primary text-primary-foreground'
@@ -114,11 +118,7 @@ export default function PricingPage() {
                       </li>
                     ))}
                   </ul>
-                  <Button
-                    className="mt-8 w-full"
-                    variant={isPro ? 'gradient' : 'outline'}
-                    asChild
-                  >
+                  <Button className="mt-8 w-full" variant={isPro ? 'gradient' : 'outline'} asChild>
                     <Link to={pathTo(ROUTES.AUTH.SIGNUP, language)}>
                       {t(`pricing.${planKey}.cta`)}
                     </Link>
@@ -139,9 +139,7 @@ export default function PricingPage() {
                       </div>
                     )}
                     <ElectricBorder className="h-full">
-                      <Card className="h-full border-0 bg-transparent shadow-none">
-                        {inner}
-                      </Card>
+                      <Card className="h-full border-0 bg-transparent shadow-none">{inner}</Card>
                     </ElectricBorder>
                   </div>
                 ) : (

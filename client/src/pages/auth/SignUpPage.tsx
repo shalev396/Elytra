@@ -42,11 +42,7 @@ export default function SignUpPage() {
           <Label htmlFor="confirm-password">{t('auth.signUp.confirmPassword')}</Label>
           <Input id="confirm-password" type="password" />
         </div>
-        <Button
-          type="submit"
-          variant="gradient"
-          className="w-full"
-        >
+        <Button type="submit" variant="gradient" className="w-full">
           {t('auth.signUp.submit')}
         </Button>
         <p className="text-center text-sm text-muted-foreground">

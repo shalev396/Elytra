@@ -66,18 +66,15 @@ export const pricing = {
       },
       {
         question: 'Can I change plans later?',
-        answer:
-          'Yes, you can upgrade or downgrade your plan at any time.',
+        answer: 'Yes, you can upgrade or downgrade your plan at any time.',
       },
       {
         question: 'What payment methods do you accept?',
-        answer:
-          'We accept all major payment methods.',
+        answer: 'We accept all major payment methods.',
       },
       {
         question: 'Is there a free trial?',
-        answer:
-          'The Free plan is free forever with no credit card required.',
+        answer: 'The Free plan is free forever with no credit card required.',
       },
     ],
   },

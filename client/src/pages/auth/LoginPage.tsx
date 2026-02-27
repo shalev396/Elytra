@@ -55,11 +55,7 @@ export default function LoginPage() {
           <Input id="password" type="password" placeholder="••••••••" />
         </div>
 
-        <Button
-          type="submit"
-          variant="gradient"
-          className="w-full"
-        >
+        <Button type="submit" variant="gradient" className="w-full">
           {t('auth.login.submit')}
         </Button>
 

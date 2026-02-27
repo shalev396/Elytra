@@ -33,9 +33,7 @@ export default function ConfirmSignUpPage() {
       <div className="space-y-4 text-center">
         {!code && (
           <>
-            <p className="text-sm text-muted-foreground">
-              {t('auth.branded.confirmEmailSent')}
-            </p>
+            <p className="text-sm text-muted-foreground">{t('auth.branded.confirmEmailSent')}</p>
             <Button asChild>
               <Link to={pathTo(ROUTES.AUTH.LOGIN, language)}>{t('auth.confirm.goToLogin')}</Link>
             </Button>

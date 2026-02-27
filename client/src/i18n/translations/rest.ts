@@ -189,8 +189,7 @@ const pricingEn = {
         },
         {
           question: 'Is there a free trial?',
-          answer:
-            'The Free plan is free forever with no credit card required.',
+          answer: 'The Free plan is free forever with no credit card required.',
         },
       ],
     },
@@ -639,8 +638,7 @@ const authHe = {
     branded: {
       description: 'הפלטפורמה שלך ללא שרת',
       comingSoon: 'בקרוב',
-      confirmEmailSent:
-        'שלחנו קישור אישור לכתובת האימייל שלך. לחץ על הקישור כדי לאמת את חשבונך.',
+      confirmEmailSent: 'שלחנו קישור אישור לכתובת האימייל שלך. לחץ על הקישור כדי לאמת את חשבונך.',
     },
     login: {
       title: 'ברוכים השבים',

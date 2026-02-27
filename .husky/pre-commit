@@ -1,19 +1,19 @@
 #!/bin/sh
+set -e
 
-echo "Running pre-commit checks..."
-
-# Step 1: Format code
 npm run format
 
-# Step 2 & 3: Build and lint (only if client/ has staged changes)
+if ! git diff --quiet; then
+  echo ""
+  echo "Formatter changed files. Please stage them and commit again."
+  git status --short
+  exit 1
+fi
+
 if git diff --cached --name-only | grep -q "^client/"; then
-  cd client
-  
-  # Step 2: Build
-  npm run build
-  
-  # Step 3: Lint (errors and warnings block commit)
-  npx eslint . --max-warnings 0
-  
-  cd ..
+  (
+    cd client
+    npm run build
+    npx eslint . --max-warnings 0
+  )
 fi
