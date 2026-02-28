@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-npx lint-staged
+npx lint-staged --quiet
 
 if git diff --cached --name-only | grep -q "^client/"; then
   (
