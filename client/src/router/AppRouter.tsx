@@ -6,6 +6,7 @@ import { ROUTES } from '@/router/routes';
 
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
+const EditProfilePage = lazy(() => import('@/pages/EditProfilePage'));
 
 export const appRoutes = (
   <Route
@@ -18,5 +19,9 @@ export const appRoutes = (
   >
     <Route index element={<DashboardPage />} />
     <Route path={ROUTES.PROFILE_SEGMENT} element={<ProfilePage />} />
+    <Route
+      path={`${ROUTES.PROFILE_SEGMENT}/${ROUTES.EDIT_PROFILE_SEGMENT}`}
+      element={<EditProfilePage />}
+    />
   </Route>
 );

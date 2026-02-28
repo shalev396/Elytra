@@ -12,6 +12,12 @@ export type {
   RefreshTokenResponseData,
 } from '../routes/auth/index.js';
 
-export type { MeResponseData, DeleteUserResponseData } from '../routes/user/account.js';
+export type {
+  MeResponseData,
+  UpdateMeRequestBody,
+  UpdateMeResponseData,
+  TestEmailResponseData,
+  DeleteUserResponseData,
+} from '../routes/user/account.js';
 
 export type { DashboardResponseData } from '../routes/user/dashboard.js';

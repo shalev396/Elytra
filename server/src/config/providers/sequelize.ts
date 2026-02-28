@@ -26,3 +26,17 @@ export async function connectSequelize(): Promise<void> {
   const instance = getSequelize();
   await instance.authenticate();
 }
+
+export async function syncSequelize(): Promise<string[]> {
+  await connectSequelize();
+
+  await import('../../models/sequelize/User.js');
+  await import('../../models/sequelize/Media.js');
+  const { defineAssociations } = await import('../../models/sequelize/associations.js');
+  defineAssociations();
+
+  const instance = getSequelize();
+  await instance.sync({ alter: true });
+
+  return ['Sequelize: tables synced with { alter: true }'];
+}

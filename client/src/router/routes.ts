@@ -8,6 +8,8 @@ export const ROUTES = {
   DOCS: 'docs',
   PROFILE: 'dashboard/profile',
   PROFILE_SEGMENT: 'profile',
+  EDIT_PROFILE: 'dashboard/profile/edit',
+  EDIT_PROFILE_SEGMENT: 'edit',
   AUTH: {
     BASE: 'auth',
     LOGIN: 'auth/login',

@@ -7,6 +7,7 @@ interface UserFields {
   cognitoSub: string;
   name: string | null;
   email: string | null;
+  photoId: string | null;
   lastLoginAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -35,6 +36,11 @@ const userSchema = new mongoose.Schema<UserDocument>(
       default: null,
       index: true,
     },
+    photoId: {
+      type: String,
+      default: null,
+      ref: 'Media',
+    },
     lastLoginAt: {
       type: Date,
       default: null,
@@ -46,6 +52,14 @@ const userSchema = new mongoose.Schema<UserDocument>(
   },
 );
 
+// User hasOne Media as photo (photoId -> Media._id)
+userSchema.virtual('photo', {
+  ref: 'Media',
+  localField: 'photoId',
+  foreignField: '_id',
+  justOne: true,
+});
+
 const UserMongoModel = mongoose.model<UserDocument>('User', userSchema);
 
 function toUserData(doc: UserDocument): UserData {
@@ -54,6 +68,7 @@ function toUserData(doc: UserDocument): UserData {
     cognitoSub: doc.cognitoSub,
     name: doc.name,
     email: doc.email,
+    photoId: doc.photoId,
     lastLoginAt: doc.lastLoginAt,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
@@ -91,6 +106,19 @@ export const UserRepository: IUserRepository = {
       },
       { upsert: true, new: true, setDefaultsOnInsert: true },
     );
+    return toUserData(doc);
+  },
+
+  async updateProfile(
+    id: string,
+    data: { name?: string; photoId?: string | null },
+  ): Promise<UserData> {
+    const update: Record<string, unknown> = {};
+    if (data.name !== undefined) update['name'] = data.name;
+    if (data.photoId !== undefined) update['photoId'] = data.photoId;
+
+    const doc = await UserMongoModel.findByIdAndUpdate(id, { $set: update }, { new: true });
+    if (doc === null) throw new Error('User not found');
     return toUserData(doc);
   },
 

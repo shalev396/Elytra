@@ -1,3 +1,3 @@
-import { initDB } from './database.js';
+import { initDB, syncDB } from './database.js';
 
-export { initDB };
+export { initDB, syncDB };

@@ -7,5 +7,17 @@ export async function initDB(): Promise<void> {
   } else {
     const { connectSequelize } = await import('./providers/sequelize.js');
     await connectSequelize();
+    const { defineAssociations } = await import('../models/sequelize/associations.js');
+    defineAssociations();
+  }
+}
+
+export async function syncDB(): Promise<string[]> {
+  if (environment.databaseProvider === 'mongoose') {
+    const { syncMongo } = await import('./providers/mongoose.js');
+    return syncMongo();
+  } else {
+    const { syncSequelize } = await import('./providers/sequelize.js');
+    return syncSequelize();
   }
 }

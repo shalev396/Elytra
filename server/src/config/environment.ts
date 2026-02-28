@@ -9,8 +9,9 @@ class Environment {
   readonly #s3AssetsBucketName: string;
   readonly #s3ClientBucketName: string;
   readonly #cognitoClientId: string;
-  readonly #cognitoUserPoolId: string | undefined;
+  readonly #cognitoUserPoolId: string;
   readonly #cognitoIssuer: string;
+  readonly #domainName: string;
 
   constructor() {
     this.#stage = process.env.ENV;
@@ -22,6 +23,7 @@ class Environment {
     this.#cognitoClientId = process.env.COGNITO_CLIENT_ID;
     this.#cognitoUserPoolId = process.env.COGNITO_USER_POOL_ID;
     this.#cognitoIssuer = process.env.COGNITO_ISSUER;
+    this.#domainName = process.env.DOMAIN_NAME;
   }
 
   get stage(): Stage {
@@ -58,6 +60,10 @@ class Environment {
 
   get cognitoIssuer(): string {
     return this.#cognitoIssuer;
+  }
+
+  get domainName(): string {
+    return this.#domainName;
   }
 }
 

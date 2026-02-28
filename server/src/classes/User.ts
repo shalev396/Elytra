@@ -14,6 +14,7 @@ export class User {
   private readonly _cognitoSub: string;
   private readonly _name: string | null;
   private readonly _email: string | null;
+  private readonly _photoId: string | null;
   private readonly _lastLoginAt: Date | null;
   private readonly _createdAt: Date;
   private readonly _updatedAt: Date;
@@ -23,6 +24,7 @@ export class User {
     this._cognitoSub = data.cognitoSub;
     this._name = data.name;
     this._email = data.email;
+    this._photoId = data.photoId;
     this._lastLoginAt = data.lastLoginAt;
     this._createdAt = data.createdAt;
     this._updatedAt = data.updatedAt;
@@ -44,6 +46,10 @@ export class User {
     return this._email;
   }
 
+  get photoId(): string | null {
+    return this._photoId;
+  }
+
   get lastLoginAt(): Date | null {
     return this._lastLoginAt;
   }
@@ -62,6 +68,7 @@ export class User {
       cognitoSub: this._cognitoSub,
       name: this._name,
       email: this._email,
+      photoId: this._photoId,
       lastLoginAt: this._lastLoginAt,
       createdAt: this._createdAt,
       updatedAt: this._updatedAt,
@@ -93,6 +100,15 @@ export class User {
       lastLoginAt: new Date(),
     });
     return new User(data);
+  }
+
+  static async updateProfile(
+    userId: string,
+    data: { name?: string; photoId?: string | null },
+  ): Promise<User> {
+    const repo = await getUserRepository();
+    const updated = await repo.updateProfile(userId, data);
+    return new User(updated);
   }
 
   static async deleteAccount(userId: string, cognitoSub: string): Promise<void> {

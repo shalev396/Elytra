@@ -12,6 +12,18 @@ export async function connectMongo(): Promise<void> {
   isConnected = true;
 }
 
+export async function syncMongo(): Promise<string[]> {
+  await connectMongo();
+
+  const { UserMongoModel } = await import('../../models/mongoose/User.js');
+  const { MediaMongoModel } = await import('../../models/mongoose/Media.js');
+
+  await UserMongoModel.ensureIndexes();
+  await MediaMongoModel.ensureIndexes();
+
+  return ['Mongoose: indexes synced for User, Media'];
+}
+
 export function getMongoose(): typeof mongoose {
   return mongoose;
 }

@@ -17,6 +17,8 @@ export type {
   RefreshTokenRequestBody,
   RefreshTokenResponseData,
   MeResponseData,
+  UpdateMeRequestBody,
+  UpdateMeResponseData,
   DashboardResponseData,
   DeleteUserResponseData,
 } from './api-contracts.js';

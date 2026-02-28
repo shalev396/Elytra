@@ -7,6 +7,7 @@ class UserModel extends Model {
   declare cognitoSub: string;
   declare name: string | null;
   declare email: string | null;
+  declare photoId: string | null;
   declare lastLoginAt: Date | null;
   declare readonly createdAt: Date;
   declare readonly updatedAt: Date;
@@ -36,6 +37,15 @@ UserModel.init(
         isEmail: true,
       },
     },
+    photoId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      defaultValue: null,
+      references: {
+        model: 'Media',
+        key: 'id',
+      },
+    },
     lastLoginAt: {
       type: DataTypes.DATE,
       allowNull: true,
@@ -63,6 +73,7 @@ function toUserData(model: UserModel): UserData {
     cognitoSub: model.cognitoSub,
     name: model.name,
     email: model.email,
+    photoId: model.photoId,
     lastLoginAt: model.lastLoginAt,
     createdAt: model.createdAt,
     updatedAt: model.updatedAt,
@@ -93,6 +104,22 @@ export const UserRepository: IUserRepository = {
       lastLoginAt: data.lastLoginAt,
     });
     return toUserData(record);
+  },
+
+  async updateProfile(
+    id: string,
+    data: { name?: string; photoId?: string | null },
+  ): Promise<UserData> {
+    const update: Partial<Pick<UserModel, 'name' | 'photoId'>> = {};
+    if (data.name !== undefined) update.name = data.name;
+    if (data.photoId !== undefined) update.photoId = data.photoId;
+
+    const [affectedCount] = await UserModel.update(update, { where: { id } });
+    if (affectedCount === 0) throw new Error('User not found');
+
+    const user = await UserModel.findByPk(id);
+    if (user === null) throw new Error('User not found');
+    return toUserData(user);
   },
 
   async deleteById(id: string): Promise<void> {

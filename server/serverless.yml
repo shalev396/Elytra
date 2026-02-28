@@ -88,6 +88,7 @@ provider:
     COGNITO_CLIENT_ID: ${self:custom.cognitoEnv.clientId}
     COGNITO_USER_POOL_ID: ${self:custom.cognitoEnv.userPoolId}
     COGNITO_ISSUER: ${self:custom.cognitoEnv.issuer}
+    DOMAIN_NAME: ${env:DOMAIN_NAME}
 
   iam:
     role:
@@ -109,6 +110,14 @@ provider:
           Resource:
             - 'arn:aws:s3:::${self:custom.assetsBucketName}/*'
 
+        # SES Permissions - Email sending
+        - Effect: Allow
+          Action:
+            - ses:SendEmail
+            - ses:SendRawEmail
+          Resource:
+            - 'arn:aws:ses:${self:provider.region}:*:identity/*'
+
 # Package Configuration
 package:
   individually: true
@@ -127,6 +136,16 @@ plugins:
 custom:
   appName: elytra
   appDisplayName: Elytra
+
+  # Set to true to enable the devApi function (DB sync, etc.). Keep false in production.
+  enableDevTools: false
+
+  devApiEvents:
+    'true':
+      - httpApi:
+          path: /api/dev/{proxy+}
+          method: ANY
+    'false': []
 
   clientBucketName: ${env:DOMAIN_NAME}
   assetsBucketName: ${env:DOMAIN_NAME}-assets
@@ -241,6 +260,17 @@ functions:
           method: ANY
           authorizer:
             name: cognitoAuthorizer
+
+  # DEV: Developer tools (DB sync, etc.)
+  # Controlled by custom.enableDevTools — when false, no HTTP event is attached (untriggerable)
+  devApi:
+    handler: ${self:custom.handlerBase.${self:custom.useEsbuild}}api/dev-handler.handler
+    timeout: 60
+    memorySize: 256
+    package:
+      patterns:
+        - 'build/api/dev-handler.mjs'
+    events: ${self:custom.devApiEvents.${self:custom.enableDevTools}}
 
 # AWS Resources Configuration
 resources:
@@ -519,6 +549,55 @@ resources:
         WriteAttributes:
           - email
           - name
+
+    # ================================
+    # SES EMAIL IDENTITY & DKIM
+    # ================================
+
+    SesDomainIdentity:
+      Type: AWS::SES::EmailIdentity
+      Properties:
+        EmailIdentity: ${env:DOMAIN_NAME}
+        DkimSigningAttributes:
+          NextSigningKeyLength: RSA_2048_BIT
+        DkimAttributes:
+          SigningEnabled: true
+
+    SesDkimRecord1:
+      Type: AWS::Route53::RecordSet
+      DependsOn: SesDomainIdentity
+      Properties:
+        HostedZoneId: ${env:HOSTED_ZONE_ID}
+        Name:
+          Fn::GetAtt: [SesDomainIdentity, DkimDNSTokenName1]
+        Type: CNAME
+        TTL: 300
+        ResourceRecords:
+          - Fn::GetAtt: [SesDomainIdentity, DkimDNSTokenValue1]
+
+    SesDkimRecord2:
+      Type: AWS::Route53::RecordSet
+      DependsOn: SesDomainIdentity
+      Properties:
+        HostedZoneId: ${env:HOSTED_ZONE_ID}
+        Name:
+          Fn::GetAtt: [SesDomainIdentity, DkimDNSTokenName2]
+        Type: CNAME
+        TTL: 300
+        ResourceRecords:
+          - Fn::GetAtt: [SesDomainIdentity, DkimDNSTokenValue2]
+
+    SesDkimRecord3:
+      Type: AWS::Route53::RecordSet
+      DependsOn: SesDomainIdentity
+      Properties:
+        HostedZoneId: ${env:HOSTED_ZONE_ID}
+        Name:
+          Fn::GetAtt: [SesDomainIdentity, DkimDNSTokenName3]
+        Type: CNAME
+        TTL: 300
+        ResourceRecords:
+          - Fn::GetAtt: [SesDomainIdentity, DkimDNSTokenValue3]
 
   Outputs:
     CognitoUserPoolId:

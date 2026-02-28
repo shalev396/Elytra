@@ -3,7 +3,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { LayoutDashboard, LogOut, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useMe } from '@/api/queries';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,10 +31,13 @@ export function UserMenu() {
   const navigate = useNavigate();
   const { language } = useLanguage();
   const user = useSelector(selectUser);
+  const { data: meData } = useMe();
 
   if (!user) {
     return null;
   }
+
+  const photoUrl = meData?.photoUrl ?? null;
 
   const handleLogout = () => {
     dispatch(logout());
@@ -45,6 +49,7 @@ export function UserMenu() {
       <DropdownMenuTrigger asChild>
         <Button variant="trigger" className="flex items-center gap-3 px-2 py-2">
           <Avatar className="h-8 w-8 shrink-0 ring-1 ring-border/20">
+            {photoUrl ? <AvatarImage src={photoUrl} alt={user.name || 'Profile'} /> : null}
             <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
               {getInitials(user.name || user.email || 'U')}
             </AvatarFallback>

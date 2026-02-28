@@ -9,6 +9,7 @@ declare global {
       COGNITO_CLIENT_ID: string;
       COGNITO_USER_POOL_ID: string;
       COGNITO_ISSUER: string;
+      DOMAIN_NAME: string;
     }
   }
 }
