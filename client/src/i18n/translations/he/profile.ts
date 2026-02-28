@@ -12,6 +12,8 @@ export const profile = {
     name: 'שם',
     email: 'אימייל',
     userId: 'מזהה משתמש',
+    lastLogin: 'התחברות אחרונה',
+    memberSince: 'חבר מאז',
     notSet: 'לא הוגדר',
   },
 };

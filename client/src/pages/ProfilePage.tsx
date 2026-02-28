@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { selectUser } from '@/store/userSlice';
 import { Upload } from 'lucide-react';
 import { FadeContent } from '@/components/animations/FadeContent';
+import { useMe } from '@/api/queries';
 
 function getInitials(name: string | undefined, email: string | undefined) {
   if (name) {
@@ -23,7 +24,12 @@ function getInitials(name: string | undefined, email: string | undefined) {
 export default function ProfilePage() {
   const { t } = useTranslation();
   const user = useSelector(selectUser);
-  const initials = getInitials(user?.name, user?.email);
+  const { data: meData } = useMe();
+  const initials = getInitials(meData?.name ?? user?.name, meData?.email ?? user?.email);
+
+  const displayName = meData?.name ?? user?.name;
+  const displayEmail = meData?.email ?? user?.email;
+  const displayId = meData?.id ?? user?.id;
 
   return (
     <div className="container mx-auto px-4 py-12 sm:px-6 lg:px-8">
@@ -66,22 +72,50 @@ export default function ProfilePage() {
                 <p className="text-muted-foreground text-sm font-medium">
                   {t('profile.info.name')}
                 </p>
-                <p className="mt-1 text-base">{user?.name ?? t('profile.info.notSet')}</p>
+                <p className="mt-1 text-base">{displayName ?? t('profile.info.notSet')}</p>
               </div>
               <Separator />
               <div className="py-3">
                 <p className="text-muted-foreground text-sm font-medium">
                   {t('profile.info.email')}
                 </p>
-                <p className="mt-1 text-base">{user?.email}</p>
+                <p className="mt-1 text-base">{displayEmail}</p>
               </div>
               <Separator />
               <div className="py-3">
                 <p className="text-muted-foreground text-sm font-medium">
                   {t('profile.info.userId')}
                 </p>
-                <p className="mt-1 font-mono text-muted-foreground text-sm break-all">{user?.id}</p>
+                <p className="mt-1 font-mono text-muted-foreground text-sm break-all">
+                  {displayId}
+                </p>
               </div>
+              {meData?.lastLoginAt && (
+                <>
+                  <Separator />
+                  <div className="py-3">
+                    <p className="text-muted-foreground text-sm font-medium">
+                      {t('profile.info.lastLogin')}
+                    </p>
+                    <p className="mt-1 text-base">
+                      {new Date(meData.lastLoginAt).toLocaleString()}
+                    </p>
+                  </div>
+                </>
+              )}
+              {meData?.createdAt && (
+                <>
+                  <Separator />
+                  <div className="py-3">
+                    <p className="text-muted-foreground text-sm font-medium">
+                      {t('profile.info.memberSince')}
+                    </p>
+                    <p className="mt-1 text-base">
+                      {new Date(meData.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </FadeContent>

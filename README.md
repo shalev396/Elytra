@@ -131,6 +131,16 @@ The backend workflow triggers on changes under `server/`, and the frontend workf
 
 ---
 
+## API Documentation
+
+The full API specification lives in [`server/openapi.yaml`](server/openapi.yaml) (OpenAPI 3.0). You can use it to:
+
+- **Browse interactively** -- paste the file into [Swagger Editor](https://editor.swagger.io) or [Swagger UI](https://petstore.swagger.io).
+- **Import into Postman** -- use **File > Import** and select the YAML file to generate a complete collection.
+- **Generate clients** -- feed the spec to [OpenAPI Generator](https://openapi-generator.tech) for typed SDKs in any language.
+
+---
+
 ## Local Development
 
 **Client:**

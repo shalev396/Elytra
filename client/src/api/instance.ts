@@ -1,20 +1,24 @@
 import axios from 'axios';
-import type { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
+import type { AxiosInstance, InternalAxiosRequestConfig, AxiosError } from 'axios';
+import { toast } from 'sonner';
 import { store } from '@/store';
-import { showGlobalLoading, hideGlobalLoading } from '@/store/uiSlice';
-import { selectAccessToken } from '@/store/userSlice';
+import { selectIdToken, selectRefreshToken, updateTokens, logout } from '@/store/userSlice';
 import type { ApiRequestConfig } from '@/types';
+import type {
+  ApiSuccessResponse,
+  ApiErrorResponse,
+  RefreshTokenResponseData,
+} from '@api-types/api-contracts';
 
-// Extend AxiosRequestConfig to include our custom config
 declare module 'axios' {
   export interface AxiosRequestConfig {
-    showGlobalLoader?: boolean;
+    suppressErrorToast?: boolean;
+    _retry?: boolean;
   }
 }
 
-// Create axios instance with base configuration (URL-based, no env)
 const baseURL =
-  typeof window !== 'undefined' && window.location.hostname === 'localhost'
+  typeof window !== 'undefined' && window.location.hostname.includes('localhost')
     ? 'http://localhost:3000/api'
     : `${typeof window !== 'undefined' ? window.location.origin : ''}/api`;
 
@@ -26,25 +30,26 @@ const axiosInstance: AxiosInstance = axios.create({
   },
 });
 
-// Track requests that have shown the global loader
-const requestsWithLoader = new Set<string>();
+let isRefreshing = false;
+let refreshSubscribers: ((token: string) => void)[] = [];
 
-// Request interceptor - add auth token and handle global loading
+function onTokenRefreshed(token: string) {
+  refreshSubscribers.forEach((cb) => {
+    cb(token);
+  });
+  refreshSubscribers = [];
+}
+
+function addRefreshSubscriber(cb: (token: string) => void) {
+  refreshSubscribers.push(cb);
+}
+
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Add Authorization header if access token exists
-    const accessToken = selectAccessToken();
-    if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
+    const idToken = selectIdToken();
+    if (idToken) {
+      config.headers.Authorization = `Bearer ${idToken}`;
     }
-
-    // Show global loading if requested
-    if (config.showGlobalLoader) {
-      const requestId = `${config.method}-${config.url}`;
-      requestsWithLoader.add(requestId);
-      store.dispatch(showGlobalLoading());
-    }
-
     return config;
   },
   (error: unknown) => {
@@ -52,41 +57,70 @@ axiosInstance.interceptors.request.use(
   },
 );
 
-// Response interceptor - hide global loading on completion
 axiosInstance.interceptors.response.use(
-  (response) => {
-    // Hide global loading if it was shown for this request
-    const requestId = `${response.config.method}-${response.config.url}`;
-    if (requestsWithLoader.has(requestId)) {
-      requestsWithLoader.delete(requestId);
-      if (requestsWithLoader.size === 0) {
-        store.dispatch(hideGlobalLoading());
+  (response) => response,
+  async (error: unknown) => {
+    const axiosError = error as AxiosError<ApiErrorResponse>;
+    const originalRequest = axiosError.config;
+
+    // Auto-refresh on 401 (skip auth endpoints and already-retried requests)
+    if (
+      axiosError.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !originalRequest.url?.startsWith('/auth/')
+    ) {
+      originalRequest._retry = true;
+      const currentRefreshToken = selectRefreshToken();
+
+      if (!currentRefreshToken) {
+        store.dispatch(logout());
+        return Promise.reject(new Error('No refresh token available'));
+      }
+
+      if (isRefreshing) {
+        return new Promise<unknown>((resolve) => {
+          addRefreshSubscriber((newToken: string) => {
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+            resolve(axiosInstance(originalRequest));
+          });
+        });
+      }
+
+      isRefreshing = true;
+
+      try {
+        const response = await axios.post<ApiSuccessResponse<RefreshTokenResponseData>>(
+          `${baseURL}/auth/refresh`,
+          { refreshToken: currentRefreshToken },
+        );
+
+        const { idToken } = response.data.data;
+
+        store.dispatch(updateTokens({ idToken }));
+        onTokenRefreshed(idToken);
+
+        originalRequest.headers.Authorization = `Bearer ${idToken}`;
+        return await axiosInstance(originalRequest);
+      } catch (refreshError) {
+        store.dispatch(logout());
+        throw refreshError instanceof Error ? refreshError : new Error('Token refresh failed');
+      } finally {
+        isRefreshing = false;
       }
     }
 
-    return response;
-  },
-  (error: unknown) => {
-    // Hide global loading on error as well
-    const err = error as { config?: { method?: string; url?: string } };
-    if (err.config) {
-      const requestId = `${err.config.method}-${err.config.url}`;
-      if (requestsWithLoader.has(requestId)) {
-        requestsWithLoader.delete(requestId);
-        if (requestsWithLoader.size === 0) {
-          store.dispatch(hideGlobalLoading());
-        }
-      }
+    if (!originalRequest?.suppressErrorToast) {
+      const message = axiosError.response?.data.message ?? 'An unexpected error occurred';
+      toast.error(message);
     }
 
     return Promise.reject(error instanceof Error ? error : new Error(String(error)));
   },
 );
 
-// Export the configured instance
 export default axiosInstance;
 
-// Convenience exports for common HTTP methods with typed config
 export const api = {
   get: <T = unknown>(url: string, config?: ApiRequestConfig) => axiosInstance.get<T>(url, config),
   post: <T = unknown>(url: string, data?: unknown, config?: ApiRequestConfig) =>

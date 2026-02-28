@@ -29,6 +29,7 @@
     "react-i18next": "^16.5.4",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.13.0",
+    "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {

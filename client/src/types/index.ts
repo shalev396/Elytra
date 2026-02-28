@@ -1,32 +1,7 @@
-/**
- * Core user type - single source of truth for user data
- */
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-}
+import type { LoginResponseData } from '@api-types/api-contracts';
 
-/**
- * Access token payload that includes user data and authentication status
- * Stored in sessionStorage (ephemeral)
- */
-export interface AccessTokenPayload extends User {
-  isAuthenticated: boolean;
-}
+export type User = LoginResponseData['user'];
 
-/**
- * API error response structure
- */
-export interface ApiError {
-  message: string;
-  code?: string;
-  status?: number;
-}
-
-/**
- * API request configuration extension for global loading
- */
 export interface ApiRequestConfig {
-  showGlobalLoader?: boolean;
+  suppressErrorToast?: boolean;
 }

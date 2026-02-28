@@ -113,7 +113,6 @@ const login: RequestHandler = async (req, res): Promise<void> => {
     );
 
     const idToken = result.AuthenticationResult?.IdToken;
-    const accessToken = result.AuthenticationResult?.AccessToken;
     const refreshToken = result.AuthenticationResult?.RefreshToken;
     const expiresIn = result.AuthenticationResult?.ExpiresIn;
 
@@ -140,7 +139,6 @@ const login: RequestHandler = async (req, res): Promise<void> => {
       },
       tokens: {
         idToken,
-        accessToken: accessToken ?? '',
         refreshToken: refreshToken ?? '',
         expiresIn: expiresIn ?? 3600,
       },
@@ -271,7 +269,7 @@ const refreshTokenHandler: RequestHandler = async (req, res): Promise<void> => {
       return;
     }
 
-    const { IdToken, AccessToken, ExpiresIn } = response.AuthenticationResult;
+    const { IdToken, ExpiresIn } = response.AuthenticationResult;
 
     if (IdToken === undefined) {
       res.error('Failed to refresh tokens', 401);
@@ -280,7 +278,6 @@ const refreshTokenHandler: RequestHandler = async (req, res): Promise<void> => {
 
     const data: RefreshTokenResponseData = {
       idToken: IdToken,
-      accessToken: AccessToken ?? '',
       expiresIn: ExpiresIn ?? 3600,
     };
 

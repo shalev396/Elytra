@@ -8,9 +8,15 @@
     "useDefineForClassFields": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@api-types/*": ["../server/src/types/*"]
     }
   },
-  "include": ["src", "vite-env.d.ts"],
+  "include": [
+    "src",
+    "vite-env.d.ts",
+    "../server/src/types/express-extensions.d.ts",
+    "../server/src/types/env.d.ts"
+  ],
   "exclude": ["dist", "node_modules"]
 }

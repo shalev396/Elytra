@@ -3,6 +3,8 @@ import { AccountController } from '../../controllers/index.js';
 
 const router = Router();
 
+// ─── GET /api/user/me ────────────────────────────────────────────────────────
+
 export interface MeResponseData {
   id: string;
   email: string;
@@ -12,6 +14,8 @@ export interface MeResponseData {
 }
 
 router.get('/me', AccountController.getMe);
+
+// ─── DELETE /api/user/delete ─────────────────────────────────────────────────
 
 export interface DeleteUserResponseData {
   message: string;

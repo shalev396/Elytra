@@ -1,0 +1,547 @@
+openapi: 3.0.3
+
+info:
+  title: Elytra API
+  version: 1.0.0
+  description: |
+    REST API for the Elytra platform.
+    Authentication endpoints are public; user endpoints require a valid JWT Bearer token obtained from the login or refresh flows.
+
+servers:
+  - url: http://localhost:3000/api
+    description: Local development
+  - url: https://{domain}/api
+    description: Deployed environment
+    variables:
+      domain:
+        default: elytra.shalev396.com
+
+tags:
+  - name: Auth
+    description: Public authentication endpoints (signup, login, password reset, token refresh)
+  - name: User
+    description: Authenticated user endpoints (profile, dashboard, account deletion)
+
+security: []
+
+paths:
+  # ── Auth ──────────────────────────────────────────────────────────────────────
+
+  /auth/signup:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      description: Creates a Cognito user and sends a verification email. The user must confirm their email before logging in.
+      operationId: signup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequestBody'
+            example:
+              email: user@example.com
+              password: P@ssw0rd!
+              name: Jane Doe
+      responses:
+        '200':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignupResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/confirm:
+    post:
+      tags: [Auth]
+      summary: Confirm email verification
+      description: Verifies the user's email address with the code sent during signup.
+      operationId: confirmSignup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmSignupRequestBody'
+            example:
+              email: user@example.com
+              code: '123456'
+      responses:
+        '200':
+          description: Email confirmed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptySuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Authenticate a user
+      description: Validates credentials against Cognito. Returns user profile data and JWT tokens (id, refresh).
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequestBody'
+            example:
+              email: user@example.com
+              password: P@ssw0rd!
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Request a password reset code
+      description: Sends a password reset verification code to the user's email. Returns success even if the email is not found (to prevent enumeration).
+      operationId: forgotPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequestBody'
+            example:
+              email: user@example.com
+      responses:
+        '200':
+          description: Reset code sent (or silently ignored if user not found)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptySuccessResponse'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Reset password with verification code
+      description: Sets a new password using the verification code from the forgot-password flow.
+      operationId: resetPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequestBody'
+            example:
+              email: user@example.com
+              code: '123456'
+              password: N3wP@ssw0rd!
+      responses:
+        '200':
+          description: Password reset successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptySuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh authentication tokens
+      description: Exchanges a valid refresh token for a new id token.
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequestBody'
+            example:
+              refreshToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      responses:
+        '200':
+          description: Tokens refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshTokenResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ── User ──────────────────────────────────────────────────────────────────────
+
+  /user/me:
+    get:
+      tags: [User]
+      summary: Get current user profile
+      description: Returns the authenticated user's profile information.
+      operationId: getMe
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /user/dashboard:
+    get:
+      tags: [User]
+      summary: Get dashboard data
+      description: Returns dashboard data for the authenticated user.
+      operationId: getDashboard
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /user/delete:
+    delete:
+      tags: [User]
+      summary: Delete user account
+      description: Permanently deletes the authenticated user's account and all associated data.
+      operationId: deleteAccount
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Account deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteUserResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  # ── Security ────────────────────────────────────────────────────────────────
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Cognito-issued JWT ID token
+
+  # ── Reusable Responses ──────────────────────────────────────────────────────
+
+  responses:
+    BadRequest:
+      description: Invalid or missing request parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+          example:
+            success: false
+            message: 'Email, password, and name are required'
+
+    Unauthorized:
+      description: Authentication required or credentials invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+          example:
+            success: false
+            message: Login failed
+
+    NotFound:
+      description: Requested resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+          example:
+            success: false
+            message: User not found
+
+    TooManyRequests:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+          example:
+            success: false
+            message: Too many requests. Please try again later.
+
+    InternalError:
+      description: Unexpected server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+          example:
+            success: false
+            message: An unexpected error occurred
+
+  # ── Schemas ─────────────────────────────────────────────────────────────────
+
+  schemas:
+    # ── Response wrappers ─────────────────────────────────────────────────────
+
+    ApiErrorResponse:
+      type: object
+      required: [success, message]
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        message:
+          type: string
+
+    EmptySuccessResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        data:
+          type: object
+
+    # ── Auth request bodies ───────────────────────────────────────────────────
+
+    SignupRequestBody:
+      type: object
+      required: [email, password, name]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 8
+        name:
+          type: string
+
+    ConfirmSignupRequestBody:
+      type: object
+      required: [email, code]
+      properties:
+        email:
+          type: string
+          format: email
+        code:
+          type: string
+
+    LoginRequestBody:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    ForgotPasswordRequestBody:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+
+    ResetPasswordRequestBody:
+      type: object
+      required: [email, code, password]
+      properties:
+        email:
+          type: string
+          format: email
+        code:
+          type: string
+        password:
+          type: string
+          format: password
+          minLength: 8
+
+    RefreshTokenRequestBody:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+
+    # ── Auth response data ────────────────────────────────────────────────────
+
+    SignupResponseData:
+      type: object
+      required: [userSub, userConfirmed]
+      properties:
+        userSub:
+          type: string
+        userConfirmed:
+          type: boolean
+
+    SignupResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        data:
+          $ref: '#/components/schemas/SignupResponseData'
+
+    LoginResponseData:
+      type: object
+      required: [user, tokens]
+      properties:
+        user:
+          type: object
+          required: [id, email, name]
+          properties:
+            id:
+              type: string
+            email:
+              type: string
+            name:
+              type: string
+        tokens:
+          type: object
+          required: [idToken, refreshToken, expiresIn]
+          properties:
+            idToken:
+              type: string
+            refreshToken:
+              type: string
+            expiresIn:
+              type: integer
+
+    LoginResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        data:
+          $ref: '#/components/schemas/LoginResponseData'
+
+    RefreshTokenResponseData:
+      type: object
+      required: [idToken, expiresIn]
+      properties:
+        idToken:
+          type: string
+        expiresIn:
+          type: integer
+
+    RefreshTokenResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        data:
+          $ref: '#/components/schemas/RefreshTokenResponseData'
+
+    # ── User response data ────────────────────────────────────────────────────
+
+    MeResponseData:
+      type: object
+      required: [id, email, name, lastLoginAt, createdAt]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        lastLoginAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    MeResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        data:
+          $ref: '#/components/schemas/MeResponseData'
+
+    DashboardResponseData:
+      type: object
+      required: [userId, message]
+      properties:
+        userId:
+          type: string
+        message:
+          type: string
+
+    DashboardResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        data:
+          $ref: '#/components/schemas/DashboardResponseData'
+
+    DeleteUserResponseData:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+
+    DeleteUserResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        data:
+          $ref: '#/components/schemas/DeleteUserResponseData'

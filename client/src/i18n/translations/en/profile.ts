@@ -12,6 +12,8 @@ export const profile = {
     name: 'Name',
     email: 'Email',
     userId: 'User ID',
+    lastLogin: 'Last Login',
+    memberSince: 'Member Since',
     notSet: 'Not set',
   },
 };

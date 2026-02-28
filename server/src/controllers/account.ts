@@ -1,6 +1,7 @@
 import { type RequestHandler } from 'express';
 import { User } from '../classes/index.js';
 import type { AuthenticatedRequest } from '../types/express.js';
+import type { MeResponseData, DeleteUserResponseData } from '../routes/user/account.js';
 
 const getMe: RequestHandler = async (req, res): Promise<void> => {
   try {
@@ -14,13 +15,15 @@ const getMe: RequestHandler = async (req, res): Promise<void> => {
       return;
     }
 
-    res.success({
+    const data: MeResponseData = {
       id: user.cognitoSub,
       email: user.email ?? '',
       name: user.name ?? '',
-      lastLoginAt: user.lastLoginAt,
+      lastLoginAt: user.lastLoginAt ?? null,
       createdAt: user.createdAt,
-    });
+    };
+
+    res.success(data);
   } catch (error) {
     console.error('Error fetching user account:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch account data';
@@ -36,9 +39,11 @@ const deleteAccount: RequestHandler = async (req, res): Promise<void> => {
 
     await User.deleteAccount(userId, cognitoSub);
 
-    res.success({
+    const data: DeleteUserResponseData = {
       message: 'All user data has been permanently deleted',
-    });
+    };
+
+    res.success(data);
   } catch (error) {
     console.error('Error deleting user account:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to delete user account';

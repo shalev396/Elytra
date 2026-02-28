@@ -85,12 +85,9 @@ provider:
     DATABASE_URL: ${env:DATABASE_URL}
     S3_ASSETS_BUCKET_NAME: ${self:custom.assetsBucketName}
     S3_CLIENT_BUCKET_NAME: ${self:custom.clientBucketName}
-    COGNITO_CLIENT_ID:
-      Ref: CognitoUserPoolClient
-    COGNITO_USER_POOL_ID:
-      Ref: CognitoUserPool
-    COGNITO_ISSUER:
-      Fn::Sub: 'https://cognito-idp.${AWS::Region}.amazonaws.com/${CognitoUserPool}'
+    COGNITO_CLIENT_ID: ${self:custom.cognitoEnv.clientId}
+    COGNITO_USER_POOL_ID: ${self:custom.cognitoEnv.userPoolId}
+    COGNITO_ISSUER: ${self:custom.cognitoEnv.issuer}
 
   iam:
     role:
@@ -137,6 +134,20 @@ custom:
   useEsbuild: ${param:use-esbuild, 'false'}
 
   esbuild: ${self:custom.esbuildConfig.${self:custom.useEsbuild}}
+
+  cognitoEnv: ${self:custom.cognitoEnvConfig.${self:custom.useEsbuild}}
+  cognitoEnvConfig:
+    'true':
+      clientId: ${env:COGNITO_CLIENT_ID}
+      userPoolId: ${env:COGNITO_USER_POOL_ID}
+      issuer: ${env:COGNITO_ISSUER}
+    'false':
+      clientId:
+        Ref: CognitoUserPoolClient
+      userPoolId:
+        Ref: CognitoUserPool
+      issuer:
+        Fn::Sub: 'https://cognito-idp.${AWS::Region}.amazonaws.com/${CognitoUserPool}'
 
   esbuildConfig:
     'true':

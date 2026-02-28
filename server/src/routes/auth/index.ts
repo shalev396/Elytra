@@ -3,6 +3,8 @@ import { AuthController } from '../../controllers/index.js';
 
 const router = Router();
 
+// ─── POST /api/auth/signup ───────────────────────────────────────────────────
+
 export interface SignupRequestBody {
   email: string;
   password: string;
@@ -16,12 +18,16 @@ export interface SignupResponseData {
 
 router.post('/signup', AuthController.signup);
 
+// ─── POST /api/auth/confirm ──────────────────────────────────────────────────
+
 export interface ConfirmSignupRequestBody {
   email: string;
   code: string;
 }
 
 router.post('/confirm', AuthController.confirmSignup);
+
+// ─── POST /api/auth/login ────────────────────────────────────────────────────
 
 export interface LoginRequestBody {
   email: string;
@@ -36,7 +42,6 @@ export interface LoginResponseData {
   };
   tokens: {
     idToken: string;
-    accessToken: string;
     refreshToken: string;
     expiresIn: number;
   };
@@ -44,11 +49,15 @@ export interface LoginResponseData {
 
 router.post('/login', AuthController.login);
 
+// ─── POST /api/auth/forgot-password ──────────────────────────────────────────
+
 export interface ForgotPasswordRequestBody {
   email: string;
 }
 
 router.post('/forgot-password', AuthController.forgotPassword);
+
+// ─── POST /api/auth/reset-password ───────────────────────────────────────────
 
 export interface ResetPasswordRequestBody {
   email: string;
@@ -58,13 +67,14 @@ export interface ResetPasswordRequestBody {
 
 router.post('/reset-password', AuthController.resetPassword);
 
+// ─── POST /api/auth/refresh ─────────────────────────────────────────────────
+
 export interface RefreshTokenRequestBody {
   refreshToken: string;
 }
 
 export interface RefreshTokenResponseData {
   idToken: string;
-  accessToken: string;
   expiresIn: number;
 }
 

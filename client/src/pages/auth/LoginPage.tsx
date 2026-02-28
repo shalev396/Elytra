@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, Link, useParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
@@ -5,7 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { pathTo, ROUTES } from '@/router/routes';
-import { setUser } from '@/store/userSlice';
+import { setAuthData } from '@/store/userSlice';
+import { login } from '@/api/services/authService';
+import type { AxiosError } from 'axios';
+import type { ApiErrorResponse } from '@api-types/api-contracts';
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -14,17 +18,33 @@ export default function LoginPage() {
   const { lng } = useParams<{ lng: string }>();
   const language = lng ?? 'en';
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Temporarily set user as authenticated so dashboard is accessible
-    dispatch(
-      setUser({
-        id: 'temp',
-        email: 'guest@example.com',
-        name: 'Guest',
-      }),
-    );
-    void navigate(pathTo(ROUTES.DASHBOARD, language));
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const response = await login({ email, password }, { suppressErrorToast: true });
+
+      dispatch(
+        setAuthData({
+          idToken: response.data.tokens.idToken,
+          refreshToken: response.data.tokens.refreshToken,
+        }),
+      );
+
+      void navigate(pathTo(ROUTES.DASHBOARD, language));
+    } catch (err) {
+      const axiosError = err as AxiosError<ApiErrorResponse>;
+      setError(axiosError.response?.data.message ?? t('auth.login.error'));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -36,10 +56,24 @@ export default function LoginPage() {
         <p className="text-muted-foreground text-balance">{t('auth.login.description')}</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6">
+        {error && (
+          <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+        )}
+
         <div className="space-y-2">
           <Label htmlFor="email">{t('auth.login.email')}</Label>
-          <Input id="email" type="email" placeholder={t('auth.login.emailPlaceholder')} />
+          <Input
+            id="email"
+            type="email"
+            placeholder={t('auth.login.emailPlaceholder')}
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+            }}
+            required
+            disabled={isLoading}
+          />
         </div>
 
         <div className="space-y-2">
@@ -52,11 +86,21 @@ export default function LoginPage() {
               {t('auth.login.forgotPassword')}
             </Link>
           </div>
-          <Input id="password" type="password" placeholder="••••••••" />
+          <Input
+            id="password"
+            type="password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+            }}
+            required
+            disabled={isLoading}
+          />
         </div>
 
-        <Button type="submit" variant="gradient" className="w-full">
-          {t('auth.login.submit')}
+        <Button type="submit" variant="gradient" className="w-full" disabled={isLoading}>
+          {isLoading ? t('auth.login.loading') : t('auth.login.submit')}
         </Button>
 
         <div className="relative">
