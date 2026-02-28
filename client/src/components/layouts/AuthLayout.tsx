@@ -25,34 +25,36 @@ export function AuthLayout() {
               </div>
 
               {/* Right - Branded panel (desktop) */}
-              <div className="relative hidden md:flex bg-linear-to-br from-blue-600 via-purple-600 to-blue-800 overflow-hidden">
+              <div className="relative hidden md:flex bg-linear-to-br from-gradient-from via-gradient-via to-gradient-deep overflow-hidden">
                 <div className="absolute inset-0 transition-transform duration-1000 hover:scale-110">
-                  <div className="absolute top-0 -right-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob" />
-                  <div className="absolute top-0 -left-4 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000" />
-                  <div className="absolute -bottom-8 left-20 w-72 h-72 bg-indigo-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000" />
+                  <div className="absolute top-0 -right-4 w-72 h-72 bg-gradient-to rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob" />
+                  <div className="absolute top-0 -left-4 w-72 h-72 bg-gradient-from rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000" />
+                  <div className="absolute -bottom-8 left-20 w-72 h-72 bg-accent rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000" />
                 </div>
-                <div className="relative flex flex-col items-center justify-center p-10 text-white w-full">
+                <div className="relative flex flex-col items-center justify-center p-10 text-on-gradient w-full">
                   <div className="space-y-6 text-center">
                     <div className="space-y-2 transform transition-transform hover:scale-105 duration-300">
                       <h2 className="text-5xl font-bold tracking-tight">{app.name}</h2>
-                      <p className="text-xl text-blue-100">{t('auth.branded.description')}</p>
+                      <p className="text-xl text-on-gradient-muted">
+                        {t('auth.branded.description')}
+                      </p>
                     </div>
                     <div className="mt-12 space-y-4 text-left max-w-md mx-auto">
                       <div className="flex items-start gap-3 group">
-                        <div className="shrink-0 w-2 h-2 rounded-full bg-white mt-2 group-hover:scale-150 transition-transform duration-300" />
-                        <p className="text-blue-50 group-hover:text-white transition-colors">
+                        <div className="shrink-0 w-2 h-2 rounded-full bg-on-gradient mt-2 group-hover:scale-150 transition-transform duration-300" />
+                        <p className="text-on-gradient-muted group-hover:text-on-gradient transition-colors">
                           {t('auth.login.feature1')}
                         </p>
                       </div>
                       <div className="flex items-start gap-3 group">
-                        <div className="shrink-0 w-2 h-2 rounded-full bg-white mt-2 group-hover:scale-150 transition-transform duration-300" />
-                        <p className="text-blue-50 group-hover:text-white transition-colors">
+                        <div className="shrink-0 w-2 h-2 rounded-full bg-on-gradient mt-2 group-hover:scale-150 transition-transform duration-300" />
+                        <p className="text-on-gradient-muted group-hover:text-on-gradient transition-colors">
                           {t('auth.login.feature2')}
                         </p>
                       </div>
                       <div className="flex items-start gap-3 group">
-                        <div className="shrink-0 w-2 h-2 rounded-full bg-white mt-2 group-hover:scale-150 transition-transform duration-300" />
-                        <p className="text-blue-50 group-hover:text-white transition-colors">
+                        <div className="shrink-0 w-2 h-2 rounded-full bg-on-gradient mt-2 group-hover:scale-150 transition-transform duration-300" />
+                        <p className="text-on-gradient-muted group-hover:text-on-gradient transition-colors">
                           {t('auth.login.feature3')}
                         </p>
                       </div>

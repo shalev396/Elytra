@@ -49,15 +49,19 @@ export function BeamsBackground({ className = '', children }: BeamsBackgroundPro
       });
     }
 
+    const primaryRgb =
+      getComputedStyle(document.documentElement).getPropertyValue('--primary-rgb').trim() ||
+      '139, 92, 246';
+
     let animationId: number;
     const animate = () => {
       ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
 
       beams.forEach((beam) => {
         const gradient = ctx.createLinearGradient(beam.x, beam.y, beam.x, beam.y + beam.height);
-        gradient.addColorStop(0, `rgba(139, 92, 246, 0)`);
-        gradient.addColorStop(0.5, `rgba(139, 92, 246, ${beam.opacity})`);
-        gradient.addColorStop(1, `rgba(139, 92, 246, 0)`);
+        gradient.addColorStop(0, `rgba(${primaryRgb}, 0)`);
+        gradient.addColorStop(0.5, `rgba(${primaryRgb}, ${beam.opacity})`);
+        gradient.addColorStop(1, `rgba(${primaryRgb}, 0)`);
 
         ctx.fillStyle = gradient;
         ctx.fillRect(beam.x, beam.y, 2, beam.height);

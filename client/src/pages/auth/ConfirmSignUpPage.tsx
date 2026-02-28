@@ -60,7 +60,7 @@ export default function ConfirmSignUpPage() {
     return (
       <>
         <div className="flex flex-col gap-2 text-center">
-          <h1 className="text-3xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold bg-linear-to-r from-gradient-from to-gradient-to bg-clip-text text-transparent">
             {t('auth.confirm.title')}
           </h1>
           <p className="text-muted-foreground text-balance">{t('auth.confirm.confirmed')}</p>
@@ -77,7 +77,7 @@ export default function ConfirmSignUpPage() {
   return (
     <>
       <div className="flex flex-col gap-2 text-center">
-        <h1 className="text-3xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        <h1 className="text-3xl font-bold bg-linear-to-r from-gradient-from to-gradient-to bg-clip-text text-transparent">
           {t('auth.confirm.title')}
         </h1>
         <p className="text-muted-foreground text-balance">

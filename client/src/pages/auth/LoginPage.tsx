@@ -50,7 +50,7 @@ export default function LoginPage() {
   return (
     <>
       <div className="flex flex-col gap-2 text-center">
-        <h1 className="text-3xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        <h1 className="text-3xl font-bold bg-linear-to-r from-gradient-from to-gradient-to bg-clip-text text-transparent">
           {t('auth.login.title')}
         </h1>
         <p className="text-muted-foreground text-balance">{t('auth.login.description')}</p>
@@ -129,7 +129,7 @@ export default function LoginPage() {
             </svg>
             {t('auth.login.loginWithGoogle')}
           </Button>
-          <span className="absolute -top-2 -end-2 bg-linear-to-r from-blue-600 to-purple-600 text-white text-xs px-2 py-1 rounded-full shadow-lg">
+          <span className="absolute -top-2 -end-2 bg-linear-to-r from-gradient-from to-gradient-to text-on-gradient text-xs px-2 py-1 rounded-full shadow-lg">
             {t('auth.branded.comingSoon')}
           </span>
         </div>
