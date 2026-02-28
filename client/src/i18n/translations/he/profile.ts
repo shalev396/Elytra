@@ -12,8 +12,10 @@ export const profile = {
     name: 'שם',
     email: 'אימייל',
     userId: 'מזהה משתמש',
+    cognitoSub: 'מזהה Cognito',
     lastLogin: 'התחברות אחרונה',
     memberSince: 'חבר מאז',
+    updatedAt: 'עודכן לאחרונה',
     notSet: 'לא הוגדר',
   },
 };

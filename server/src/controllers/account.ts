@@ -16,11 +16,13 @@ const getMe: RequestHandler = async (req, res): Promise<void> => {
     }
 
     const data: MeResponseData = {
-      id: user.cognitoSub,
+      id: user.id,
+      cognitoSub: user.cognitoSub,
       email: user.email ?? '',
       name: user.name ?? '',
       lastLoginAt: user.lastLoginAt ?? null,
       createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
     };
 
     res.success(data);

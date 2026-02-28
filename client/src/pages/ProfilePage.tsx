@@ -29,7 +29,8 @@ export default function ProfilePage() {
 
   const displayName = meData?.name ?? user?.name;
   const displayEmail = meData?.email ?? user?.email;
-  const displayId = meData?.id ?? user?.id;
+  const displayId = meData?.id;
+  const displayCognitoSub = meData?.cognitoSub ?? user?.id;
 
   return (
     <div className="container mx-auto px-4 py-12 sm:px-6 lg:px-8">
@@ -81,13 +82,26 @@ export default function ProfilePage() {
                 </p>
                 <p className="mt-1 text-base">{displayEmail}</p>
               </div>
+              {displayId && (
+                <>
+                  <Separator />
+                  <div className="py-3">
+                    <p className="text-muted-foreground text-sm font-medium">
+                      {t('profile.info.userId')}
+                    </p>
+                    <p className="mt-1 font-mono text-muted-foreground text-sm break-all">
+                      {displayId}
+                    </p>
+                  </div>
+                </>
+              )}
               <Separator />
               <div className="py-3">
                 <p className="text-muted-foreground text-sm font-medium">
-                  {t('profile.info.userId')}
+                  {t('profile.info.cognitoSub')}
                 </p>
                 <p className="mt-1 font-mono text-muted-foreground text-sm break-all">
-                  {displayId}
+                  {displayCognitoSub}
                 </p>
               </div>
               {meData?.lastLoginAt && (
@@ -112,6 +126,19 @@ export default function ProfilePage() {
                     </p>
                     <p className="mt-1 text-base">
                       {new Date(meData.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </>
+              )}
+              {meData?.updatedAt && (
+                <>
+                  <Separator />
+                  <div className="py-3">
+                    <p className="text-muted-foreground text-sm font-medium">
+                      {t('profile.info.updatedAt')}
+                    </p>
+                    <p className="mt-1 text-base">
+                      {new Date(meData.updatedAt).toLocaleDateString()}
                     </p>
                   </div>
                 </>

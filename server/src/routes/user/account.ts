@@ -7,10 +7,12 @@ const router = Router();
 
 export interface MeResponseData {
   id: string;
+  cognitoSub: string;
   email: string;
   name: string;
   lastLoginAt: Date | null;
   createdAt: Date;
+  updatedAt: Date;
 }
 
 router.get('/me', AccountController.getMe);

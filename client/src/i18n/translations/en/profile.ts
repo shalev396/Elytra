@@ -12,8 +12,10 @@ export const profile = {
     name: 'Name',
     email: 'Email',
     userId: 'User ID',
+    cognitoSub: 'Cognito Sub',
     lastLogin: 'Last Login',
     memberSince: 'Member Since',
+    updatedAt: 'Last Updated',
     notSet: 'Not set',
   },
 };

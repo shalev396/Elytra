@@ -484,9 +484,12 @@ components:
 
     MeResponseData:
       type: object
-      required: [id, email, name, lastLoginAt, createdAt]
+      required: [id, cognitoSub, email, name, lastLoginAt, createdAt, updatedAt]
       properties:
         id:
+          type: string
+          format: uuid
+        cognitoSub:
           type: string
         email:
           type: string
@@ -497,6 +500,9 @@ components:
           format: date-time
           nullable: true
         createdAt:
+          type: string
+          format: date-time
+        updatedAt:
           type: string
           format: date-time
 
