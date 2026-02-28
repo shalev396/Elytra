@@ -1,2 +1,12 @@
 *node_modules
 *dist
+
+# Server build artifacts
+*build/
+*.serverless/
+
+# Environment files (secrets)
+*.env.dev
+*.env.qa
+*.env.prod
+*.env.local

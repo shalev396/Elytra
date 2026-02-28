@@ -1,0 +1,61 @@
+{
+  "name": "elytra-server",
+  "version": "1.0.0",
+  "description": "Elytra Serverless Backend",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "serverless offline --stage dev --param use-esbuild=true",
+    "dev:qa": "serverless offline --stage qa --param use-esbuild=true",
+    "dev:prod": "serverless offline --stage prod --param use-esbuild=true",
+    "build": "tsc --noEmit && webpack",
+    "lint": "eslint .",
+    "start": "npm run build && serverless offline --stage dev",
+    "start:qa": "npm run build && serverless offline --stage qa",
+    "start:prod": "npm run build && serverless offline --stage prod",
+    "deploy:dev": "npm run build && serverless deploy --stage dev",
+    "deploy:qa": "npm run build && serverless deploy --stage qa",
+    "deploy:prod": "npm run build && serverless deploy --stage prod"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.1000.0",
+    "@aws-sdk/client-s3": "^3.1000.0",
+    "@aws-sdk/s3-request-presigner": "^3.1000.0",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.2",
+    "jwks-rsa": "^3.1.0",
+    "mongoose": "^8.14.1",
+    "pg": "^8.16.2",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.37.7",
+    "serverless-http": "^4.0.0",
+    "uuid": "^10.0.0"
+  },
+  "overrides": {
+    "fast-xml-parser": ">=5.3.8",
+    "serialize-javascript": ">=7.0.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.33.0",
+    "@types/aws-lambda": "^8.10.158",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^24.0.3",
+    "@types/pg": "^8.16.0",
+    "@types/uuid": "^10.0.0",
+    "esbuild": "^0.27.3",
+    "eslint": "^9.33.0",
+    "globals": "^16.3.0",
+    "serverless-esbuild": "^1.57.0",
+    "serverless-offline": "^14.4.0",
+    "serverless-prune-plugin": "^2.1.0",
+    "ts-loader": "^9.2.1",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.39.1",
+    "webpack": "^5.98.0",
+    "webpack-cli": "^4.10.0"
+  }
+}

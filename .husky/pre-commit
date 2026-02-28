@@ -1,18 +1,19 @@
 #!/bin/sh
 set -e
 
-npm run format
-
-if ! git diff --quiet; then
-  echo ""
-  echo "Formatter changed files. Please stage them and commit again."
-  git status --short
-  exit 1
-fi
+npx lint-staged
 
 if git diff --cached --name-only | grep -q "^client/"; then
   (
     cd client
+    npm run build
+    npx eslint . --max-warnings 0
+  )
+fi
+
+if git diff --cached --name-only | grep -q "^server/"; then
+  (
+    cd server
     npm run build
     npx eslint . --max-warnings 0
   )
