@@ -83,8 +83,8 @@ provider:
   environment:
     ENV: ${opt:stage, 'dev'}
     DATABASE_URL: ${env:DATABASE_URL}
-    S3_ASSETS_BUCKET_NAME: ${env:S3_ASSETS_BUCKET_NAME}
-    S3_CLIENT_BUCKET_NAME: ${env:S3_CLIENT_BUCKET_NAME}
+    S3_ASSETS_BUCKET_NAME: ${self:custom.assetsBucketName}
+    S3_CLIENT_BUCKET_NAME: ${self:custom.clientBucketName}
     COGNITO_CLIENT_ID:
       Ref: CognitoUserPoolClient
     COGNITO_USER_POOL_ID:
@@ -110,7 +110,7 @@ provider:
             - s3:GetObject
             - s3:DeleteObject
           Resource:
-            - 'arn:aws:s3:::${env:S3_ASSETS_BUCKET_NAME}/*'
+            - 'arn:aws:s3:::${self:custom.assetsBucketName}/*'
 
 # Package Configuration
 package:
@@ -130,6 +130,9 @@ plugins:
 custom:
   appName: elytra
   appDisplayName: Elytra
+
+  clientBucketName: ${env:DOMAIN_NAME}
+  assetsBucketName: ${env:DOMAIN_NAME}-assets
 
   useEsbuild: ${param:use-esbuild, 'false'}
 
@@ -240,7 +243,7 @@ resources:
     ClientFilesBucket:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: ${env:S3_CLIENT_BUCKET_NAME}
+        BucketName: ${self:custom.clientBucketName}
         PublicAccessBlockConfiguration:
           BlockPublicAcls: false
           BlockPublicPolicy: false
@@ -287,7 +290,7 @@ resources:
     AssetsBucket:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: ${env:S3_ASSETS_BUCKET_NAME}
+        BucketName: ${self:custom.assetsBucketName}
         PublicAccessBlockConfiguration:
           BlockPublicAcls: false
           BlockPublicPolicy: false
@@ -541,3 +544,10 @@ resources:
         Ref: ClientFilesBucket
       Export:
         Name: ${self:custom.appName}-${self:provider.stage}-S3ClientBucketName
+
+    S3AssetsBucketName:
+      Description: S3 Assets Bucket Name
+      Value:
+        Ref: AssetsBucket
+      Export:
+        Name: ${self:custom.appName}-${self:provider.stage}-S3AssetsBucketName
