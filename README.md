@@ -60,14 +60,18 @@ custom:
 
 For **local development**, create environment files (e.g. `server/.env.dev`) based on `server/.env.example`:
 
-| Variable          | Description                          |
-| ----------------- | ------------------------------------ |
-| `AWS_REGION`      | AWS region (e.g. `us-east-1`)        |
-| `DOMAIN_NAME`     | Your domain (e.g. `app.example.com`) |
-| `DATABASE_URL`    | Database connection string           |
-| `HOSTED_ZONE_ID`  | Route 53 hosted zone ID              |
-| `CERTIFICATE_ARN` | ACM certificate ARN (us-east-1)      |
-| `AWS_ACCOUNT_ID`  | Your AWS account ID                  |
+| Variable                | Description                                                     |
+| ----------------------- | --------------------------------------------------------------- |
+| `AWS_ACCOUNT_ID`        | Your AWS account ID                                             |
+| `HOSTED_ZONE_ID`        | Route 53 hosted zone ID                                         |
+| `CERTIFICATE_ARN`       | ACM certificate ARN (us-east-1)                                 |
+| `SERVERLESS_ACCESS_KEY` | Serverless Framework dashboard access key                       |
+| `AWS_REGION`            | AWS region (e.g. `us-east-1`)                                   |
+| `DOMAIN_NAME`           | Your domain (e.g. `app.example.com`)                            |
+| `DATABASE_URL`          | Database connection string                                      |
+| `COGNITO_CLIENT_ID`     | Cognito app client ID (get from AWS Console after first deploy) |
+| `COGNITO_USER_POOL_ID`  | Cognito user pool ID (get from AWS Console after first deploy)  |
+| `COGNITO_ISSUER`        | Cognito issuer URL (get from AWS Console after first deploy)    |
 
 S3 bucket names are derived automatically from your domain -- the client bucket is named after `DOMAIN_NAME` and the assets bucket is `DOMAIN_NAME-assets`. No need to configure them separately.
 
@@ -112,15 +116,10 @@ Add these in your GitHub repository settings under **Settings > Secrets and vari
 
 **Per-environment secrets** (set under each GitHub environment: `dev`, `qa`, `prod`):
 
-| Secret         | Description                |
-| -------------- | -------------------------- |
-| `DATABASE_URL` | Database connection string |
-
-**Per-environment variables** (set under each GitHub environment: `dev`, `qa`, `prod`):
-
-| Variable      | Description                                          |
-| ------------- | ---------------------------------------------------- |
-| `DOMAIN_NAME` | Domain for this environment (e.g. `dev.example.com`) |
+| Secret         | Description                                          |
+| -------------- | ---------------------------------------------------- |
+| `DOMAIN_NAME`  | Domain for this environment (e.g. `dev.example.com`) |
+| `DATABASE_URL` | Database connection string                           |
 
 ### 6. Deploy
 

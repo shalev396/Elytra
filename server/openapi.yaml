@@ -20,7 +20,12 @@ tags:
   - name: Auth
     description: Public authentication endpoints (signup, login, password reset, token refresh)
   - name: User
-    description: Authenticated user endpoints (profile, dashboard, account deletion)
+    description: Authenticated user endpoints (profile, profile update, dashboard, test email, account deletion)
+  - name: Dev
+    description: |
+      Development-only endpoints for local testing and debugging.
+      These endpoints are **disabled by default** in deployed environments.
+      To enable them, set `custom.enableDevTools: true` in `serverless.yml` before deploying.
 
 security: []
 
@@ -211,6 +216,55 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
+    put:
+      tags: [User]
+      summary: Update current user profile
+      description: Updates the authenticated user's profile. Supports optional photo upload (max 5 MB, JPEG/PNG/WebP/GIF). Send `removePhoto` as `"true"` to delete the current photo without uploading a replacement.
+      operationId: updateMe
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: false
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdateMeRequestBody'
+      responses:
+        '200':
+          description: Updated user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /user/me/test-email:
+    post:
+      tags: [User]
+      summary: Send a test email
+      description: Sends a test email to the authenticated user's email address via SES.
+      operationId: sendTestEmail
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Test email sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestEmailResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
   /user/dashboard:
     get:
       tags: [User]
@@ -248,6 +302,24 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ── Dev ──────────────────────────────────────────────────────────────────────
+
+  /dev/sync-db:
+    post:
+      tags: [Dev]
+      summary: Sync database schema
+      description: Manually syncs the database schema from the code models to actual tables/collections.
+      operationId: syncDatabase
+      responses:
+        '200':
+          description: Database synced successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncDbResponse'
         '500':
           $ref: '#/components/responses/InternalError'
 
@@ -484,7 +556,7 @@ components:
 
     MeResponseData:
       type: object
-      required: [id, cognitoSub, email, name, lastLoginAt, createdAt, updatedAt]
+      required: [id, cognitoSub, email, name, photoUrl, lastLoginAt, createdAt, updatedAt]
       properties:
         id:
           type: string
@@ -495,6 +567,9 @@ components:
           type: string
         name:
           type: string
+        photoUrl:
+          type: string
+          nullable: true
         lastLoginAt:
           type: string
           format: date-time
@@ -515,6 +590,36 @@ components:
           enum: [true]
         data:
           $ref: '#/components/schemas/MeResponseData'
+
+    UpdateMeRequestBody:
+      type: object
+      properties:
+        name:
+          type: string
+        removePhoto:
+          type: string
+          description: Send "true" to delete the current photo without uploading a replacement
+        photo:
+          type: string
+          format: binary
+          description: Profile photo (max 5 MB; JPEG, PNG, WebP, or GIF)
+
+    TestEmailResponseData:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+
+    TestEmailResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        data:
+          $ref: '#/components/schemas/TestEmailResponseData'
 
     DashboardResponseData:
       type: object
@@ -551,3 +656,32 @@ components:
           enum: [true]
         data:
           $ref: '#/components/schemas/DeleteUserResponseData'
+
+    # ── Dev response data ───────────────────────────────────────────────────────
+
+    SyncDbResponseData:
+      type: object
+      required: [provider, results]
+      properties:
+        provider:
+          type: string
+          description: The database provider in use (e.g., "sequelize" or "mongoose")
+          example: sequelize
+        results:
+          type: array
+          items:
+            type: string
+          description: Log messages from the sync operation
+          example:
+            - "Table 'users' created"
+            - "Index 'users_email' created"
+
+    SyncDbResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        data:
+          $ref: '#/components/schemas/SyncDbResponseData'
