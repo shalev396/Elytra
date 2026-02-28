@@ -62,10 +62,10 @@ export const auth = {
   resetPassword: {
     title: 'צור סיסמה חדשה',
     description: 'הזן את הסיסמה החדשה שלך למטה',
+    code: 'קוד אימות',
     newPassword: 'סיסמה חדשה',
     confirmPassword: 'אשר סיסמה',
     passwordHint: 'חייבת להיות לפחות 8 תווים',
-    code: 'קוד אימות',
     submit: 'אפס סיסמה',
     resetting: 'מאפס...',
     error: 'איפוס הסיסמה נכשל. נסה שוב.',
@@ -73,12 +73,17 @@ export const auth = {
   },
   confirm: {
     title: 'אישור אימייל',
-    checking: 'מאשר את כתובת האימייל שלך...',
-    checkEmail: 'בדוק את האימייל שלך לקישור אישור',
+    codeSentTo:
+      'שלחנו קוד אימות אל <strong>{{email}}</strong>. בדוק את תיבת הדואר הנכנס שלך והזן את הקוד למטה.',
+    checkEmail: 'הזן את האימייל שלך ואת קוד האימות ששלחנו לך.',
+    confirmed: 'האימייל שלך אומת בהצלחה!',
     codeLabel: 'קוד אימות',
     verify: 'אמת אימייל',
     verifying: 'מאמת...',
     error: 'האימות נכשל. נסה שוב.',
     goToLogin: 'עבור להתחברות',
+    goToDashboard: 'עבור ללוח הבקרה',
+    redirectingToLogin: 'מעביר אותך להתחברות...',
+    redirectingToDashboard: 'מעביר אותך ללוח הבקרה...',
   },
 };

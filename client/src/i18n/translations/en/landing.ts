@@ -9,7 +9,7 @@ export const landing = {
     viewGithub: 'View on GitHub',
   },
   benefits: {
-    title: 'Why Choose Elytra',
+    title: 'Why Choose {{appName}}',
     instant: {
       title: 'Instant Loading',
       description: 'Optimized for performance with sub-second load times',
@@ -93,7 +93,7 @@ export const landing = {
     title: 'Ready to Start',
     titleHighlight: 'Building?',
     description:
-      'Join developers who are shipping faster with Elytra. Free, open source, and ready for production.',
+      'Join developers who are shipping faster with {{appName}}. Free, open source, and ready for production.',
     button: 'Create Account',
     docs: 'Read Documentation',
   },

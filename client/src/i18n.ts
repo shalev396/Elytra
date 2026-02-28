@@ -2,7 +2,8 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import { updateDocumentDirection } from './i18n/config';
-import { resources } from './i18n/resources.ts';
+import { resources } from './i18n/resources';
+import { app } from './data';
 
 void i18n
   .use(LanguageDetector)
@@ -17,6 +18,9 @@ void i18n
     },
     interpolation: {
       escapeValue: false,
+      defaultVariables: {
+        appName: app.name,
+      },
     },
     resources,
   });

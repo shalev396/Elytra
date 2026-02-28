@@ -16,8 +16,8 @@ export const footer = {
   terms: 'תנאי שימוש',
   github: 'GitHub',
   social: 'חברתי',
-  githubAria: 'פתח את המאגר של Elytra ב-GitHub',
-  linkedInAria: 'פתח את Elytra ב-LinkedIn',
+  githubAria: 'פתח את המאגר של {{appName}} ב-GitHub',
+  linkedInAria: 'פתח את {{appName}} ב-LinkedIn',
   copyright: '© {{year}} {{name}}',
   madeWithLove: 'נבנה עם {{name}} באהבה',
 };

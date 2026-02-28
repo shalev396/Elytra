@@ -74,12 +74,17 @@ export const auth = {
   },
   confirm: {
     title: 'Email Confirmation',
-    checking: 'Confirming your email address...',
-    checkEmail: 'Check your email for a confirmation link',
+    codeSentTo:
+      "We've sent a verification code to <strong>{{email}}</strong>. Please check your inbox and enter the code below.",
+    checkEmail: 'Enter your email and the verification code we sent you.',
+    confirmed: 'Your email has been verified successfully!',
     codeLabel: 'Verification Code',
     verify: 'Verify Email',
     verifying: 'Verifying...',
     error: 'Verification failed. Please try again.',
     goToLogin: 'Go to Login',
+    goToDashboard: 'Go to Dashboard',
+    redirectingToLogin: 'Redirecting you to login...',
+    redirectingToDashboard: 'Redirecting you to dashboard...',
   },
 };

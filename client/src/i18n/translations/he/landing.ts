@@ -9,7 +9,7 @@ export const landing = {
     viewGithub: 'צפה ב-GitHub',
   },
   benefits: {
-    title: 'למה לבחור ב-Elytra',
+    title: 'למה לבחור ב-{{appName}}',
     instant: {
       title: 'טעינה מיידית',
       description: 'אופטימיזציה לביצועים עם זמני טעינה מתחת לשנייה',
@@ -88,7 +88,7 @@ export const landing = {
   cta: {
     title: 'מוכן להתחיל',
     titleHighlight: 'לבנות?',
-    description: 'הצטרף למפתחים ששולחים מהר יותר עם Elytra. חינם, קוד פתוח, ומוכן לייצור.',
+    description: 'הצטרף למפתחים ששולחים מהר יותר עם {{appName}}. חינם, קוד פתוח, ומוכן לייצור.',
     button: 'צור חשבון',
     docs: 'קרא תיעוד',
   },

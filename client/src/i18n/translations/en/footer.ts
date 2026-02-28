@@ -16,8 +16,8 @@ export const footer = {
   terms: 'Terms of Service',
   github: 'GitHub',
   social: 'Social',
-  githubAria: 'Open Elytra repository on GitHub',
-  linkedInAria: 'Open Elytra on LinkedIn',
+  githubAria: 'Open {{appName}} repository on GitHub',
+  linkedInAria: 'Open {{appName}} on LinkedIn',
   copyright: '© {{year}} {{name}}',
   madeWithLove: 'Made with {{name}} and love',
 };

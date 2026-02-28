@@ -6,7 +6,12 @@ Full-stack serverless template built on AWS. React frontend, Lambda backend, Cog
 
 **Frontend** -- React 19, TypeScript, Vite, Tailwind, shadcn/ui, Redux Toolkit, React Query, React Router.
 **Backend** -- Node.js 22, Express, Serverless Framework, AWS Lambda, API Gateway, Cognito, S3, CloudFront, Route 53.
-**Database** -- Sequelize ORM supporting PostgreSQL, MySQL, MariaDB, SQLite, Microsoft SQL Server, and more.
+**Database** -- Multi-provider support via swappable adapters:
+
+| ORM / ODM | Supported Databases                                                                             |
+| --------- | ----------------------------------------------------------------------------------------------- |
+| Sequelize | PostgreSQL, MySQL, MariaDB, SQLite, Microsoft SQL Server, Snowflake, DB2 for LUW, DB2 for IBM i |
+| Mongoose  | MongoDB, Amazon DocumentDB                                                                      |
 
 ---
 

@@ -138,9 +138,9 @@ custom:
   cognitoEnv: ${self:custom.cognitoEnvConfig.${self:custom.useEsbuild}}
   cognitoEnvConfig:
     'true':
-      clientId: ${env:COGNITO_CLIENT_ID}
-      userPoolId: ${env:COGNITO_USER_POOL_ID}
-      issuer: ${env:COGNITO_ISSUER}
+      clientId: ${env:COGNITO_CLIENT_ID, ''}
+      userPoolId: ${env:COGNITO_USER_POOL_ID, ''}
+      issuer: ${env:COGNITO_ISSUER, ''}
     'false':
       clientId:
         Ref: CognitoUserPoolClient

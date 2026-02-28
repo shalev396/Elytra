@@ -1,5 +1,5 @@
 export const common = {
-  app: { name: 'Elytra' },
+  app: { name: '{{appName}}' },
   aria: { toggleTheme: 'Toggle theme' },
   theme: { light: 'Light', dark: 'Dark', system: 'System' },
   nav: {
@@ -9,7 +9,7 @@ export const common = {
     features: 'Features',
     pricing: 'Pricing',
     selectLanguage: 'Select language',
-    homeAria: 'Elytra - Go to home',
+    homeAria: '{{appName}} - Go to home',
     myAccount: 'My account',
     logOut: 'Log out',
     guest: 'Guest',
