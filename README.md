@@ -79,8 +79,12 @@ npm run dev
 GitHub Actions needs permission to deploy to your AWS account. Set up OpenID Connect (OIDC) so the workflows can assume an IAM role without storing long-lived credentials:
 
 1. Follow the official guide: [Configuring OpenID Connect in Amazon Web Services](https://docs.github.com/en/actions/security-for-github-actions/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services).
-2. Create an IAM role named `github-actions-role` (or change the name in both workflow files under `.github/workflows/`).
-3. Attach permissions for S3, CloudFront, CloudFormation, Lambda, API Gateway, Cognito, Route 53, and IAM (as needed by the Serverless Framework).
+2. Create an IAM role and attach permissions for S3, CloudFront, CloudFormation, Lambda, API Gateway, Cognito, Route 53, and IAM (as needed by the Serverless Framework).
+3. Update the `role-to-assume` in both workflow files (`.github/workflows/Backend-CICD.yml` and `Frontend-CICD.yml`) to match your role name:
+
+```yaml
+role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/your-role-name
+```
 
 ### 5. Configure GitHub Secrets and Variables
 
