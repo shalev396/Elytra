@@ -32,7 +32,10 @@ export function LandingFeatures() {
 
   return (
     <FadeContent delay={200}>
-      <section className="container mx-auto px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
+      <section
+        id="features"
+        className="container mx-auto px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24 scroll-mt-20"
+      >
         <div className="mb-12 text-center sm:mb-16">
           <h2 className="text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl">
             {t('landing.features.title')}{' '}

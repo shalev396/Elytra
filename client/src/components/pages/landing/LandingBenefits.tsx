@@ -16,7 +16,10 @@ export function LandingBenefits() {
 
   return (
     <FadeContent>
-      <section className="container mx-auto px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+      <section
+        id="benefits"
+        className="container mx-auto px-4 py-12 sm:px-6 sm:py-16 lg:px-8 scroll-mt-20"
+      >
         <div className="mb-8 text-center sm:mb-12">
           <h2 className="text-xl font-bold tracking-tight sm:text-2xl md:text-3xl">
             <GradientText>{t('landing.benefits.title')}</GradientText>

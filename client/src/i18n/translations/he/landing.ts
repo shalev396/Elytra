@@ -7,6 +7,13 @@ export const landing = {
       'תבנית מוכנה לייצור עם אימות, העלאת קבצים ורכיבי UI מודרניים. התחל לבנות את הפרויקט הבא שלך תוך דקות, לא שבועות.',
     cta: 'נסה עכשיו',
     viewGithub: 'צפה ב-GitHub',
+    exploreLabel: 'חקור',
+  },
+  nav: {
+    benefits: 'יתרונות',
+    features: 'תכונות',
+    tech: 'טכנולוגיות',
+    pricing: 'תמחור',
   },
   benefits: {
     title: 'למה לבחור ב-{{appName}}',

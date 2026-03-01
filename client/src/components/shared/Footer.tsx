@@ -3,13 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { app, assets } from '@/data';
 import { pathTo, ROUTES } from '@/router/routes';
 import { useLanguage } from '@/hooks/useLanguage';
+import { Trans } from 'react-i18next';
 
 const footerLinks = [
   { to: ROUTES.LEGAL.TERMS, key: 'terms' as const },
   { to: ROUTES.LEGAL.PRIVACY, key: 'privacy' as const },
-  { to: ROUTES.FEATURES, key: 'features' as const },
   { to: ROUTES.PRICING, key: 'pricing' as const },
-  { to: ROUTES.DOCS, key: 'documentation' as const },
 ] as const;
 
 export default function Footer() {
@@ -39,7 +38,22 @@ export default function Footer() {
             ))}
           </nav>
           {/* Disclaimer */}
-          <span className="text-center">{t('footer.madeWithLove', { name: app.name })}</span>
+          <span className="text-center">
+            <Trans
+              i18nKey="footer.madeWithLove"
+              values={{ name: app.name }}
+              components={{
+                elytraLink: (
+                  <a
+                    href={app.repoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-foreground transition-colors hover:text-primary"
+                  />
+                ),
+              }}
+            />
+          </span>
           {/* Logo + copyright */}
           <div className="flex flex-col items-center gap-2 sm:flex-row sm:gap-2 sm:gap-x-6">
             <Link

@@ -7,11 +7,24 @@ import { BeamsBackground } from '@/components/animations/backgrounds/BeamsBackgr
 import { app } from '@/data';
 import { pathTo, ROUTES } from '@/router/routes';
 import { useLanguage } from '@/hooks/useLanguage';
-import { Code } from 'lucide-react';
+import { Code, Sparkles, Zap, Layers, DollarSign } from 'lucide-react';
+
+const sectionNavItems = [
+  { id: 'benefits', icon: Zap, key: 'benefits' },
+  { id: 'features', icon: Sparkles, key: 'features' },
+  { id: 'tech', icon: Layers, key: 'tech' },
+] as const;
 
 export function LandingHero() {
   const { t } = useTranslation();
   const { language } = useLanguage();
+
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   return (
     <BeamsBackground className="relative">
@@ -37,6 +50,29 @@ export function LandingHero() {
                 {t('landing.hero.viewGithub')}
               </a>
             </Button>
+          </div>
+
+          {/* Section Navigation */}
+          <div className="flex flex-wrap items-center justify-center gap-2 pt-4 sm:gap-3 sm:pt-6">
+            {sectionNavItems.map(({ id, icon: Icon, key }) => (
+              <button
+                key={id}
+                onClick={() => {
+                  scrollToSection(id);
+                }}
+                className="flex items-center gap-1.5 rounded-full border border-border/60 bg-background/50 px-3 py-1.5 text-sm font-medium text-muted-foreground backdrop-blur transition-all hover:border-primary/40 hover:bg-primary/5 hover:text-foreground sm:px-4 sm:py-2"
+              >
+                <Icon className="size-3.5 sm:size-4" />
+                {t(`landing.nav.${key}`)}
+              </button>
+            ))}
+            <Link
+              to={pathTo(ROUTES.PRICING, language)}
+              className="flex items-center gap-1.5 rounded-full border border-border/60 bg-background/50 px-3 py-1.5 text-sm font-medium text-muted-foreground backdrop-blur transition-all hover:border-primary/40 hover:bg-primary/5 hover:text-foreground sm:px-4 sm:py-2"
+            >
+              <DollarSign className="size-3.5 sm:size-4" />
+              {t('landing.nav.pricing')}
+            </Link>
           </div>
         </FadeContent>
       </section>

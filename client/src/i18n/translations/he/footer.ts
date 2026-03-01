@@ -19,5 +19,5 @@ export const footer = {
   githubAria: 'פתח את המאגר של {{appName}} ב-GitHub',
   linkedInAria: 'פתח את {{appName}} ב-LinkedIn',
   copyright: '© {{year}} {{name}}',
-  madeWithLove: 'נבנה עם {{name}} באהבה',
+  madeWithLove: 'נבנה עם <elytraLink>Elytra</elytraLink> באהבה',
 };

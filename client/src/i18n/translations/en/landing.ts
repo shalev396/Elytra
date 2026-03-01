@@ -7,6 +7,13 @@ export const landing = {
       'A production-ready full-stack serverless template with authentication, file uploads, and modern UI components. Start building your next project in minutes, not weeks.',
     cta: 'Try It Now',
     viewGithub: 'View on GitHub',
+    exploreLabel: 'Explore',
+  },
+  nav: {
+    benefits: 'Benefits',
+    features: 'Features',
+    tech: 'Tech Stack',
+    pricing: 'Pricing',
   },
   benefits: {
     title: 'Why Choose {{appName}}',

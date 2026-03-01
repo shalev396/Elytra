@@ -19,5 +19,5 @@ export const footer = {
   githubAria: 'Open {{appName}} repository on GitHub',
   linkedInAria: 'Open {{appName}} on LinkedIn',
   copyright: '© {{year}} {{name}}',
-  madeWithLove: 'Made with {{name}} and love',
+  madeWithLove: 'Made with <elytraLink>Elytra</elytraLink> and love',
 };

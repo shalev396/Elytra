@@ -3,9 +3,7 @@
 export const ROUTES = {
   HOME: '',
   DASHBOARD: 'dashboard',
-  FEATURES: 'features',
   PRICING: 'pricing',
-  DOCS: 'docs',
   PROFILE: 'dashboard/profile',
   PROFILE_SEGMENT: 'profile',
   EDIT_PROFILE: 'dashboard/profile/edit',
