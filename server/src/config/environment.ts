@@ -1,8 +1,8 @@
 type DatabaseProvider = 'sequelize' | 'mongoose';
-type Stage = 'dev' | 'qa' | 'prod';
+type Env = 'dev' | 'qa' | 'prod';
 
 class Environment {
-  readonly #stage: Stage;
+  readonly #env: Env;
   readonly #awsRegion: string;
   readonly #databaseUrl: string;
   readonly #databaseProvider: DatabaseProvider;
@@ -14,10 +14,10 @@ class Environment {
   readonly #domainName: string;
 
   constructor() {
-    this.#stage = process.env.ENV;
+    this.#env = process.env.ENV;
     this.#awsRegion = process.env.AWS_REGION;
     this.#databaseUrl = process.env.DATABASE_URL;
-    this.#databaseProvider = 'mongoose';
+    this.#databaseProvider = process.env.DATABASE_PROVIDER;
     this.#s3AssetsBucketName = process.env.S3_ASSETS_BUCKET_NAME;
     this.#s3ClientBucketName = process.env.S3_CLIENT_BUCKET_NAME;
     this.#cognitoClientId = process.env.COGNITO_CLIENT_ID;
@@ -26,8 +26,8 @@ class Environment {
     this.#domainName = process.env.DOMAIN_NAME;
   }
 
-  get stage(): Stage {
-    return this.#stage;
+  get env(): Env {
+    return this.#env;
   }
 
   get awsRegion(): string {

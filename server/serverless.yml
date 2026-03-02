@@ -83,6 +83,7 @@ provider:
   environment:
     ENV: ${opt:stage, 'dev'}
     DATABASE_URL: ${env:DATABASE_URL}
+    DATABASE_PROVIDER: ${env:DATABASE_PROVIDER}
     S3_ASSETS_BUCKET_NAME: ${self:custom.assetsBucketName}
     S3_CLIENT_BUCKET_NAME: ${self:custom.clientBucketName}
     COGNITO_CLIENT_ID: ${self:custom.cognitoEnv.clientId}
@@ -96,8 +97,8 @@ provider:
         # Cognito Permissions
         - Effect: Allow
           Action:
-            - cognito-idp:AdminGetUser
             - cognito-idp:AdminDeleteUser
+            - cognito-idp:ListUsers
           Resource:
             - arn:aws:cognito-idp:${self:provider.region}:*:userpool/*
 

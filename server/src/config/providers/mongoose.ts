@@ -24,6 +24,11 @@ export async function syncMongo(): Promise<string[]> {
   return ['Mongoose: indexes synced for User, Media'];
 }
 
+export async function clearAllMongo(): Promise<void> {
+  await connectMongo();
+  await mongoose.connection.dropDatabase();
+}
+
 export function getMongoose(): typeof mongoose {
   return mongoose;
 }

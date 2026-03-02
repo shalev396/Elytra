@@ -1,0 +1,451 @@
+{
+  "info": {
+    "_postman_id": "user-collection-001",
+    "name": "Elytra User API",
+    "description": "Tests for authenticated user endpoints. Requires idToken from auth collection.\\n\\n**Endpoints tested:**\\n- GET /user/me - Get current user profile\\n- PUT /user/me - Update user profile\\n- GET /user/dashboard - Get user dashboard\\n\\n**Validations:**\\n- Valid token returns user data with correct email\\n- Invalid/missing token returns 401 Unauthorized\\n- Profile updates persist correctly",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://qa.elytra.shalev396.com/api"
+    },
+    {
+      "key": "testEmail",
+      "value": ""
+    },
+    {
+      "key": "testPassword",
+      "value": ""
+    },
+    {
+      "key": "testName",
+      "value": "Test User"
+    },
+    {
+      "key": "idToken",
+      "value": ""
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Get Me",
+      "item": [
+        {
+          "name": "Get me - valid token",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const token = pm.environment.get('idToken') || pm.collectionVariables.get('idToken');",
+                  "if (token) {",
+                  "    pm.request.headers.upsert({",
+                  "        key: 'Authorization',",
+                  "        value: 'Bearer ' + token",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response indicates success', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test('Response has user data', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.data).to.have.property('id');",
+                  "    pm.expect(json.data).to.have.property('cognitoSub');",
+                  "    pm.expect(json.data).to.have.property('email');",
+                  "    pm.expect(json.data).to.have.property('name');",
+                  "    pm.expect(json.data).to.have.property('createdAt');",
+                  "    pm.expect(json.data).to.have.property('updatedAt');",
+                  "});",
+                  "",
+                  "pm.test('User email matches test email', function () {",
+                  "    const json = pm.response.json();",
+                  "    const testEmail = pm.environment.get('testEmail') || pm.collectionVariables.get('testEmail');",
+                  "    pm.expect(json.data.email).to.equal(testEmail);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "me"]
+            }
+          }
+        },
+        {
+          "name": "Get me - no token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Response is not a success', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.not.equal(true);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/user/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "me"]
+            }
+          }
+        },
+        {
+          "name": "Get me - invalid token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Response is not a success', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.not.equal(true);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid-token-here"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Update Me",
+      "item": [
+        {
+          "name": "Update me - change name",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const token = pm.environment.get('idToken') || pm.collectionVariables.get('idToken');",
+                  "if (token) {",
+                  "    pm.request.headers.upsert({",
+                  "        key: 'Authorization',",
+                  "        value: 'Bearer ' + token",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response indicates success', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test('Name was updated', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.data.name).to.equal('Updated Test User');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "Updated Test User",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "me"]
+            }
+          }
+        },
+        {
+          "name": "Update me - restore original name",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const token = pm.environment.get('idToken') || pm.collectionVariables.get('idToken');",
+                  "if (token) {",
+                  "    pm.request.headers.upsert({",
+                  "        key: 'Authorization',",
+                  "        value: 'Bearer ' + token",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response indicates success', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test('Name was restored', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.data.name).to.equal('Test User');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "Test User",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "me"]
+            }
+          }
+        },
+        {
+          "name": "Update me - no token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Response is not a success', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.not.equal(true);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "Hacker User",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Dashboard - valid token",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const token = pm.environment.get('idToken') || pm.collectionVariables.get('idToken');",
+                  "if (token) {",
+                  "    pm.request.headers.upsert({",
+                  "        key: 'Authorization',",
+                  "        value: 'Bearer ' + token",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response indicates success', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test('Response has dashboard data', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.data).to.have.property('userId');",
+                  "    pm.expect(json.data).to.have.property('message');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/dashboard",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "dashboard"]
+            }
+          }
+        },
+        {
+          "name": "Dashboard - no token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Response is not a success', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.not.equal(true);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/user/dashboard",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "dashboard"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

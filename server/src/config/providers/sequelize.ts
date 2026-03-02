@@ -40,3 +40,9 @@ export async function syncSequelize(): Promise<string[]> {
 
   return ['Sequelize: tables synced with { alter: true }'];
 }
+
+export async function clearAllSequelize(): Promise<void> {
+  const instance = getSequelize();
+  await instance.authenticate();
+  await instance.drop();
+}

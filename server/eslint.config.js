@@ -14,7 +14,7 @@ export default tseslint.config(
       ecmaVersion: 2022,
       globals: globals.node,
       parserOptions: {
-        projectService: true,
+        project: ['./tsconfig.json', './tests/tsconfig.json'],
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -32,6 +32,12 @@ export default tseslint.config(
       'no-console': ['error', { allow: ['warn', 'error'] }],
       eqeqeq: ['error', 'always'],
       'no-debugger': 'error',
+    },
+  },
+  {
+    files: ['tests/**/*.ts'],
+    rules: {
+      'no-console': 'off',
     },
   },
   {

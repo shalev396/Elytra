@@ -1,0 +1,1192 @@
+{
+  "info": {
+    "_postman_id": "auth-collection-001",
+    "name": "Elytra Auth API",
+    "description": "Auth API tests with real email verification via Mail.tm.\\n\\n**Signup Flow:**\\nCreates temp email → Signs up → Polls for verification email → Extracts code → Confirms → Logs in → Saves tokens\\n\\n**Login Tests:**\\nValid credentials, wrong password (401), wrong email (401), missing fields (400)\\n\\n**Token Refresh Tests:**\\nValid token gets new idToken, invalid/missing returns 401/400\\n\\n**Password Reset Tests:**\\nForgot password (200 for any email to prevent enumeration), reset password validation",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://qa.elytra.shalev396.com/api"
+    },
+    {
+      "key": "testEmail",
+      "value": ""
+    },
+    {
+      "key": "testPassword",
+      "value": ""
+    },
+    {
+      "key": "testName",
+      "value": "Test User"
+    },
+    {
+      "key": "idToken",
+      "value": ""
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
+    },
+    {
+      "key": "tempEmail",
+      "value": ""
+    },
+    {
+      "key": "tempEmailPassword",
+      "value": ""
+    },
+    {
+      "key": "mailTmToken",
+      "value": ""
+    },
+    {
+      "key": "mailTmDomain",
+      "value": ""
+    },
+    {
+      "key": "mailTmMessageId",
+      "value": ""
+    },
+    {
+      "key": "confirmationCode",
+      "value": ""
+    },
+    {
+      "key": "pollRetryCount",
+      "value": "0"
+    }
+  ],
+  "item": [
+    {
+      "name": "Signup Flow (Mail.tm)",
+      "item": [
+        {
+          "name": "1. Mail.tm - Get Domains",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Has available domains', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json['hydra:member']).to.be.an('array');",
+                  "    pm.expect(json['hydra:member'].length).to.be.greaterThan(0);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "const domains = json['hydra:member'];",
+                  "const activeDomain = domains.find(d => d.isActive);",
+                  "if (activeDomain) {",
+                  "    pm.collectionVariables.set('mailTmDomain', activeDomain.domain);",
+                  "    console.log('Selected domain:', activeDomain.domain);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://api.mail.tm/domains",
+              "protocol": "https",
+              "host": ["api", "mail", "tm"],
+              "path": ["domains"]
+            }
+          }
+        },
+        {
+          "name": "2. Mail.tm - Create Account",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const random1 = Math.random().toString(36).substring(2, 8);",
+                  "const random2 = Math.random().toString(36).substring(2, 6);",
+                  "const domain = pm.collectionVariables.get('mailTmDomain');",
+                  "",
+                  "// Mail.tm requires username to be at least 10 characters",
+                  "const email = `qatest${random1}${random2}@${domain}`;",
+                  "// Password for Mail.tm account",
+                  "const mailTmPassword = `Password${random1}!`;",
+                  "// Stronger password for our app (meets Cognito requirements)",
+                  "const appPassword = `Test@${random1}Aa1!`;",
+                  "",
+                  "// Save to collection variables for later requests",
+                  "pm.collectionVariables.set('tempEmail', email);",
+                  "pm.collectionVariables.set('tempEmailPassword', mailTmPassword);",
+                  "pm.collectionVariables.set('testEmail', email);",
+                  "pm.collectionVariables.set('testPassword', appPassword);",
+                  "",
+                  "// Also save to environment for Newman export",
+                  "pm.environment.set('testEmail', email);",
+                  "pm.environment.set('testPassword', appPassword);",
+                  "",
+                  "// Dynamically set request body to ensure variables are resolved",
+                  "pm.request.body.raw = JSON.stringify({",
+                  "    address: email,",
+                  "    password: mailTmPassword",
+                  "});",
+                  "",
+                  "console.log('Generated email:', email);",
+                  "console.log('Request body:', pm.request.body.raw);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Log error details if not 201",
+                  "if (pm.response.code !== 201) {",
+                  "    console.log('Mail.tm Error Response:', pm.response.text());",
+                  "}",
+                  "",
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Account created', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('id');",
+                  "    pm.expect(json).to.have.property('address');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"address\": \"{{tempEmail}}\",\n    \"password\": \"{{tempEmailPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "https://api.mail.tm/accounts",
+              "protocol": "https",
+              "host": ["api", "mail", "tm"],
+              "path": ["accounts"]
+            }
+          }
+        },
+        {
+          "name": "3. Mail.tm - Get Token",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Dynamically set request body",
+                  "const email = pm.collectionVariables.get('tempEmail');",
+                  "const password = pm.collectionVariables.get('tempEmailPassword');",
+                  "pm.request.body.raw = JSON.stringify({ address: email, password: password });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Token received', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('token');",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('mailTmToken', json.token);",
+                  "console.log('Mail.tm token obtained');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "https://api.mail.tm/token",
+              "protocol": "https",
+              "host": ["api", "mail", "tm"],
+              "path": ["token"]
+            }
+          }
+        },
+        {
+          "name": "4. App - Sign Up",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Reset poll retry count for upcoming inbox polling",
+                  "pm.collectionVariables.set('pollRetryCount', '0');",
+                  "",
+                  "// Dynamically set request body",
+                  "const email = pm.collectionVariables.get('testEmail');",
+                  "const password = pm.collectionVariables.get('testPassword');",
+                  "const name = pm.collectionVariables.get('testName');",
+                  "pm.request.body.raw = JSON.stringify({ email, password, name });",
+                  "",
+                  "console.log('Signing up with:', email);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 or 201', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "pm.test('Signup successful', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "    pm.expect(json.data).to.have.property('userSub');",
+                  "});",
+                  "",
+                  "console.log('Signup successful, waiting for verification email...');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/signup",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "signup"]
+            }
+          }
+        },
+        {
+          "name": "5. Mail.tm - Poll Inbox",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Set Authorization header dynamically",
+                  "const token = pm.collectionVariables.get('mailTmToken');",
+                  "pm.request.headers.upsert({ key: 'Authorization', value: 'Bearer ' + token });",
+                  "console.log('Polling inbox with token:', token ? 'present' : 'MISSING');"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "const messages = json['hydra:member'] || [];",
+                  "",
+                  "if (messages.length > 0) {",
+                  "    const message = messages[0];",
+                  "    pm.collectionVariables.set('mailTmMessageId', message.id);",
+                  "    console.log('Email received:', message.subject);",
+                  "    pm.test('Email received', function () {",
+                  "        pm.expect(messages.length).to.be.greaterThan(0);",
+                  "    });",
+                  "} else {",
+                  "    pm.test('Email received', function () {",
+                  "        pm.expect.fail('No email received yet - increase delayRequest in runner');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://api.mail.tm/messages",
+              "protocol": "https",
+              "host": ["api", "mail", "tm"],
+              "path": ["messages"]
+            }
+          }
+        },
+        {
+          "name": "6. Mail.tm - Read Message",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Set Authorization header and URL dynamically",
+                  "const token = pm.collectionVariables.get('mailTmToken');",
+                  "const messageId = pm.collectionVariables.get('mailTmMessageId');",
+                  "pm.request.headers.upsert({ key: 'Authorization', value: 'Bearer ' + token });",
+                  "pm.request.url = 'https://api.mail.tm/messages/' + messageId;",
+                  "console.log('Reading message:', messageId);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "const emailText = json.text || '';",
+                  "const emailHtml = (json.html || []).join(' ');",
+                  "const content = emailText + ' ' + emailHtml;",
+                  "",
+                  "console.log('Email content length:', content.length);",
+                  "",
+                  "// Extract 6-digit confirmation code",
+                  "const codeMatch = content.match(/\\b(\\d{6})\\b/);",
+                  "",
+                  "pm.test('Confirmation code found', function () {",
+                  "    pm.expect(codeMatch).to.not.be.null;",
+                  "    pm.expect(codeMatch[1]).to.have.lengthOf(6);",
+                  "});",
+                  "",
+                  "if (codeMatch && codeMatch[1]) {",
+                  "    pm.collectionVariables.set('confirmationCode', codeMatch[1]);",
+                  "    console.log('Confirmation code extracted:', codeMatch[1]);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://api.mail.tm/messages/placeholder",
+              "protocol": "https",
+              "host": ["api", "mail", "tm"],
+              "path": ["messages", "placeholder"]
+            }
+          }
+        },
+        {
+          "name": "7. App - Confirm Signup",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const email = pm.collectionVariables.get('testEmail');",
+                  "const code = pm.collectionVariables.get('confirmationCode');",
+                  "pm.request.body.raw = JSON.stringify({ email, code });",
+                  "console.log('Confirming with code:', code);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Confirmation successful', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "});",
+                  "",
+                  "console.log('User confirmed successfully');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/confirm",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "confirm"]
+            }
+          }
+        },
+        {
+          "name": "8. App - Login (Get Tokens)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const email = pm.collectionVariables.get('testEmail');",
+                  "const password = pm.collectionVariables.get('testPassword');",
+                  "pm.request.body.raw = JSON.stringify({ email, password });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Login successful', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "    pm.expect(json.data.tokens).to.have.property('idToken');",
+                  "    pm.expect(json.data.tokens).to.have.property('refreshToken');",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.tokens) {",
+                  "    pm.collectionVariables.set('idToken', json.data.tokens.idToken);",
+                  "    pm.collectionVariables.set('refreshToken', json.data.tokens.refreshToken);",
+                  "    pm.environment.set('idToken', json.data.tokens.idToken);",
+                  "    pm.environment.set('refreshToken', json.data.tokens.refreshToken);",
+                  "    console.log('Tokens saved for subsequent tests');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{testEmail}}\",\n    \"password\": \"{{testPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login",
+      "item": [
+        {
+          "name": "Login - valid credentials",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const email = pm.collectionVariables.get('testEmail');",
+                  "const password = pm.collectionVariables.get('testPassword');",
+                  "pm.request.body.raw = JSON.stringify({ email, password });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response indicates success', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test('Response has user data', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.data.user).to.have.property('id');",
+                  "    pm.expect(json.data.user).to.have.property('email');",
+                  "    pm.expect(json.data.user).to.have.property('name');",
+                  "});",
+                  "",
+                  "pm.test('Response has tokens', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.data.tokens).to.have.property('idToken');",
+                  "    pm.expect(json.data.tokens).to.have.property('refreshToken');",
+                  "    pm.expect(json.data.tokens).to.have.property('expiresIn');",
+                  "});",
+                  "",
+                  "// Save tokens for subsequent requests",
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.tokens) {",
+                  "    pm.collectionVariables.set('idToken', json.data.tokens.idToken);",
+                  "    pm.collectionVariables.set('refreshToken', json.data.tokens.refreshToken);",
+                  "    pm.environment.set('idToken', json.data.tokens.idToken);",
+                  "    pm.environment.set('refreshToken', json.data.tokens.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login - wrong password",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const testEmail = pm.environment.get('testEmail') || pm.collectionVariables.get('testEmail');",
+                  "pm.request.body.raw = JSON.stringify({",
+                  "    email: testEmail,",
+                  "    password: 'WrongPassword123!'",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Response indicates failure', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.false;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login - unregistered email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Response indicates failure', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.false;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"nonexistent@example.com\",\n    \"password\": \"SomePassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login - wrong email and password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Response indicates failure', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.false;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"nonexistent@example.com\",\n    \"password\": \"WrongPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login - missing email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response indicates failure', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.false;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"password\": \"SomePassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login - missing password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response indicates failure', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.false;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"test@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Token Refresh",
+      "item": [
+        {
+          "name": "Refresh - valid token",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const refreshToken = pm.environment.get('refreshToken') || pm.collectionVariables.get('refreshToken');",
+                  "pm.request.body.raw = JSON.stringify({ refreshToken });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response indicates success', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test('Response has new idToken', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.data).to.have.property('idToken');",
+                  "    pm.expect(json.data).to.have.property('expiresIn');",
+                  "});",
+                  "",
+                  "// Update idToken with new value",
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.idToken) {",
+                  "    pm.collectionVariables.set('idToken', json.data.idToken);",
+                  "    pm.environment.set('idToken', json.data.idToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            }
+          }
+        },
+        {
+          "name": "Refresh - invalid token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Response indicates failure', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.false;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"refreshToken\": \"invalid-refresh-token\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            }
+          }
+        },
+        {
+          "name": "Refresh - missing token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response indicates failure', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.false;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Forgot Password",
+      "item": [
+        {
+          "name": "Forgot Password - valid email",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const email = pm.environment.get('testEmail') || pm.collectionVariables.get('testEmail');",
+                  "pm.request.body.raw = JSON.stringify({ email });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response indicates success', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "forgot-password"]
+            }
+          }
+        },
+        {
+          "name": "Forgot Password - nonexistent email (returns 200 to prevent enumeration)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 (prevents email enumeration)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response indicates success', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"nonexistent@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "forgot-password"]
+            }
+          }
+        },
+        {
+          "name": "Forgot Password - missing email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response indicates failure', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.false;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "forgot-password"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reset Password",
+      "item": [
+        {
+          "name": "Reset Password - invalid code",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const email = pm.environment.get('testEmail') || pm.collectionVariables.get('testEmail');",
+                  "pm.request.body.raw = JSON.stringify({ email, code: '000000', password: 'NewPassword123!' });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response indicates failure', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.false;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "reset-password"]
+            }
+          }
+        },
+        {
+          "name": "Reset Password - missing fields",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response indicates failure', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.false;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"test@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "reset-password"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

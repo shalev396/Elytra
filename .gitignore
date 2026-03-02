@@ -10,3 +10,6 @@
 *.env.qa
 *.env.prod
 *.env.local
+
+# Test artifacts (contains tokens)
+**exported.postman_environment.json
