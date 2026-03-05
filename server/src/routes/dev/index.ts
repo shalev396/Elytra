@@ -12,4 +12,8 @@ export interface SyncDbResponseData {
 
 router.post('/sync-db', DevtoolsController.syncDatabase);
 
+// ─── POST /api/dev/reset ─────────────────────────────────────────────────────
+
+router.post('/reset', DevtoolsController.resetDatabase);
+
 export { router as devRouter };

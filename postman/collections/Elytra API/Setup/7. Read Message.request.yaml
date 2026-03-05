@@ -1,0 +1,35 @@
+$kind: http-request
+url: https://api.mail.tm/messages/{{mailTmMessageId}}
+method: GET
+auth:
+  type: inherit
+  credentials:
+    id: c77fdf1d-2d72-4d5b-8112-f48266aefdfc
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      const json = pm.response.json();
+      const emailText = json.text || '';
+      const emailHtml = (json.html || []).join(' ');
+      const content = emailText + ' ' + emailHtml;
+
+      console.log('Email content length:', content.length);
+
+      const codeMatch = content.match(/\b(\d{6})\b/);
+
+      pm.test('Confirmation code found', function () {
+          pm.expect(codeMatch).to.not.be.null;
+          pm.expect(codeMatch[1]).to.have.lengthOf(6);
+      });
+
+      if (codeMatch && codeMatch[1]) {
+          pm.collectionVariables.set('confirmationCode', codeMatch[1]);
+          pm.environment.set('confirmationCode', codeMatch[1]);
+          console.log('Confirmation code extracted and saved for Confirm Signup:', codeMatch[1]);
+      }
+    language: text/javascript
+order: 7000

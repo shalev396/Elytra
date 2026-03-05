@@ -1,0 +1,40 @@
+$kind: http-request
+url: '{{baseUrl}}/auth/login'
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: '{}'
+scripts:
+  - type: beforeRequest
+    code: |-
+      const email = pm.collectionVariables.get('testEmail') || pm.environment.get('testEmail');
+      const password = pm.collectionVariables.get('testPassword') || pm.environment.get('testPassword');
+      pm.request.body.raw = JSON.stringify({ email, password });
+      console.log('Flow signup - logging in with:', email);
+    language: text/javascript
+  - type: afterResponse
+    code: >-
+      const json = pm.response.json();
+
+      const tokens = json.data && json.data.tokens;
+      if (pm.response.code === 200 && tokens && tokens.idToken && tokens.refreshToken) {
+          pm.collectionVariables.set('idToken', tokens.idToken);
+          pm.collectionVariables.set('refreshToken', tokens.refreshToken);
+          pm.environment.set('idToken', tokens.idToken);
+          pm.environment.set('refreshToken', tokens.refreshToken);
+          console.log('Flow signup - tokens saved for subsequent flows');
+      }
+
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Login successful', function () {
+          pm.expect(json.success).to.be.true;
+          pm.expect(json.data.tokens).to.have.property('idToken');
+          pm.expect(json.data.tokens).to.have.property('refreshToken');
+      });
+    language: text/javascript
+order: 8000

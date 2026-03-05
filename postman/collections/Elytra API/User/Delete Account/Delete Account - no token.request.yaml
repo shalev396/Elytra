@@ -1,0 +1,18 @@
+$kind: http-request
+url: '{{baseUrl}}/user/delete'
+method: DELETE
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 401', function () {
+          pm.response.to.have.status(401);
+      });
+
+      pm.test('Response indicates failure', function () {
+          const json = pm.response.json();
+          pm.expect(json.success).to.be.false;
+      });
+    language: text/javascript
+order: 1000

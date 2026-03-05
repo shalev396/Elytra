@@ -1,0 +1,27 @@
+$kind: http-request
+name: Dashboard - valid token
+url: '{{baseUrl}}/user/dashboard'
+method: GET
+auth:
+  type: inherit
+  credentials:
+    id: 383fc78f-96ef-47d9-81d5-e4c7dada7326
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Response indicates success', function () {
+          const json = pm.response.json();
+          pm.expect(json.success).to.be.true;
+      });
+
+      pm.test('Response has dashboard data', function () {
+          const json = pm.response.json();
+          pm.expect(json.data).to.have.property('userId');
+          pm.expect(json.data).to.have.property('message');
+      });
+    language: text/javascript
+order: 1000

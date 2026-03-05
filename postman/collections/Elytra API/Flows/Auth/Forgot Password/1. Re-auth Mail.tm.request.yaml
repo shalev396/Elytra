@@ -1,0 +1,33 @@
+$kind: http-request
+url: https://api.mail.tm/token
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: '{}'
+scripts:
+  - type: beforeRequest
+    code: |-
+      const email = pm.collectionVariables.get('tempEmail') || pm.environment.get('tempEmail');
+      const password = pm.collectionVariables.get('tempEmailPassword') || pm.environment.get('tempEmailPassword');
+      pm.request.body.raw = JSON.stringify({ address: email, password });
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      const json = pm.response.json();
+
+      if (pm.response.code === 200 && json && json.token) {
+          pm.collectionVariables.set('mailTmToken', json.token);
+          pm.environment.set('mailTmToken', json.token);
+      }
+
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Mail.tm token refreshed', function () {
+          pm.expect(json).to.have.property('token');
+      });
+    language: text/javascript
+order: 1000

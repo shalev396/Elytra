@@ -13,3 +13,9 @@
 
 # Test artifacts (contains tokens)
 **exported.postman_environment.json
+
+# Local Postman environment (user copy with baseUrl/secrets); use qa.template.json as reference
+**/postman/environments/*.postman_environment.json
+
+# Postman CLI test results (CI)
+postman-results.xml

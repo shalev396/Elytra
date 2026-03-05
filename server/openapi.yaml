@@ -323,6 +323,24 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
+  /dev/reset:
+    post:
+      tags: [Dev]
+      summary: Reset database and Cognito
+      description: |
+        Erases all data in the database and deletes all users in the Cognito user pool.
+        Only available when ENV=qa. Requires enableDevTools to be true for the deployment.
+      operationId: resetDatabase
+      responses:
+        '200':
+          description: Reset completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResetResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
 components:
   # ── Security ────────────────────────────────────────────────────────────────
 
@@ -685,3 +703,24 @@ components:
           enum: [true]
         data:
           $ref: '#/components/schemas/SyncDbResponseData'
+
+    ResetResponseData:
+      type: object
+      required: [provider, message]
+      properties:
+        provider:
+          type: string
+          description: The database provider in use
+        message:
+          type: string
+          description: Confirmation message
+
+    ResetResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        data:
+          $ref: '#/components/schemas/ResetResponseData'

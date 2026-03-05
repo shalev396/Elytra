@@ -1,0 +1,30 @@
+$kind: http-request
+url: '{{baseUrl}}/auth/forgot-password'
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: '{}'
+scripts:
+  - type: beforeRequest
+    code: |-
+      pm.collectionVariables.set('pollRetryCount', '0');
+      const email = pm.collectionVariables.get('testEmail') || pm.environment.get('testEmail');
+      pm.request.body.raw = JSON.stringify({ email });
+      console.log('Requesting password reset for:', email);
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Reset requested', function () {
+          const json = pm.response.json();
+          pm.expect(json.success).to.be.true;
+      });
+
+      console.log('Password reset requested, waiting for email...');
+    language: text/javascript
+order: 2000

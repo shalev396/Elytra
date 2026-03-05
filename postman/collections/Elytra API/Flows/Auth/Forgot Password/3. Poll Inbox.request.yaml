@@ -1,0 +1,58 @@
+$kind: http-request
+url: https://api.mail.tm/messages
+method: GET
+auth:
+  type: inherit
+  credentials:
+    id: c77fdf1d-2d72-4d5b-8112-f48266aefdfc
+scripts:
+  - type: beforeRequest
+    code: >-
+      const retries = parseInt(pm.collectionVariables.get('pollRetryCount') || '0', 10);
+      const delayMs = retries === 0 ? 12000 : 5000;
+      const start = Date.now();
+      while (Date.now() - start < delayMs) { /* block */ }
+      if (retries === 0) {
+        console.log('Waiting 12s for reset email delivery before first poll...');
+      } else {
+        console.log('Waiting 5s before retry ' + retries + '...');
+      }
+    language: text/javascript
+  - type: afterResponse
+    code: >-
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      const json = pm.response.json();
+      const messages = json['hydra:member'] || [];
+      const maxPollRetries = 6;
+      const retries = parseInt(pm.collectionVariables.get('pollRetryCount') || '0', 10);
+
+      if (messages.length > 0) {
+          const message = messages[0];
+          pm.collectionVariables.set('mailTmMessageId', message.id);
+          pm.environment.set('mailTmMessageId', message.id);
+          console.log('Reset email received:', message.subject);
+          pm.test('Reset email received', function () {
+              pm.expect(messages.length).to.be.greaterThan(0);
+          });
+      } else if (retries < maxPollRetries) {
+          pm.collectionVariables.set('pollRetryCount', String(retries + 1));
+          console.log('No email yet, retry ' + (retries + 1) + '/' + maxPollRetries);
+          if (typeof pm.execution !== 'undefined' && pm.execution.setNextRequest) {
+              pm.execution.setNextRequest('3. Poll Inbox');
+          } else if (typeof postman !== 'undefined' && postman.setNextRequest) {
+              postman.setNextRequest('3. Poll Inbox');
+          } else {
+              pm.test('Reset email received', function () {
+                  pm.expect.fail('No email received yet');
+              });
+          }
+      } else {
+          pm.test('Reset email received', function () {
+              pm.expect.fail('No email received after ' + maxPollRetries + ' retries');
+          });
+      }
+    language: text/javascript
+order: 3000

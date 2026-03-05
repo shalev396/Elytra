@@ -1,0 +1,31 @@
+$kind: http-request
+url: '{{baseUrl}}/user/me'
+method: PUT
+auth:
+  type: inherit
+  credentials:
+    id: 383fc78f-96ef-47d9-81d5-e4c7dada7326
+body:
+  type: formdata
+  content:
+    - type: text
+      key: name
+      value: Test User
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Response indicates success', function () {
+          const json = pm.response.json();
+          pm.expect(json.success).to.be.true;
+      });
+
+      pm.test('Name was restored', function () {
+          const json = pm.response.json();
+          pm.expect(json.data.name).to.equal('Test User');
+      });
+    language: text/javascript
+order: 2000

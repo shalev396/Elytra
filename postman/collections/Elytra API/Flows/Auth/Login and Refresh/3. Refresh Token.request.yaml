@@ -1,0 +1,34 @@
+$kind: http-request
+url: '{{baseUrl}}/auth/refresh'
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: '{}'
+scripts:
+  - type: beforeRequest
+    code: |-
+      const refreshToken = pm.collectionVariables.get('refreshToken') || pm.environment.get('refreshToken');
+      pm.request.body.raw = JSON.stringify({ refreshToken });
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      const json = pm.response.json();
+
+      if (pm.response.code === 200 && json.data && json.data.idToken) {
+          pm.collectionVariables.set('idToken', json.data.idToken);
+          pm.environment.set('idToken', json.data.idToken);
+      }
+
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Token refreshed', function () {
+          pm.expect(json.success).to.be.true;
+          pm.expect(json.data).to.have.property('idToken');
+          pm.expect(json.data).to.have.property('expiresIn');
+      });
+    language: text/javascript
+order: 3000

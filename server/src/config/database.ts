@@ -35,3 +35,17 @@ export async function syncDB(): Promise<string[]> {
     return syncSequelize();
   }
 }
+
+export async function resetDatabase(): Promise<void> {
+  if (environment.env !== 'qa' && environment.env !== 'dev') {
+    throw new Error('resetDatabase can only run on QA or DEV environment');
+  }
+
+  if (environment.databaseProvider === 'mongoose') {
+    const { clearAllMongo } = await import('./providers/mongoose.js');
+    await clearAllMongo();
+  } else {
+    const { clearAllSequelize } = await import('./providers/sequelize.js');
+    await clearAllSequelize();
+  }
+}

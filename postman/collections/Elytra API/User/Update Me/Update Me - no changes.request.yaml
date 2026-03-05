@@ -1,0 +1,20 @@
+$kind: http-request
+url: '{{baseUrl}}/user/me'
+method: PUT
+auth:
+  type: inherit
+  credentials:
+    id: 383fc78f-96ef-47d9-81d5-e4c7dada7326
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 400', function () {
+          pm.response.to.have.status(400);
+      });
+
+      pm.test('Response indicates failure', function () {
+          const json = pm.response.json();
+          pm.expect(json.success).to.be.false;
+      });
+    language: text/javascript
+order: 4000

@@ -1,0 +1,37 @@
+$kind: http-request
+url: '{{baseUrl}}/auth/signup'
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: '{}'
+auth:
+  type: noauth
+scripts:
+  - type: beforeRequest
+    code: |-
+      pm.collectionVariables.set('pollRetryCount', '0');
+
+      const email = pm.collectionVariables.get('testEmail');
+      const password = pm.collectionVariables.get('testPassword');
+      const name = pm.collectionVariables.get('testName');
+      pm.request.body.raw = JSON.stringify({ email, password, name });
+
+      console.log('Flow signup - signing up with:', email);
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Signup successful', function () {
+          const json = pm.response.json();
+          pm.expect(json.success).to.be.true;
+          pm.expect(json.data).to.have.property('userSub');
+      });
+
+      console.log('Flow signup successful, waiting for verification email...');
+    language: text/javascript
+order: 4000

@@ -1,0 +1,33 @@
+$kind: collection
+name: Elytra API
+description: 'Elytra API tests. Setup: resets DB and Cognito. Auth: signup
+  (Mail.tm), login, refresh, password. User: me, dashboard.'
+variables:
+  baseUrl: https://qa.elytra.shalev396.com/api
+  testEmail: ''
+  testPassword: ''
+  testName: Test User
+  idToken: ''
+  refreshToken: ''
+  tempEmail: ''
+  tempEmailPassword: ''
+  mailTmToken: ''
+  mailTmDomain: ''
+  mailTmMessageId: ''
+  confirmationCode: ''
+  pollRetryCount: '0'
+  resetCode: ''
+  newPassword: ''
+auth:
+  - id: c77fdf1d-2d72-4d5b-8112-f48266aefdfc
+    type: bearer
+    name: Mail.tm Token
+    description: mail.tm Token for mail.tm/*
+    credentials:
+      token: '{{mailTmToken}}'
+  - id: 383fc78f-96ef-47d9-81d5-e4c7dada7326
+    type: bearer
+    name: API Token
+    description: API Token
+    credentials:
+      token: '{{idToken}}'

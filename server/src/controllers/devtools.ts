@@ -1,6 +1,7 @@
 import { type RequestHandler } from 'express';
 import { environment } from '../config/environment.js';
-import { syncDB } from '../config/database.js';
+import { resetDatabase as resetDb, syncDB } from '../config/database.js';
+import { clearAllCognitoUsers } from '../utils/cognitoReset.js';
 
 const syncDatabase: RequestHandler = async (_req, res): Promise<void> => {
   try {
@@ -17,6 +18,23 @@ const syncDatabase: RequestHandler = async (_req, res): Promise<void> => {
   }
 };
 
+const resetDatabase: RequestHandler = async (_req, res): Promise<void> => {
+  try {
+    await resetDb();
+    await clearAllCognitoUsers();
+
+    res.success({
+      provider: environment.databaseProvider,
+      message: 'Database and Cognito user pool reset complete',
+    });
+  } catch (error) {
+    console.error('Reset error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Reset failed';
+    res.error(errorMessage, 500);
+  }
+};
+
 export const DevtoolsController = {
+  resetDatabase,
   syncDatabase,
 } as const;

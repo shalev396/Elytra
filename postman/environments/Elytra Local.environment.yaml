@@ -1,0 +1,63 @@
+name: Elytra Local
+values:
+  - key: baseUrl
+    value: 'http://localhost:3000/api'
+    enabled: true
+    description:
+      content: Local serverless-offline API (port 3000)
+      type: text/plain
+  - key: testEmail
+    value: ''
+    enabled: true
+    description:
+      content: Set by Mail.tm signup flow - leave empty
+      type: text/plain
+  - key: testPassword
+    value: ''
+    enabled: true
+    description:
+      content: Set by Mail.tm signup flow - leave empty
+      type: text/plain
+  - key: testName
+    value: Test User
+    enabled: true
+  - key: idToken
+    value: ''
+    enabled: true
+    description:
+      content: Set by login - leave empty
+      type: text/plain
+  - key: refreshToken
+    value: ''
+    enabled: true
+    description:
+      content: Set by login - leave empty
+      type: text/plain
+  - key: tempEmail
+    value: ''
+    enabled: true
+  - key: tempEmailPassword
+    value: ''
+    enabled: true
+  - key: mailTmToken
+    value: ''
+    enabled: true
+  - key: mailTmDomain
+    value: ''
+    enabled: true
+  - key: mailTmMessageId
+    value: ''
+    enabled: true
+  - key: confirmationCode
+    value: ''
+    enabled: true
+  - key: pollRetryCount
+    value: '0'
+    enabled: true
+  - key: resetCode
+    value: ''
+    enabled: true
+  - key: newPassword
+    value: ''
+    enabled: true
+color: 0

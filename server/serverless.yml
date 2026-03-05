@@ -138,8 +138,13 @@ custom:
   appName: elytra
   appDisplayName: Elytra
 
-  # Set to true to enable the devApi function (DB sync, etc.). Keep false in production.
-  enableDevTools: false
+  # Enable dev API (DB sync, reset, etc.) for dev/qa only. Prod always false.
+  # Override with ENABLE_DEV_TOOLS env var if needed.
+  enableDevToolsByStage:
+    dev: 'true'
+    qa: 'true'
+    prod: 'false'
+  enableDevTools: ${env:ENABLE_DEV_TOOLS, self:custom.enableDevToolsByStage.${opt:stage, 'dev'}, 'false'}
 
   devApiEvents:
     'true':

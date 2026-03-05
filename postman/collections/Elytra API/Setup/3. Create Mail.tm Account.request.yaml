@@ -1,0 +1,61 @@
+$kind: http-request
+name: 3. Create Mail.tm Account
+url: https://api.mail.tm/accounts
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+        "address": "{{tempEmail}}",
+        "password": "{{tempEmailPassword}}"
+    }
+auth:
+  type: noauth
+scripts:
+  - type: beforeRequest
+    code: |-
+      const random1 = Math.random().toString(36).substring(2, 8);
+      const random2 = Math.random().toString(36).substring(2, 6);
+      const domain = pm.collectionVariables.get('mailTmDomain');
+
+      const email = `qatest${random1}${random2}@${domain}`;
+
+      const mailTmPassword = `Password${random1}!`;
+
+      const appPassword = `Test@${random1}Aa1!`;
+
+      pm.collectionVariables.set('tempEmail', email);
+      pm.collectionVariables.set('tempEmailPassword', mailTmPassword);
+      pm.collectionVariables.set('testEmail', email);
+      pm.collectionVariables.set('testPassword', appPassword);
+      pm.environment.set('tempEmail', email);
+      pm.environment.set('tempEmailPassword', mailTmPassword);
+      pm.environment.set('testEmail', email);
+      pm.environment.set('testPassword', appPassword);
+
+      pm.request.body.raw = JSON.stringify({
+          address: email,
+          password: mailTmPassword
+      });
+
+      console.log('Generated email:', email);
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      if (pm.response.code !== 201) {
+          console.log('Mail.tm Error Response:', pm.response.text());
+      }
+
+      pm.test('Status code is 201', function () {
+          pm.response.to.have.status(201);
+      });
+
+      pm.test('Account created', function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property('id');
+          pm.expect(json).to.have.property('address');
+      });
+    language: text/javascript
+order: 3000

@@ -1,0 +1,10 @@
+$kind: collection
+name: User
+order: 3000
+auth:
+  - id: 383fc78f-96ef-47d9-81d5-e4c7dada7326
+    type: bearer
+    name: API Token
+    description: API Token
+    credentials:
+      token: '{{idToken}}'

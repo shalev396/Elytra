@@ -1,0 +1,27 @@
+$kind: http-request
+url: https://api.mail.tm/domains
+method: GET
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Has available domains', function () {
+          const json = pm.response.json();
+          pm.expect(json['hydra:member']).to.be.an('array');
+          pm.expect(json['hydra:member'].length).to.be.greaterThan(0);
+      });
+
+      const json = pm.response.json();
+      const domains = json['hydra:member'];
+      const activeDomain = domains.find(d => d.isActive);
+      if (activeDomain) {
+          pm.collectionVariables.set('mailTmDomain', activeDomain.domain);
+          console.log('Selected domain:', activeDomain.domain);
+      }
+    language: text/javascript
+order: 1000

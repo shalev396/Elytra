@@ -12,28 +12,19 @@ export const expressAuth: RequestHandler = async (
     const authHeader = req.headers.authorization;
 
     if (authHeader === undefined || authHeader === '') {
-      res.status(401).json({
-        success: false,
-        message: 'No authorization header provided',
-      });
+      res.error('No authorization header provided', 401);
       return;
     }
 
     if (!authHeader.startsWith('Bearer ')) {
-      res.status(401).json({
-        success: false,
-        message: 'Invalid authorization header format. Expected: Bearer <token>',
-      });
+      res.error('Invalid authorization header format. Expected: Bearer <token>', 401);
       return;
     }
 
     const token = authHeader.substring(7);
 
     if (token === '') {
-      res.status(401).json({
-        success: false,
-        message: 'No token provided',
-      });
+      res.error('No token provided', 401);
       return;
     }
 
@@ -42,10 +33,7 @@ export const expressAuth: RequestHandler = async (
     const cognitoSub = decoded.sub;
 
     if (cognitoSub === undefined) {
-      res.status(401).json({
-        success: false,
-        message: 'Invalid token: missing subject',
-      });
+      res.error('Invalid token: missing subject', 401);
       return;
     }
 
@@ -53,10 +41,7 @@ export const expressAuth: RequestHandler = async (
     const user = await userRepo.findByCognitoSub(cognitoSub);
 
     if (!user) {
-      res.status(404).json({
-        success: false,
-        message: 'User not found',
-      });
+      res.error('User not found', 404);
       return;
     }
 
@@ -68,9 +53,6 @@ export const expressAuth: RequestHandler = async (
     next();
   } catch (error) {
     console.error('Authentication error:', error);
-    res.status(401).json({
-      success: false,
-      message: 'Authentication failed',
-    });
+    res.error('Authentication failed', 401);
   }
 };

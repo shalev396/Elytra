@@ -1,0 +1,22 @@
+$kind: http-request
+url: '{{baseUrl}}/user/me'
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: '{{idToken}}'
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('User identity verified before deletion', function () {
+          const json = pm.response.json();
+          pm.expect(json.success).to.be.true;
+          const testEmail = pm.collectionVariables.get('testEmail') || pm.environment.get('testEmail');
+          pm.expect(json.data.email).to.equal(testEmail);
+      });
+    language: text/javascript
+order: 2000

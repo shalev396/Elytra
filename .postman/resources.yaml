@@ -1,0 +1,10 @@
+# Maps local Postman files to workspace entities.
+# Required for Native Git: Postman uses this to display collections, environments, and APIs.
+# Run "postman workspace prepare" and "postman workspace push" from repo root.
+
+collections:
+  - postman/collections/Elytra API
+
+environments:
+  - postman/environments/Elytra Local.environment.yaml
+  - postman/environments/Elytra QA.environment.yaml

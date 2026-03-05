@@ -1,0 +1,17 @@
+$kind: http-request
+url: '{{baseUrl}}/dev/reset'
+method: POST
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Reset successful', function () {
+          const json = pm.response.json();
+          pm.expect(json.success).to.be.true;
+          pm.expect(json.data).to.have.property("provider");
+      });
+    language: text/javascript
+order: 1000

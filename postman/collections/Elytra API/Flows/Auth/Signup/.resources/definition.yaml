@@ -1,0 +1,10 @@
+$kind: collection
+name: Signup
+order: 1000
+auth:
+  - id: c77fdf1d-2d72-4d5b-8112-f48266aefdfc
+    type: bearer
+    name: Mail.tm Token
+    description: mail.tm Token for mail.tm/*
+    credentials:
+      token: '{{mailTmToken}}'

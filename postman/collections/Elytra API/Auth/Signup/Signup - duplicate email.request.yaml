@@ -1,0 +1,27 @@
+$kind: http-request
+url: '{{baseUrl}}/auth/signup'
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: '{}'
+scripts:
+  - type: beforeRequest
+    code: |-
+      const email = pm.collectionVariables.get('testEmail') || pm.environment.get('testEmail');
+      const password = pm.collectionVariables.get('testPassword') || pm.environment.get('testPassword');
+      pm.request.body.raw = JSON.stringify({ email, password, name: 'Duplicate Test' });
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 400', function () {
+          pm.response.to.have.status(400);
+      });
+
+      pm.test('Response indicates failure', function () {
+          const json = pm.response.json();
+          pm.expect(json.success).to.be.false;
+      });
+    language: text/javascript
+order: 4000

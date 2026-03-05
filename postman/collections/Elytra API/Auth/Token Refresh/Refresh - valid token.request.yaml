@@ -1,0 +1,41 @@
+$kind: http-request
+url: '{{baseUrl}}/auth/refresh'
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: '{"refreshToken":"{{refreshToken}}"}'
+scripts:
+  - type: beforeRequest
+    code: >-
+      const refreshToken = pm.collectionVariables.get('refreshToken') || pm.environment.get('refreshToken');
+      if (!refreshToken) {
+        console.warn('refreshToken is empty - Login must run first and save tokens');
+      }
+      pm.request.body.raw = JSON.stringify({ refreshToken });
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      const json = pm.response.json();
+
+      if (pm.response.code === 200 && json.data && json.data.idToken) {
+          pm.collectionVariables.set('idToken', json.data.idToken);
+          pm.environment.set('idToken', json.data.idToken);
+          console.log('New idToken saved for subsequent Elytra API requests');
+      }
+
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Response indicates success', function () {
+          pm.expect(json.success).to.be.true;
+      });
+
+      pm.test('Response has new idToken', function () {
+          pm.expect(json.data).to.have.property('idToken');
+          pm.expect(json.data).to.have.property('expiresIn');
+      });
+    language: text/javascript
+order: 1000
