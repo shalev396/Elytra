@@ -33,9 +33,9 @@ export async function createUserExportZip(
       resolve(Buffer.concat(chunks));
     });
 
-    const archive = archiver.create('zip', { zlib: { level: 6 } });
-    archive.on('error', (err: archiver.ArchiverError) => {
-      reject(err instanceof Error ? err : new Error(String(err)));
+    const archive = archiver('zip', { zlib: { level: 6 } });
+    archive.on('error', (err: Error) => {
+      reject(err);
     });
     archive.pipe(writable);
     archive.append(Buffer.from(csv, 'utf-8'), { name: 'user-data.csv' });
