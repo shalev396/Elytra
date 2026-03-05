@@ -1,0 +1,26 @@
+$kind: http-request
+url: '{{baseUrl}}/user/me/export'
+method: GET
+auth:
+  type: inherit
+  credentials:
+    id: 383fc78f-96ef-47d9-81d5-e4c7dada7326
+scripts:
+  - type: afterResponse
+    code: >-
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+
+      pm.test('Response is ZIP download', function () {
+          pm.expect(pm.response.headers.get('Content-Type')).to.include('application/zip');
+          pm.expect(pm.response.headers.get('Content-Disposition')).to.include('attachment');
+      });
+
+
+      pm.test('Response body is non-empty', function () {
+          pm.expect(pm.response.size().body).to.be.above(0);
+      });
+    language: text/javascript
+order: 1000

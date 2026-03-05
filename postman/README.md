@@ -20,7 +20,7 @@ In your active environment, set `baseUrl`:
 
 Tokens are set automatically when you run the collection (Login and Mail.tm flows save them). If you run individual requests or your environment resets:
 
-- `idToken` -- From login; used for Elytra API (`/user/me`, `/user/dashboard`)
+- `idToken` -- From login; used for Elytra API (`/user/me`, `/user/me/export`, `/user/dashboard`)
 - `mailTmToken` -- From Mail.tm Get Token; used for `api.mail.tm` (Poll Inbox, Read Message)
 
 Paste values into the environment if needed. The collection uses beforeRequest scripts to add `Authorization: Bearer <token>` from these variables.
@@ -58,7 +58,7 @@ Endpoint coverage for all authentication routes:
 | **Forgot Password** | `POST /auth/forgot-password` | 4 (valid email, nonexistent email, missing email, invalid email format)                                                      |
 | **Reset Password**  | `POST /auth/reset-password`  | 5 (invalid code, missing fields, missing email, missing code, missing password)                                              |
 
-### 3. User (10 requests)
+### 3. User (12 requests)
 
 Endpoint coverage for user routes (all require `Authorization: Bearer <idToken>`):
 
@@ -67,6 +67,7 @@ Endpoint coverage for user routes (all require `Authorization: Bearer <idToken>`
 | **Get Me**          | `GET /user/me`             | 3 (valid token, no token, invalid token)            |
 | **Update Me**       | `PUT /user/me`             | 4 (change name, restore name, no token, no changes) |
 | **Send Test Email** | `POST /user/me/test-email` | 2 (valid token, no token)                           |
+| **Export Me**       | `GET /user/me/export`      | 2 (valid token, no token)                           |
 | **Delete Account**  | `DELETE /user/delete`      | 1 (no token -- expects 401)                         |
 
 ### 4. Dashboard (2 requests)
@@ -89,21 +90,21 @@ User interaction flows that mimic real user journeys, organized by topic:
 
 #### User Flows
 
-| Flow               | Requests | Journey                               |
-| ------------------ | -------- | ------------------------------------- |
-| **Delete Account** | 3        | Login -> Get Me -> Delete Account     |
-| **Export Data**    | --       | Placeholder for future implementation |
+| Flow               | Requests | Journey                                                   |
+| ------------------ | -------- | --------------------------------------------------------- |
+| **Export Data**    | 3        | Login -> Get Me -> Export Me (runs before Delete Account) |
+| **Delete Account** | 3        | Login -> Get Me -> Delete Account                         |
 
 ## Auth Middleware Testing
 
 All `/user/*` endpoints use the same `expressAuth` middleware. No-token and invalid-token edge cases are tested comprehensively on `GET /user/me`. Other authenticated endpoints include a single no-token sanity check each.
 
-## Total: 60 requests
+## Total: 62 requests
 
 - Setup: 9
 - Auth: 27
-- User: 10
+- User: 12
 - Dashboard: 2
-- Flows: 21 (Auth: 18 + User: 3)
+- Flows: 22 (Auth: 18 + User: 4)
 
 Note: The Setup account is not explicitly deleted -- it is cleaned up by the "Reset Database" step at the start of the next run. The Signup flow creates a separate account for flow testing, which is deleted by the Delete Account flow at the end.

@@ -18,11 +18,21 @@ export const profile = {
     notSet: 'Not set',
   },
   editButton: 'Edit Profile',
+  actions: {
+    title: 'Data & account',
+    description: 'Export your data or delete your account',
+  },
   testEmail: {
     button: 'Send Test Email',
     sending: 'Sending...',
     success: 'Test email sent successfully — check your inbox',
     error: 'Failed to send test email',
+  },
+  exportData: {
+    button: 'Export my data',
+    exporting: 'Exporting...',
+    success: 'Your data export is ready. Download started.',
+    error: 'Failed to export data',
   },
   deleteAccount: {
     button: 'Delete Account',

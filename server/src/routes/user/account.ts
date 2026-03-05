@@ -52,6 +52,11 @@ export interface TestEmailResponseData {
 
 router.post('/me/test-email', AccountController.sendTest);
 
+// ─── GET /api/user/me/export ──────────────────────────────────────────────────
+// Returns binary ZIP (application/zip) with Content-Disposition: attachment
+
+router.get('/me/export', AccountController.exportMyData);
+
 // ─── DELETE /api/user/delete ─────────────────────────────────────────────────
 
 export interface DeleteUserResponseData {

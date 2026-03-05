@@ -108,7 +108,26 @@ axiosInstance.interceptors.response.use(
     }
 
     if (!originalRequest?.suppressErrorToast) {
-      const message = axiosError.response?.data.message ?? 'An unexpected error occurred';
+      const data = axiosError.response?.data;
+      let message = 'An unexpected error occurred';
+      if (
+        data &&
+        typeof data === 'object' &&
+        'message' in data &&
+        typeof data.message === 'string'
+      ) {
+        message = data.message;
+      } else if (data instanceof Blob) {
+        try {
+          const text = await data.text();
+          const parsed = JSON.parse(text) as { message?: string };
+          if (typeof parsed.message === 'string') {
+            message = parsed.message;
+          }
+        } catch {
+          // Keep default message if blob parsing fails
+        }
+      }
       toast.error(message);
     }
 

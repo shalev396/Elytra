@@ -6,7 +6,6 @@ import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,9 +18,9 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { selectUser, logout } from '@/store/userSlice';
-import { Mail, Pencil, Trash2 } from 'lucide-react';
+import { Download, Mail, Pencil, Trash2 } from 'lucide-react';
 import { FadeContent } from '@/components/animations/FadeContent';
-import { useMe, useSendTestEmail, useDeleteAccount } from '@/api/queries';
+import { useMe, useSendTestEmail, useExportMyData, useDeleteAccount } from '@/api/queries';
 import { useLanguage } from '@/hooks/useLanguage';
 import { pathTo, ROUTES } from '@/router/routes';
 
@@ -45,6 +44,7 @@ export default function ProfilePage() {
   const { data: meData } = useMe();
   const { language } = useLanguage();
   const sendTestEmailMutation = useSendTestEmail();
+  const exportMyDataMutation = useExportMyData();
   const deleteAccountMutation = useDeleteAccount();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
@@ -67,6 +67,17 @@ export default function ProfilePage() {
     });
   };
 
+  const handleExportData = () => {
+    exportMyDataMutation.mutate(undefined, {
+      onSuccess: () => {
+        toast.success(t('profile.exportData.success'));
+      },
+      onError: () => {
+        toast.error(t('profile.exportData.error'));
+      },
+    });
+  };
+
   const handleDeleteAccount = () => {
     deleteAccountMutation.mutate(undefined, {
       onSuccess: () => {
@@ -82,7 +93,7 @@ export default function ProfilePage() {
 
   return (
     <div className="container mx-auto px-4 py-12 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-2xl space-y-6">
+      <div className="mx-auto max-w-4xl">
         <FadeContent>
           <div className="mb-8">
             <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{t('profile.title')}</h1>
@@ -90,42 +101,76 @@ export default function ProfilePage() {
           </div>
         </FadeContent>
 
-        <FadeContent delay={50}>
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('profile.avatar.title')}</CardTitle>
-              <CardDescription>{t('profile.avatar.description')}</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-6 sm:flex-row sm:items-center">
-              <Avatar className="size-24 text-2xl">
-                {photoUrl ? <AvatarImage src={photoUrl} alt={displayName ?? 'Profile'} /> : null}
-                <AvatarFallback className="bg-primary/10 text-primary">{initials}</AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col gap-1">
-                <p className="text-lg font-semibold">{displayName ?? t('profile.info.notSet')}</p>
-                <p className="text-muted-foreground text-sm">{displayEmail}</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <Button variant="outline" size="sm" asChild>
-                    <Link to={pathTo(ROUTES.EDIT_PROFILE, language)}>
-                      <Pencil className="me-2 size-4" />
-                      {t('profile.editButton')}
-                    </Link>
-                  </Button>
+        <div className="grid gap-6 lg:grid-cols-[1fr_320px] lg:gap-8">
+          <div className="space-y-6">
+            <FadeContent delay={50}>
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t('profile.avatar.title')}</CardTitle>
+                  <CardDescription>{t('profile.avatar.description')}</CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-6 sm:flex-row sm:items-center">
+                  <Avatar className="size-24 shrink-0 text-2xl">
+                    {photoUrl ? (
+                      <AvatarImage src={photoUrl} alt={displayName ?? 'Profile'} />
+                    ) : null}
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-lg font-semibold">
+                      {displayName ?? t('profile.info.notSet')}
+                    </p>
+                    <p className="text-muted-foreground truncate text-sm">{displayEmail}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button variant="outline" size="sm" asChild>
+                        <Link to={pathTo(ROUTES.EDIT_PROFILE, language)}>
+                          <Pencil className="me-2 size-4" />
+                          {t('profile.editButton')}
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSendTestEmail}
+                        disabled={sendTestEmailMutation.isPending}
+                      >
+                        <Mail className="me-2 size-4" />
+                        {sendTestEmailMutation.isPending
+                          ? t('profile.testEmail.sending')
+                          : t('profile.testEmail.button')}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </FadeContent>
+          </div>
+
+          <aside className="lg:sticky lg:top-6 lg:self-start">
+            <FadeContent delay={75}>
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t('profile.actions.title')}</CardTitle>
+                  <CardDescription>{t('profile.actions.description')}</CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-3">
                   <Button
                     variant="outline"
-                    size="sm"
-                    onClick={handleSendTestEmail}
-                    disabled={sendTestEmailMutation.isPending}
+                    className="justify-start"
+                    onClick={handleExportData}
+                    disabled={exportMyDataMutation.isPending}
                   >
-                    <Mail className="me-2 size-4" />
-                    {sendTestEmailMutation.isPending
-                      ? t('profile.testEmail.sending')
-                      : t('profile.testEmail.button')}
+                    <Download className="me-3 size-4 shrink-0" />
+                    {exportMyDataMutation.isPending
+                      ? t('profile.exportData.exporting')
+                      : t('profile.exportData.button')}
                   </Button>
                   <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                     <AlertDialogTrigger asChild>
-                      <Button variant="destructive" size="sm">
-                        <Trash2 className="me-2 size-4" />
+                      <Button variant="destructive" className="justify-start">
+                        <Trash2 className="me-3 size-4 shrink-0" />
                         {t('profile.deleteAccount.button')}
                       </Button>
                     </AlertDialogTrigger>
@@ -154,79 +199,73 @@ export default function ProfilePage() {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </FadeContent>
+                </CardContent>
+              </Card>
+            </FadeContent>
+          </aside>
 
-        <FadeContent delay={100}>
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('profile.info.title')}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-0">
-              {displayId && (
-                <div className="py-3">
-                  <p className="text-muted-foreground text-sm font-medium">
-                    {t('profile.info.userId')}
-                  </p>
-                  <p className="text-muted-foreground mt-1 break-all font-mono text-sm">
-                    {displayId}
-                  </p>
+          <FadeContent delay={100} className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>{t('profile.info.title')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-6 sm:grid-cols-2">
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-muted-foreground text-sm font-medium">
+                        {t('profile.info.userId')}
+                      </p>
+                      <p className="text-muted-foreground mt-1 break-all font-mono text-sm">
+                        {displayId ?? '—'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-sm font-medium">
+                        {t('profile.info.cognitoSub')}
+                      </p>
+                      <p className="text-muted-foreground mt-1 break-all font-mono text-sm">
+                        {displayCognitoSub}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    {meData?.lastLoginAt && (
+                      <div>
+                        <p className="text-muted-foreground text-sm font-medium">
+                          {t('profile.info.lastLogin')}
+                        </p>
+                        <p className="mt-1 text-base">
+                          {new Date(meData.lastLoginAt).toLocaleString()}
+                        </p>
+                      </div>
+                    )}
+                    {meData?.createdAt && (
+                      <div>
+                        <p className="text-muted-foreground text-sm font-medium">
+                          {t('profile.info.memberSince')}
+                        </p>
+                        <p className="mt-1 text-base">
+                          {new Date(meData.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    )}
+                    {meData?.updatedAt && (
+                      <div>
+                        <p className="text-muted-foreground text-sm font-medium">
+                          {t('profile.info.updatedAt')}
+                        </p>
+                        <p className="mt-1 text-base">
+                          {new Date(meData.updatedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
-              {displayId && <Separator />}
-              <div className="py-3">
-                <p className="text-muted-foreground text-sm font-medium">
-                  {t('profile.info.cognitoSub')}
-                </p>
-                <p className="text-muted-foreground mt-1 break-all font-mono text-sm">
-                  {displayCognitoSub}
-                </p>
-              </div>
-              {meData?.lastLoginAt && (
-                <>
-                  <Separator />
-                  <div className="py-3">
-                    <p className="text-muted-foreground text-sm font-medium">
-                      {t('profile.info.lastLogin')}
-                    </p>
-                    <p className="mt-1 text-base">
-                      {new Date(meData.lastLoginAt).toLocaleString()}
-                    </p>
-                  </div>
-                </>
-              )}
-              {meData?.createdAt && (
-                <>
-                  <Separator />
-                  <div className="py-3">
-                    <p className="text-muted-foreground text-sm font-medium">
-                      {t('profile.info.memberSince')}
-                    </p>
-                    <p className="mt-1 text-base">
-                      {new Date(meData.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                </>
-              )}
-              {meData?.updatedAt && (
-                <>
-                  <Separator />
-                  <div className="py-3">
-                    <p className="text-muted-foreground text-sm font-medium">
-                      {t('profile.info.updatedAt')}
-                    </p>
-                    <p className="mt-1 text-base">
-                      {new Date(meData.updatedAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </FadeContent>
+              </CardContent>
+            </Card>
+          </FadeContent>
+        </div>
       </div>
     </div>
   );

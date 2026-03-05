@@ -23,8 +23,8 @@ export const pricing = {
   },
   pro: {
     name: 'Pro',
-    price: '$20',
-    priceYearly: '$16',
+    price: '$0',
+    priceYearly: '$0',
     period: 'per month',
     periodYearly: 'per month',
     description: 'For professional developers and small teams',
@@ -40,8 +40,8 @@ export const pricing = {
   },
   enterprise: {
     name: 'Enterprise',
-    price: 'Custom',
-    priceYearly: 'Custom',
+    price: '$0',
+    priceYearly: '$0',
     period: 'contact us',
     periodYearly: 'contact us',
     description: 'For organizations with specific needs',

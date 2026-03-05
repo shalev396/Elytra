@@ -108,7 +108,9 @@ provider:
             - s3:PutObject
             - s3:GetObject
             - s3:DeleteObject
+            - s3:ListBucket
           Resource:
+            - 'arn:aws:s3:::${self:custom.assetsBucketName}'
             - 'arn:aws:s3:::${self:custom.assetsBucketName}/*'
 
         # SES Permissions - Email sending
@@ -253,10 +255,11 @@ functions:
           method: ANY
 
   # PRIVATE: All authenticated user operations
+  # Timeout/memory higher for export (ZIP creation) and delete operations
   userApi:
     handler: ${self:custom.handlerBase.${self:custom.useEsbuild}}api/user-handler.handler
     timeout: 30
-    memorySize: 256
+    memorySize: 1024
     package:
       patterns:
         - 'build/api/user-handler.mjs'

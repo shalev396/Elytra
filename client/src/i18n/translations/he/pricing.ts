@@ -18,8 +18,8 @@ export const pricing = {
   },
   pro: {
     name: 'מקצועי',
-    price: '$20',
-    priceYearly: '$16',
+    price: '$0',
+    priceYearly: '$0',
     period: 'לחודש',
     periodYearly: 'לחודש',
     description: 'למפתחים מקצועיים וצוותים קטנים',
@@ -35,8 +35,8 @@ export const pricing = {
   },
   enterprise: {
     name: 'ארגוני',
-    price: 'מותאם\nאישית',
-    priceYearly: 'מותאם\nאישית',
+    price: '$0',
+    priceYearly: '$0',
     period: 'צור קשר',
     periodYearly: 'צור קשר',
     description: 'לארגונים עם צרכים ספציפיים',

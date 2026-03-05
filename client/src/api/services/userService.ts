@@ -1,4 +1,4 @@
-import { api } from '@/api/instance';
+import axiosInstance, { api } from '@/api/instance';
 import type { ApiRequestConfig } from '@/types';
 import type {
   ApiSuccessResponse,
@@ -47,6 +47,49 @@ export async function sendTestEmail(
     config,
   );
   return response.data;
+}
+
+/** Response type returned by the export endpoint - allows future format changes */
+const EXPORT_RESPONSE_TYPE = 'application/zip';
+
+/**
+ * Requests the user data export (ZIP). The API returns the binary file directly.
+ * Uses X-Response-Type header to detect response format (future-proof).
+ * Triggers a download in the browser and resolves when done.
+ */
+export async function exportMyData(config?: ApiRequestConfig): Promise<void> {
+  const response = await axiosInstance.get<Blob>('/user/me/export', {
+    ...config,
+    responseType: 'blob',
+  });
+  const headers = response.headers as { 'x-response-type'?: string; 'content-type'?: string };
+  const xResponseType = headers['x-response-type'];
+  const contentType: string | undefined = headers['content-type'];
+  const contentTypeBase =
+    typeof contentType === 'string' ? (contentType.split(';')[0]?.trim() ?? undefined) : undefined;
+  const responseType = xResponseType ?? contentTypeBase;
+  if (
+    responseType !== EXPORT_RESPONSE_TYPE &&
+    (typeof responseType !== 'string' || !responseType.includes('zip'))
+  ) {
+    throw new Error(`Unexpected export response type: ${responseType ?? 'unknown'}`);
+  }
+  const blob = response.data;
+  const contentDisposition = (response.headers as { 'content-disposition'?: string })[
+    'content-disposition'
+  ];
+  const filenameMatch = contentDisposition?.match(/filename="?([^";\n]+)"?/);
+  const filename = filenameMatch?.[1] ?? `user-export-${Date.now()}.zip`;
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 export async function deleteAccount(

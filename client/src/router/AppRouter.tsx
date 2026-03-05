@@ -9,19 +9,27 @@ const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
 const EditProfilePage = lazy(() => import('@/pages/EditProfilePage'));
 
 export const appRoutes = (
-  <Route
-    path={ROUTES.DASHBOARD}
-    element={
-      <ProtectedRoute>
-        <DashboardLayout />
-      </ProtectedRoute>
-    }
-  >
-    <Route index element={<DashboardPage />} />
-    <Route path={ROUTES.PROFILE_SEGMENT} element={<ProfilePage />} />
+  <>
     <Route
-      path={`${ROUTES.PROFILE_SEGMENT}/${ROUTES.EDIT_PROFILE_SEGMENT}`}
-      element={<EditProfilePage />}
-    />
-  </Route>
+      path={ROUTES.DASHBOARD}
+      element={
+        <ProtectedRoute>
+          <DashboardLayout />
+        </ProtectedRoute>
+      }
+    >
+      <Route index element={<DashboardPage />} />
+    </Route>
+    <Route
+      path={ROUTES.PROFILE}
+      element={
+        <ProtectedRoute>
+          <DashboardLayout />
+        </ProtectedRoute>
+      }
+    >
+      <Route index element={<ProfilePage />} />
+      <Route path={ROUTES.EDIT_PROFILE_SEGMENT} element={<EditProfilePage />} />
+    </Route>
+  </>
 );

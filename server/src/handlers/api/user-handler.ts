@@ -20,4 +20,6 @@ userApp.use('/api/user', userRouter);
 userApp.use(notFound);
 userApp.use(errorHandler);
 
-export const handler = serverlessHttp(userApp);
+export const handler = serverlessHttp(userApp, {
+  binary: true,
+});

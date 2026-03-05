@@ -4,6 +4,7 @@ import {
   getMe,
   updateMe,
   sendTestEmail,
+  exportMyData,
   deleteAccount,
 } from '@/api/services/userService';
 
@@ -41,6 +42,14 @@ export function useSendTestEmail() {
     mutationFn: async () => {
       const response = await sendTestEmail();
       return response.data;
+    },
+  });
+}
+
+export function useExportMyData() {
+  return useMutation({
+    mutationFn: async () => {
+      await exportMyData();
     },
   });
 }

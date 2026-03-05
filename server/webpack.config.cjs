@@ -47,7 +47,6 @@ module.exports = {
     '@aws-sdk/client-ses': 'commonjs @aws-sdk/client-ses',
     '@aws-sdk/client-cognito-identity-provider':
       'commonjs @aws-sdk/client-cognito-identity-provider',
-    '@aws-sdk/s3-request-presigner': 'commonjs @aws-sdk/s3-request-presigner',
   },
 
   resolve: {

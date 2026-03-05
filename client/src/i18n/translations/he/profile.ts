@@ -18,11 +18,21 @@ export const profile = {
     notSet: 'לא הוגדר',
   },
   editButton: 'ערוך פרופיל',
+  actions: {
+    title: 'נתונים וחשבון',
+    description: 'ייצא את הנתונים שלך או מחק את החשבון',
+  },
   testEmail: {
     button: 'שלח אימייל בדיקה',
     sending: 'שולח...',
     success: 'אימייל בדיקה נשלח בהצלחה — בדוק את תיבת הדואר שלך',
     error: 'שליחת אימייל בדיקה נכשלה',
+  },
+  exportData: {
+    button: 'ייצא את הנתונים שלי',
+    exporting: 'מייצא...',
+    success: 'ייצוא הנתונים מוכן. ההורדה החלה.',
+    error: 'ייצוא הנתונים נכשל',
   },
   deleteAccount: {
     button: 'מחק חשבון',

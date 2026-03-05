@@ -7,6 +7,7 @@ import type {
   UpdateMeResponseData,
 } from '../routes/user/account.js';
 import { uploadFile, deleteFile } from '../utils/s3Util.js';
+import { createUserExportZip } from '../utils/exportZipUtil.js';
 import { sendEmail, escapeHtml } from '../utils/sesUtil.js';
 import { environment } from '../config/environment.js';
 
@@ -220,9 +221,40 @@ const sendTest: RequestHandler = async (req, res): Promise<void> => {
   }
 };
 
+const exportMyData: RequestHandler = async (req, res): Promise<void> => {
+  try {
+    const authReq = req as AuthenticatedRequest;
+    const userId = authReq.user.id;
+
+    const user = await User.findById(userId);
+    if (user === null) {
+      res.error('User not found', 404);
+      return;
+    }
+
+    const media = await Media.findByUploadedBy(userId);
+    const photoUrl = await resolvePhotoUrl(user.photoId);
+
+    const zipBuffer = await createUserExportZip(user, media, photoUrl);
+
+    const timestamp = String(Date.now());
+    const filename = `user-export-${timestamp}.zip`;
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('X-Response-Type', 'application/zip');
+    res.send(zipBuffer);
+  } catch (error) {
+    console.error('Error exporting user data:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to export data';
+    res.error(errorMessage, 500);
+  }
+};
+
 export const AccountController = {
   getMe,
   updateMe,
   deleteAccount,
   sendTest,
+  exportMyData,
 } as const;

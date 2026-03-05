@@ -1,4 +1,11 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
+  ListObjectsV2Command,
+  DeleteObjectsCommand,
+} from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
 import { environment } from '../config/environment.js';
 import path from 'path';
@@ -78,4 +85,72 @@ export async function deleteFile(s3Key: string): Promise<void> {
       Key: s3Key,
     }),
   );
+}
+
+/**
+ * Fetches a file from the S3 assets bucket and returns its contents as a Buffer.
+ */
+export async function getObjectBuffer(s3Key: string): Promise<Buffer> {
+  const response = await s3Client.send(
+    new GetObjectCommand({
+      Bucket: environment.s3AssetsBucketName,
+      Key: s3Key,
+    }),
+  );
+  const chunks: Uint8Array[] = [];
+  const stream = response.Body;
+  if (!stream) throw new Error(`Empty response for S3 key: ${s3Key}`);
+  for await (const chunk of stream as AsyncIterable<Uint8Array>) {
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks);
+}
+
+/**
+ * Lists all object keys under the given prefix in the assets bucket.
+ */
+export async function listObjectsInPrefix(prefix: string): Promise<string[]> {
+  const keys: string[] = [];
+  let continuationToken: string | undefined;
+  do {
+    const response = await s3Client.send(
+      new ListObjectsV2Command({
+        Bucket: environment.s3AssetsBucketName,
+        Prefix: prefix,
+        ContinuationToken: continuationToken,
+      }),
+    );
+    const contents = response.Contents ?? [];
+    for (const obj of contents) {
+      const key = obj.Key;
+      if (typeof key === 'string' && key.length > 0) {
+        keys.push(key);
+      }
+    }
+    continuationToken = response.NextContinuationToken;
+  } while (continuationToken !== undefined);
+  return keys;
+}
+
+/**
+ * Deletes all objects under the media prefix (user uploads and exports).
+ * Used by the dev reset endpoint to clear user-uploaded assets.
+ */
+export async function clearUserUploadedAssets(): Promise<void> {
+  const keys = await listObjectsInPrefix(MEDIA_PREFIX);
+  if (keys.length === 0) return;
+
+  const BATCH_SIZE = 1000;
+  for (let i = 0; i < keys.length; i += BATCH_SIZE) {
+    const batch = keys.slice(i, i + BATCH_SIZE);
+    await s3Client.send(
+      new DeleteObjectsCommand({
+        Bucket: environment.s3AssetsBucketName,
+        Delete: {
+          Objects: batch.map((Key) => ({ Key })),
+          Quiet: true,
+        },
+      }),
+    );
+  }
 }

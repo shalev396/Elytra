@@ -2,6 +2,7 @@ import { type RequestHandler } from 'express';
 import { environment } from '../config/environment.js';
 import { resetDatabase as resetDb, syncDB } from '../config/database.js';
 import { clearAllCognitoUsers } from '../utils/cognitoReset.js';
+import { clearUserUploadedAssets } from '../utils/s3Util.js';
 
 const syncDatabase: RequestHandler = async (_req, res): Promise<void> => {
   try {
@@ -21,11 +22,12 @@ const syncDatabase: RequestHandler = async (_req, res): Promise<void> => {
 const resetDatabase: RequestHandler = async (_req, res): Promise<void> => {
   try {
     await resetDb();
+    await clearUserUploadedAssets();
     await clearAllCognitoUsers();
 
     res.success({
       provider: environment.databaseProvider,
-      message: 'Database and Cognito user pool reset complete',
+      message: 'Database, S3 user uploads, and Cognito user pool reset complete',
     });
   } catch (error) {
     console.error('Reset error:', error);

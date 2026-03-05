@@ -4,9 +4,9 @@ export const ROUTES = {
   HOME: '',
   DASHBOARD: 'dashboard',
   PRICING: 'pricing',
-  PROFILE: 'dashboard/profile',
+  PROFILE: 'profile',
   PROFILE_SEGMENT: 'profile',
-  EDIT_PROFILE: 'dashboard/profile/edit',
+  EDIT_PROFILE: 'profile/edit',
   EDIT_PROFILE_SEGMENT: 'edit',
   AUTH: {
     BASE: 'auth',
