@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { PageMetadata } from '@/components/shared/PageMetadata';
 import { selectUser, logout } from '@/store/userSlice';
 import { Download, Mail, Pencil, Trash2 } from 'lucide-react';
 import { FadeContent } from '@/components/animations/FadeContent';
@@ -93,6 +94,7 @@ export default function ProfilePage() {
 
   return (
     <div className="container mx-auto px-4 py-12 sm:px-6 lg:px-8">
+      <PageMetadata title="Profile | Elytra" noIndex />
       <div className="mx-auto max-w-4xl">
         <FadeContent>
           <div className="mb-8">

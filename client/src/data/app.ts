@@ -1,6 +1,7 @@
 export const app = {
   name: 'Elytra',
   repoUrl: 'https://github.com/shalev396/Elytra',
+  baseUrl: 'https://elytra.shalev396.com',
   contactEmail: 'shalev396@gmail.com',
   supportEmail: 'shalev396@gmail.com',
   privacyEmail: 'shalev396@gmail.com',

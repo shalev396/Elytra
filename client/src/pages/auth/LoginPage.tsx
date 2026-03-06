@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { PageMetadata } from '@/components/shared/PageMetadata';
 import { useNavigate, Link, useParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { Button } from '@/components/ui/button';
@@ -49,6 +50,7 @@ export default function LoginPage() {
 
   return (
     <>
+      <PageMetadata title="Login | Elytra" noIndex />
       <div className="flex flex-col gap-2 text-center">
         <h1 className="text-3xl font-bold bg-linear-to-r from-gradient-from to-gradient-to bg-clip-text text-transparent">
           {t('auth.login.title')}

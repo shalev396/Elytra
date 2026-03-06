@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { FadeContent } from '@/components/animations/FadeContent';
 import { Upload, X, ArrowLeft } from 'lucide-react';
+import { PageMetadata } from '@/components/shared/PageMetadata';
 import { useMe, useUpdateMe } from '@/api/queries';
 import { useLanguage } from '@/hooks/useLanguage';
 import { pathTo, ROUTES } from '@/router/routes';
@@ -101,6 +102,7 @@ export default function EditProfilePage() {
 
   return (
     <div className="container mx-auto px-4 py-12 sm:px-6 lg:px-8">
+      <PageMetadata title="Edit Profile | Elytra" noIndex />
       <div className="mx-auto max-w-2xl space-y-6">
         <FadeContent>
           <div className="mb-8">

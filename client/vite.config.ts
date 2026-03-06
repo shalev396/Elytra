@@ -2,48 +2,62 @@ import path from 'path';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
+import { app } from './src/data/app.js';
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  assetsInclude: ['**/*.glb'],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@api-types': path.resolve(__dirname, '../server/src/types'),
-    },
-  },
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks: (id): string | undefined => {
-          // Vendor chunks for better caching. Keep React in "vendor" to avoid circular chunk.
-          // Don't split react-router-dom into "router" — it can become an empty chunk when tree-shaken into app code.
-          if (id.includes('node_modules')) {
-            // Redux
-            if (id.includes('@reduxjs/toolkit') || id.includes('react-redux')) {
-              return 'redux';
-            }
-            // React Query
-            if (id.includes('@tanstack/react-query')) {
-              return 'query';
-            }
-            // Icons
-            if (id.includes('lucide-react')) {
-              return 'icons';
-            }
-            // UI Library (Radix)
-            if (id.includes('@radix-ui')) {
-              return 'ui-lib';
-            }
-            // React, react-dom, and all other vendors in one chunk
-            return 'vendor';
-          }
-          return undefined;
+export default defineConfig(() => {
+  const baseUrl = app.baseUrl.replace(/\/$/, '');
+
+  return {
+    plugins: [
+      react(),
+      tailwindcss(),
+      {
+        name: 'html-base-url',
+        transformIndexHtml(html) {
+          return html.replace(/__VITE_APP_URL__/g, baseUrl);
         },
       },
+    ],
+    assetsInclude: ['**/*.glb'],
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
+        '@api-types': path.resolve(__dirname, '../server/src/types'),
+      },
     },
-    // Optimize chunk size
-    chunkSizeWarningLimit: 1000,
-  },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: (id): string | undefined => {
+            // Vendor chunks for better caching. Keep React in "vendor" to avoid circular chunk.
+            // Don't split react-router-dom into "router" — it can become an empty chunk when tree-shaken into app code.
+            if (id.includes('node_modules')) {
+              // Redux
+              if (id.includes('@reduxjs/toolkit') || id.includes('react-redux')) {
+                return 'redux';
+              }
+              // React Query
+              if (id.includes('@tanstack/react-query')) {
+                return 'query';
+              }
+              // Icons
+              if (id.includes('lucide-react')) {
+                return 'icons';
+              }
+              // UI Library (Radix)
+              if (id.includes('@radix-ui')) {
+                return 'ui-lib';
+              }
+              // React, react-dom, and all other vendors in one chunk
+              return 'vendor';
+            }
+            return undefined;
+          },
+        },
+      },
+      // Optimize chunk size
+      chunkSizeWarningLimit: 1000,
+    },
+  };
 });

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { PageMetadata } from '@/components/shared/PageMetadata';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,6 +33,7 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-svh">
+      <PageMetadata title="Pricing | Elytra" />
       <div className="container mx-auto px-4 py-24 sm:px-6 lg:px-8">
         {/* Header */}
         <FadeContent>

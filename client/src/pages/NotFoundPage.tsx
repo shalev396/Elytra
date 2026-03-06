@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { PageMetadata } from '@/components/shared/PageMetadata';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import NavBar from '@/components/shared/NavBar';
@@ -12,6 +13,7 @@ export default function NotFoundPage() {
 
   return (
     <div className="flex min-h-svh flex-col">
+      <PageMetadata title="Page Not Found | Elytra" noIndex />
       <NavBar />
       <main className="flex flex-1 flex-col items-center justify-center gap-6 p-6">
         <div className="flex flex-col items-center gap-4 text-center">

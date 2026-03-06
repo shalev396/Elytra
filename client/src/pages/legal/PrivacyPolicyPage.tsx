@@ -1,4 +1,5 @@
 import { Link, useParams } from 'react-router-dom';
+import { PageMetadata } from '@/components/shared/PageMetadata';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -22,6 +23,7 @@ export default function PrivacyPolicyPage() {
 
   return (
     <Card>
+      <PageMetadata title="Privacy Policy | Elytra" />
       <CardHeader>
         <CardTitle className="text-3xl">{t('legal.privacy.title')}</CardTitle>
         <p className="text-sm text-muted-foreground">{t('legal.privacy.lastUpdated')}</p>
