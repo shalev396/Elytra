@@ -1,6 +1,7 @@
 # Reusable workflow: Run tests against local servers (serverless offline + Vite)
 # Tests run SEQUENTIALLY: backend first, then frontend (serverless offline can't run twice)
 # Uses qa environment secrets for testing before merge to qa
+# Requires: Repository secret SERVERLESS_ACCESS_KEY (Serverless Framework v4+ needs auth for offline)
 name: Test Local
 
 on:
@@ -19,6 +20,7 @@ jobs:
     environment:
       name: ${{ inputs.environment }}
     env:
+      SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
       AWS_REGION: ${{ vars.AWS_REGION }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       DATABASE_PROVIDER: ${{ vars.DATABASE_PROVIDER }}
@@ -59,6 +61,7 @@ jobs:
     environment:
       name: ${{ inputs.environment }}
     env:
+      SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
       AWS_REGION: ${{ vars.AWS_REGION }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       DATABASE_PROVIDER: ${{ vars.DATABASE_PROVIDER }}
