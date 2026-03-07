@@ -1,0 +1,50 @@
+# Reusable workflow: Run tests against live QA environment
+# Tests run SEQUENTIALLY: backend first, then frontend
+# Uses qa environment to get DOMAIN_NAME (qa.elytra.shalev396.com)
+name: Test QA
+
+on:
+  workflow_call:
+
+jobs:
+  test-backend-qa:
+    name: Backend Tests (Postman vs QA)
+    runs-on: ubuntu-latest
+    environment:
+      name: qa
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+        working-directory: server
+      - name: Run Postman against QA API
+        run: npm run test:qa
+        working-directory: server
+
+  test-frontend-qa:
+    name: Frontend Tests (Playwright vs QA)
+    runs-on: ubuntu-latest
+    needs: test-backend-qa
+    environment:
+      name: qa
+    env:
+      BASE_URL: https://${{ secrets.DOMAIN_NAME }}
+      API_BASE_URL: https://${{ secrets.DOMAIN_NAME }}/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+        working-directory: client
+      - name: Install Playwright test dependencies
+        run: npm run test:install
+        working-directory: client
+      - name: Run Playwright against QA
+        run: npm run test:qa
+        working-directory: client

@@ -1,0 +1,110 @@
+# Reusable workflow: Run tests against local servers (serverless offline + Vite)
+# Tests run SEQUENTIALLY: backend first, then frontend (serverless offline can't run twice)
+# Uses qa environment secrets for testing before merge to qa
+name: Test Local
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Environment to use for secrets (default: qa)'
+        required: false
+        type: string
+        default: qa
+
+jobs:
+  test-backend:
+    name: Backend Tests (Postman)
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_PROVIDER: ${{ vars.DATABASE_PROVIDER }}
+      COGNITO_CLIENT_ID: ${{ secrets.COGNITO_CLIENT_ID }}
+      COGNITO_USER_POOL_ID: ${{ secrets.COGNITO_USER_POOL_ID }}
+      COGNITO_ISSUER: ${{ secrets.COGNITO_ISSUER }}
+      DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+        working-directory: server
+      - name: Start serverless offline and run Postman
+        run: |
+          npm run dev &
+          SERVER_PID=$!
+          for i in $(seq 1 45); do
+            if curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 http://localhost:3000 2>/dev/null | grep -qE '^[0-9]+'; then
+              echo "API ready on port 3000"
+              npm run test:local
+              TEST_EXIT=$?
+              kill $SERVER_PID 2>/dev/null || true
+              exit $TEST_EXIT
+            fi
+            sleep 2
+          done
+          echo "API failed to start"
+          kill $SERVER_PID 2>/dev/null || true
+          exit 1
+        working-directory: server
+
+  test-frontend:
+    name: Frontend Tests (Playwright)
+    runs-on: ubuntu-latest
+    needs: test-backend
+    environment:
+      name: ${{ inputs.environment }}
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_PROVIDER: ${{ vars.DATABASE_PROVIDER }}
+      COGNITO_CLIENT_ID: ${{ secrets.COGNITO_CLIENT_ID }}
+      COGNITO_USER_POOL_ID: ${{ secrets.COGNITO_USER_POOL_ID }}
+      COGNITO_ISSUER: ${{ secrets.COGNITO_ISSUER }}
+      DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
+      BASE_URL: http://localhost:5173
+      API_BASE_URL: http://localhost:3000/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+        working-directory: client
+      - run: npm ci
+        working-directory: server
+      - name: Install Playwright test dependencies
+        run: npm run test:install
+        working-directory: client
+      - name: Start backend and Vite, run Playwright
+        run: |
+          cd ../server
+          npm run dev &
+          SERVER_PID=$!
+          cd ../client
+          npm run dev &
+          VITE_PID=$!
+          echo "Waiting for servers to start..."
+          for i in $(seq 1 45); do
+            API_OK=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 http://localhost:3000 2>/dev/null || echo "000")
+            VITE_OK=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 http://localhost:5173 2>/dev/null || echo "000")
+            if [ "$API_OK" != "000" ] && [ "$VITE_OK" != "000" ]; then
+              echo "Backend (3000) and Vite (5173) ready"
+              npm run test
+              TEST_EXIT=$?
+              kill $SERVER_PID $VITE_PID 2>/dev/null || true
+              exit $TEST_EXIT
+            fi
+            sleep 2
+          done
+          echo "Servers failed to start"
+          kill $SERVER_PID $VITE_PID 2>/dev/null || true
+          exit 1
+        working-directory: client

@@ -7,6 +7,6 @@
     "moduleResolution": "NodeNext",
     "module": "NodeNext"
   },
-  "include": ["vite.config.ts"],
+  "include": ["vite.config.ts", "tests/**/*.ts"],
   "exclude": ["dist", "node_modules"]
 }

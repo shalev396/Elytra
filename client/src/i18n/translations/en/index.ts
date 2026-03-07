@@ -1,13 +1,13 @@
-import { common } from './common';
-import { landing } from './landing';
-import { pricing } from './pricing';
-import { dashboard } from './dashboard';
-import { notFound } from './notFound';
-import { auth } from './auth';
-import { legal } from './legal';
-import { featuresPage } from './featuresPage';
-import { profile } from './profile';
-import { footer } from './footer';
+import { common } from './common.js';
+import { landing } from './landing.js';
+import { pricing } from './pricing.js';
+import { dashboard } from './dashboard.js';
+import { notFound } from './notFound.js';
+import { auth } from './auth.js';
+import { legal } from './legal.js';
+import { featuresPage } from './featuresPage.js';
+import { profile } from './profile.js';
+import { footer } from './footer.js';
 
 export const en = {
   ...common,

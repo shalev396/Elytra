@@ -1,0 +1,18 @@
+# Push to main: deploy to prod environment (tests already passed in PR)
+name: Push Main
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'client/**'
+      - 'server/**'
+      - '.github/workflows/**'
+
+jobs:
+  deploy:
+    name: Deploy
+    uses: ./.github/workflows/_deploy.yml
+    secrets: inherit
+    with:
+      stage: prod

@@ -1,0 +1,22 @@
+# PR to main: lint, build, then run tests against live QA environment
+name: PR to Main
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'client/**'
+      - 'server/**'
+      - 'postman/**'
+      - '.github/workflows/**'
+
+jobs:
+  lint-build:
+    name: Lint & Build
+    uses: ./.github/workflows/_lint-build.yml
+
+  test:
+    name: Test
+    needs: lint-build
+    uses: ./.github/workflows/_test-qa.yml
+    secrets: inherit

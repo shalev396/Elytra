@@ -1,0 +1,24 @@
+# PR to qa: lint, build, then run local tests (serverless offline + Postman + Playwright)
+name: PR to QA
+
+on:
+  pull_request:
+    branches: [qa]
+    paths:
+      - 'client/**'
+      - 'server/**'
+      - 'postman/**'
+      - '.github/workflows/**'
+
+jobs:
+  lint-build:
+    name: Lint & Build
+    uses: ./.github/workflows/_lint-build.yml
+
+  test:
+    name: Test
+    needs: lint-build
+    uses: ./.github/workflows/_test-local.yml
+    secrets: inherit
+    with:
+      environment: qa

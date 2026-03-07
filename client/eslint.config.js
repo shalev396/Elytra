@@ -12,7 +12,7 @@ export default defineConfig([
       reportUnusedDisableDirectives: 'error',
     },
   },
-  globalIgnores(['dist', 'node_modules', 'eslint.config.js']),
+  globalIgnores(['dist', 'node_modules', '.venv', 'eslint.config.js']),
   js.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
@@ -59,5 +59,9 @@ export default defineConfig([
       eqeqeq: ['error', 'always'],
       curly: ['error', 'all'],
     },
+  },
+  {
+    files: ['tests/scripts/**/*.ts'],
+    rules: { 'no-console': 'off' },
   },
 ]);

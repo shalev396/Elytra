@@ -19,3 +19,11 @@
 
 # Postman CLI test results (CI)
 postman-results.xml
+
+# Playwright E2E artifacts
+*artifacts
+*translations.json
+
+# Python venv
+*.venv
+*__pycache__

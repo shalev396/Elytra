@@ -1,0 +1,18 @@
+# Push to qa: deploy to QA environment (tests already passed in PR)
+name: Push QA
+
+on:
+  push:
+    branches: [qa]
+    paths:
+      - 'client/**'
+      - 'server/**'
+      - '.github/workflows/**'
+
+jobs:
+  deploy:
+    name: Deploy
+    uses: ./.github/workflows/_deploy.yml
+    secrets: inherit
+    with:
+      stage: qa

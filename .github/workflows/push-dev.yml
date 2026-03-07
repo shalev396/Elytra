@@ -1,0 +1,23 @@
+# Push to dev: lint, build, then deploy to dev environment
+name: Push Dev
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - 'client/**'
+      - 'server/**'
+      - '.github/workflows/**'
+
+jobs:
+  lint-build:
+    name: Lint & Build
+    uses: ./.github/workflows/_lint-build.yml
+
+  deploy:
+    name: Deploy
+    needs: lint-build
+    uses: ./.github/workflows/_deploy.yml
+    secrets: inherit
+    with:
+      stage: dev
