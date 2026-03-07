@@ -1,6 +1,8 @@
-# Elytra API Tests (Postman)
+# Elytra Backend API Tests (Postman)
 
-API tests run with the **Postman CLI** or **Postman desktop app**.
+[← Back to main README](../README.md)
+
+API tests run with the **Postman CLI** or **Postman desktop app**. For frontend E2E tests (Playwright), see [client/tests/README.md](../client/tests/README.md).
 
 ## Import
 
@@ -30,7 +32,6 @@ Paste values into the environment if needed. The collection uses beforeRequest s
 From `server/`:
 
 ```bash
-npm run test        # Same as test:local
 npm run test:local  # Against http://localhost:3000/api
 npm run test:qa     # Against QA (baseUrl from Elytra QA.environment.yaml)
 ```
