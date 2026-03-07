@@ -2,6 +2,8 @@
 
 [← Back to main README](../../README.md)
 
+Run these against a live backend or serverless offline + Vite.
+
 ---
 
 ## Run Locally

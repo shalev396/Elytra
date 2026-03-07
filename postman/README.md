@@ -2,7 +2,7 @@
 
 [← Back to main README](../README.md)
 
-API tests run with the **Postman CLI** or **Postman desktop app**. For frontend E2E tests (Playwright), see [client/tests/README.md](../client/tests/README.md).
+Run these against a live API or serverless offline. API tests use the **Postman CLI** or **Postman desktop app**. For frontend E2E tests (Playwright), see [client/tests/README.md](../client/tests/README.md).
 
 ## Import
 
