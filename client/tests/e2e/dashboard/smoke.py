@@ -29,4 +29,4 @@ def test_dashboard_welcome_card(page: Page, app_url: str, authenticated_page: Pa
     if "/auth/login" in page.url:
         pytest.skip("Authentication fixture not available")
     expect(page.get_by_text("User ID")).to_be_visible()
-    expect(page.get_by_text("Message")).to_be_visible()
+    expect(page.get_by_text("Status")).to_be_visible()

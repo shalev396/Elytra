@@ -16,7 +16,6 @@
     "deploy:dev": "npm run build && serverless deploy --stage dev",
     "deploy:qa": "npm run build && serverless deploy --stage qa",
     "deploy:prod": "npm run build && serverless deploy --stage prod",
-    "test": "npm run test:local",
     "test:local": "postman collection run \"../postman/collections/Elytra API\" --environment \"../postman/environments/Elytra Local.environment.yaml\" ",
     "test:qa": "postman collection run \"../postman/collections/Elytra API\" --environment \"../postman/environments/Elytra QA.environment.yaml\" "
   },

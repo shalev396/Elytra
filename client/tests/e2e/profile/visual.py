@@ -1,21 +1,16 @@
 """
 Profile page (profile) visual regression tests.
 """
-from pathlib import Path
+from playwright.sync_api import Page, expect
 
-from playwright.sync_api import Page
-
-ARTIFACTS_DIR = Path(__file__).resolve().parent.parent.parent.parent / "artifacts"
+from tests.config import NORMAL_TIMEOUT
+from tests.helpers.mailtm import navigate_to_profile_via_ui
 
 
 def test_profile_visual(page: Page, app_url: str, authenticated_page: Page):
-    """Captures a screenshot of the profile page at 1440x900 when authenticated."""
-    page.goto(f"{app_url}/profile", wait_until="domcontentloaded")
-    page.wait_for_load_state("networkidle")
+    """Asserts the profile page loads at 1440x900 when authenticated."""
+    navigate_to_profile_via_ui(page, app_url)
     if "/auth/login" in page.url:
         return
     page.set_viewport_size({"width": 1440, "height": 900})
-    ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
-    path = ARTIFACTS_DIR / "profile.png"
-    page.screenshot(path=path)
-    assert path.exists()
+    expect(page).to_have_url(f"{app_url}/profile", timeout=NORMAL_TIMEOUT)

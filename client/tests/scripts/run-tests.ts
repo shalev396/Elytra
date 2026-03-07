@@ -6,6 +6,7 @@
  * Usage:
  *   npx tsx tests/scripts/run-tests.ts install   - Create venv, install deps, playwright
  *   npx tsx tests/scripts/run-tests.ts run       - Run pytest (local)
+ *   npx tsx tests/scripts/run-tests.ts run --headed - Run with visible browser (non-headless)
  *   npx tsx tests/scripts/run-tests.ts run --qa  - Run pytest against QA URLs
  */
 import { execSync, spawnSync } from 'child_process';
@@ -23,7 +24,7 @@ const PIP = path.join(VENV_BIN, isWin ? 'pip.exe' : 'pip');
 function run(cmd: string, args: string[], opts?: { cwd?: string; env?: NodeJS.ProcessEnv }) {
   const cwd = opts?.cwd ?? ROOT;
   const env = { ...process.env, ...opts?.env };
-  const result = spawnSync(cmd, args, { cwd, env, stdio: 'inherit', shell: isWin });
+  const result = spawnSync(cmd, args, { cwd, env, stdio: 'inherit', shell: false });
   if (result.status !== 0) {
     process.exit(result.status ?? 1);
   }
@@ -60,6 +61,7 @@ function cmdInstall(): void {
 
 function cmdRun(): void {
   const qa = process.argv.includes('--qa');
+  const headed = process.argv.includes('--headed');
 
   let baseUrl: string;
   let apiBaseUrl: string;
@@ -95,6 +97,16 @@ function cmdRun(): void {
     '--self-contained-html',
   ];
 
+  if (headed) {
+    args.push('--headed');
+  }
+
+  const errorsDir = path.join(ROOT, 'artifacts', 'errors');
+  if (fs.existsSync(errorsDir)) {
+    fs.rmSync(errorsDir, { recursive: true });
+  }
+  fs.mkdirSync(errorsDir, { recursive: true });
+
   run(PYTHON, args, {
     env: {
       ...process.env,
@@ -110,6 +122,6 @@ if (sub === 'install') {
 } else if (sub === 'run') {
   cmdRun();
 } else {
-  console.error('Usage: npx tsx tests/scripts/run-tests.ts <install|run> [--qa]');
+  console.error('Usage: npx tsx tests/scripts/run-tests.ts <install|run> [--headed] [--qa]');
   process.exit(1);
 }

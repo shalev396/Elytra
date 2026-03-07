@@ -6,6 +6,7 @@ BASE_URL: npm run test   → http://localhost:5173 (local dev)
 
 Requires: client (and server for auth flows) running at the target URL.
 """
+import base64
 import os
 import subprocess
 from pathlib import Path
@@ -55,9 +56,10 @@ def app_url(base_url):
 @pytest.fixture(scope="session")
 def shared_test_user(api_base_url):
     """
-    One shared test user for the whole run. Uses env vars if set, else creates once.
-    Uses 0 SES emails if E2E_TEST_EMAIL, E2E_TEST_PASSWORD, E2E_TEST_ID_TOKEN,
-    E2E_TEST_REFRESH_TOKEN are all set.
+    One shared test user for the whole run. All auth-dependent tests should use this via
+    authenticated_page or login_page_with_user. Only tests that must create a new user
+    (e.g. signup, delete account) should use create_test_user.
+    Uses env vars if set, else creates once. Uses 0 SES emails if E2E_TEST_* are all set.
     """
     from tests.helpers.mailtm import get_test_user_from_env, create_test_user
 
@@ -70,6 +72,26 @@ def shared_test_user(api_base_url):
         if "429" in str(e) or "limit" in str(e).lower():
             pytest.skip(f"SES/rate limit: set E2E_TEST_EMAIL, E2E_TEST_PASSWORD, etc. to use existing account. {e}")
         raise
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    outcome = yield
+    report = outcome.get_result()
+    if report.when == "call" and report.failed:
+        page = item.funcargs.get("page", None)
+        if page:
+            from tests.helpers.screenshot_on_failure import take_screenshot_on_failure
+
+            path = take_screenshot_on_failure(page, item)
+            if path and path.exists():
+                pytest_html = item.config.pluginmanager.getplugin("html")
+                if pytest_html:
+                    if not hasattr(report, "extras"):
+                        report.extras = []
+                    with open(path, "rb") as f:
+                        b64 = base64.b64encode(f.read()).decode("ascii")
+                    report.extras.append(pytest_html.extras.image(b64, name="Screenshot"))
 
 
 @pytest.fixture

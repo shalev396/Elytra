@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "test:install": "npx tsx tests/scripts/run-tests.ts install",
     "test": "npx tsx tests/scripts/run-tests.ts run",
+    "test:headed": "npx tsx tests/scripts/run-tests.ts run --headed",
     "test:qa": "npx tsx tests/scripts/run-tests.ts run --qa"
   },
   "dependencies": {

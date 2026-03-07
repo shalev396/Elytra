@@ -176,7 +176,10 @@ def get_test_user_from_env() -> Optional[TestUser]:
 
 
 def login_page_with_user(page, app_url: str, user: TestUser) -> None:
-    """Inject tokens into page; does not create a new user."""
+    """
+    Inject tokens into page; does not create a new user.
+    Use shared_test_user via authenticated_page or login_page_with_user for all auth-dependent tests.
+    """
     parsed = urlparse(app_url)
     origin = f"{parsed.scheme}://{parsed.netloc}"
     page.goto(f"{origin}/en", wait_until="domcontentloaded")
@@ -187,6 +190,21 @@ def login_page_with_user(page, app_url: str, user: TestUser) -> None:
     }""",
         [{"idToken": user.id_token, "refreshToken": user.refresh_token}],
     )
+    page.reload(wait_until="networkidle")
+    # Stabilize auth: navigate to dashboard and wait for it so auth is fully applied
+    page.goto(f"{app_url}/dashboard", wait_until="networkidle")
+    page.get_by_role("heading", name="Dashboard").wait_for(state="visible", timeout=15000)
+
+
+def navigate_to_profile_via_ui(page, app_url: str, timeout_ms: int = 15000) -> None:
+    """
+    Navigate to profile by opening the user menu and clicking My account.
+    Use after login_page_with_user. Assumes page is on dashboard or another authenticated page.
+    """
+    page.get_by_role("navigation").get_by_role("button").first.click(timeout=timeout_ms)
+    page.get_by_role("menuitem", name="My account").click(timeout=timeout_ms)
+    page.wait_for_load_state("networkidle")
+    page.get_by_role("heading", name="Profile").wait_for(state="visible", timeout=timeout_ms)
 
 
 def create_test_user_and_login(page, app_url: str, api_base_url: str) -> None:
