@@ -1,19 +1,15 @@
 """
-Landing page (HOME) responsive tests — mobile, tablet, desktop viewports.
+Landing page (HOME) responsive tests — 7 viewports from mobile_small to desktop.
 """
 from playwright.sync_api import Page, expect
 
 from tests.config import NORMAL_TIMEOUT
-
-VIEWPORTS = [
-    {"name": "mobile", "width": 390, "height": 844},
-    {"name": "tablet", "width": 768, "height": 1024},
-    {"name": "desktop", "width": 1440, "height": 900},
-]
+from tests.helpers.responsive import assert_no_horizontal_overflow
+from tests.viewports import VIEWPORTS
 
 
 def test_landing_responsive(page: Page, app_url: str):
-    """Asserts navigation and main content are visible at mobile, tablet, and desktop viewports."""
+    """Asserts navigation and main content visible at all viewports; no horizontal overflow."""
     for vp in VIEWPORTS:
         page.set_viewport_size({"width": vp["width"], "height": vp["height"]})
         page.goto(app_url, wait_until="domcontentloaded")
@@ -22,3 +18,4 @@ def test_landing_responsive(page: Page, app_url: str):
         expect(nav).to_be_visible(timeout=NORMAL_TIMEOUT)
         main = page.get_by_role("main").first
         expect(main).to_be_visible(timeout=NORMAL_TIMEOUT)
+        assert_no_horizontal_overflow(page, vp["name"], vp["width"])
