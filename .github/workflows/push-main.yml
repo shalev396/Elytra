@@ -9,6 +9,10 @@ on:
       - 'server/**'
       - '.github/workflows/**'
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   deploy:
     name: Deploy
