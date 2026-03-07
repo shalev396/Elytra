@@ -40,6 +40,7 @@ jobs:
       # Environment variables
       ENV: ${{ vars.ENV }}
       DATABASE_PROVIDER: ${{ vars.DATABASE_PROVIDER }}
+      APP_NAME: ${{ vars.APP_NAME }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -87,7 +88,7 @@ jobs:
         id: cf
         run: |
           # Stack name pattern from serverless.yml: ${appName}-${stage}
-          STACK="elytra-${{ inputs.stage }}"
+          STACK="${{ vars.APP_NAME }}-${{ inputs.stage }}"
           # Retry logic for eventual consistency after deploy
           for i in 1 2 3; do
             CF_ID=$(aws cloudformation describe-stacks --stack-name "$STACK" --query "Stacks[0].Outputs[?OutputKey=='CloudFrontDistributionId'].OutputValue" --output text 2>/dev/null || echo "")

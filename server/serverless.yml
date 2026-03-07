@@ -158,6 +158,10 @@ custom:
   clientBucketName: ${env:DOMAIN_NAME}
   assetsBucketName: ${env:DOMAIN_NAME}-assets
 
+  # SES/Cognito: sender address and SES identity ARN for Cognito email (DEVELOPER mode)
+  cognitoFromEmail: authenticator@${env:DOMAIN_NAME}
+  sesIdentityArn: arn:aws:ses:${self:provider.region}:${env:AWS_ACCOUNT_ID}:identity/${env:DOMAIN_NAME}
+
   useEsbuild: ${param:use-esbuild, 'false'}
 
   esbuild: ${self:custom.esbuildConfig.${self:custom.useEsbuild}}
@@ -274,7 +278,7 @@ functions:
   # Controlled by custom.enableDevTools — when false, no HTTP event is attached (untriggerable)
   devApi:
     handler: ${self:custom.handlerBase.${self:custom.useEsbuild}}api/dev-handler.handler
-    timeout: 60
+    timeout: 30
     memorySize: 256
     package:
       patterns:
@@ -495,6 +499,10 @@ resources:
 
     CognitoUserPool:
       Type: AWS::Cognito::UserPool
+      DependsOn:
+        - SesDkimRecord1
+        - SesDkimRecord2
+        - SesDkimRecord3
       Properties:
         UserPoolName: ${self:custom.appName}-${self:provider.stage}
         UserPoolTier: ESSENTIALS
@@ -519,11 +527,13 @@ resources:
             RequireNumbers: true
             RequireSymbols: true
         EmailConfiguration:
-          EmailSendingAccount: COGNITO_DEFAULT
+          EmailSendingAccount: DEVELOPER
+          From: ${self:custom.cognitoFromEmail}
+          SourceArn: ${self:custom.sesIdentityArn}
         VerificationMessageTemplate:
           DefaultEmailOption: CONFIRM_WITH_CODE
           EmailSubject: '${self:custom.appDisplayName} — Verify your email'
-          EmailMessage: 'Your ${self:custom.appDisplayName} verification code is {####}. This code expires in 24 hours.'
+          EmailMessage: ${file(./email-templates/cognito-verification.html)}
         AccountRecoverySetting:
           RecoveryMechanisms:
             - Name: verified_email
@@ -629,6 +639,10 @@ resources:
         Fn::Sub: https://cognito-idp.${AWS::Region}.amazonaws.com/${CognitoUserPool}
       Export:
         Name: ${self:custom.appName}-${self:provider.stage}-Issuer
+
+    CognitoFromEmail:
+      Description: SES sender address for Cognito
+      Value: ${self:custom.cognitoFromEmail}
 
     CloudFrontDistributionId:
       Description: CloudFront Distribution ID for cache invalidation
