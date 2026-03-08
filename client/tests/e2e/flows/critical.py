@@ -8,7 +8,7 @@ import time
 import pytest
 from playwright.sync_api import Page, expect
 
-from tests.config import LONG_TIMEOUT, NORMAL_TIMEOUT, SHORT_TIMEOUT
+from tests.config import FORGOT_PASSWORD_TIMEOUT, LONG_TIMEOUT, NORMAL_TIMEOUT, SHORT_TIMEOUT
 from tests.helpers.mailtm import (
     create_test_user,
     create_test_user_and_login,
@@ -61,12 +61,29 @@ def test_forgot_password_redirects_to_reset(page: Page, app_url: str, shared_tes
     page.wait_for_load_state("networkidle")
     page.get_by_role("link", name="Forgot your password?").click(timeout=SHORT_TIMEOUT)
     expect(page).to_have_url(f"{app_url}/auth/forgot-password", timeout=SHORT_TIMEOUT)
-    page.get_by_label("Email").fill(shared_test_user.email, timeout=SHORT_TIMEOUT)
+
+    email_input = page.get_by_role("textbox", name="Email")
+    email_input.click(timeout=SHORT_TIMEOUT)
+    email_input.press_sequentially(shared_test_user.email, delay=0, timeout=SHORT_TIMEOUT)
+    expect(email_input).to_have_value(shared_test_user.email, timeout=SHORT_TIMEOUT)
+
     page.get_by_role("button", name="Send Reset Link").click(timeout=SHORT_TIMEOUT)
     page.wait_for_load_state("networkidle")
+
     try:
-        page.wait_for_url(re.compile(r".*auth/reset-password.*email=.*"), timeout=LONG_TIMEOUT)
+        page.wait_for_url(
+            re.compile(r".*auth/reset-password.*email=.*"),
+            timeout=FORGOT_PASSWORD_TIMEOUT,
+        )
     except Exception:
+        if page.get_by_text("Failed to send reset code", exact=False).is_visible():
+            pytest.fail(
+                "Forgot-password API returned an error (check Cognito config, SES, rate limits)"
+            )
+        if page.get_by_text("Failed to initiate", exact=False).is_visible():
+            pytest.fail(
+                "Forgot-password API returned an error (check Cognito config, SES, rate limits)"
+            )
         pytest.skip(
             "Cognito forgot-password API failed or not configured; "
             "redirect to reset-password did not occur"

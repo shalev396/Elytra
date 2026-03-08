@@ -134,3 +134,10 @@ jobs:
           kill $SERVER_PID $VITE_PID 2>/dev/null || true
           exit 1
         working-directory: client
+      - name: Upload Playwright test report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: client/artifacts/
+          retention-days: 7
