@@ -1,6 +1,12 @@
 import express from 'express';
 import serverlessHttp from 'serverless-http';
-import { responseFormatter, errorHandler, notFound, expressAuth } from '../../middlewares/index.js';
+import {
+  responseFormatter,
+  errorHandler,
+  notFound,
+  expressAuth,
+  generalLimiter,
+} from '../../middlewares/index.js';
 import { userRouter } from '../../routes/index.js';
 import { initDB } from '../../config/bootstrap.js';
 
@@ -12,6 +18,7 @@ userApp.use(express.json());
 userApp.use(express.urlencoded({ extended: true }));
 
 userApp.use(responseFormatter);
+userApp.use(generalLimiter);
 
 userApp.use(expressAuth);
 
