@@ -107,6 +107,17 @@ User interaction flows that mimic real user journeys, organized by topic:
 
 All `/user/*` endpoints use the same `expressAuth` middleware. No-token and invalid-token edge cases are tested comprehensively on `GET /user/me`. Other authenticated endpoints include a single no-token sanity check each.
 
+### 401 Response Format: Local vs QA/Prod
+
+Protected routes (`/user/*`, `/user/dashboard`) use the **API Gateway Cognito JWT authorizer** when deployed. The "Response indicates failure" assertion in no-token and invalid-token tests accepts both formats:
+
+| Environment                    | Who responds                                   | Body                                               |
+| ------------------------------ | ---------------------------------------------- | -------------------------------------------------- |
+| **Local** (serverless-offline) | Lambda + `expressAuth`                         | `{ success: false, message }`                      |
+| **QA/Prod** (deployed)         | API Gateway Cognito authorizer (before Lambda) | `{ message: "Unauthorized" }` (no `success` field) |
+
+Local tests hit the Lambda because serverless-offline bypasses the authorizer (`noAuth: true`). In QA/prod, the authorizer rejects invalid/missing tokens before the Lambda is invoked, so the response comes from API Gateway, not our app.
+
 ## Total: 62 requests
 
 - Setup: 9
