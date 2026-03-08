@@ -55,7 +55,23 @@ cd Elytra
 
 Or use GitHub's **"Use this template"** button to create your own copy.
 
-### 2. Environment Variables
+### 2. Change Hardcoded URLs and Branding
+
+Before running or deploying, replace template URLs and branding with your own:
+
+| File                                                                                                                           | What to Change                                                                                                                       |
+| ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **[`client/src/data/app.ts`](client/src/data/app.ts)**                                                                         | `baseUrl`, `repoUrl`, `contactEmail`, `supportEmail`, `privacyEmail`, `socialLinks.github` (and `linkedin` if used)                  |
+| **[`postman/environments/Elytra QA.environment.yaml`](postman/environments/Elytra%20QA.environment.yaml)**                     | `baseUrl` → `https://qa.yourdomain.com/api`                                                                                          |
+| **[`postman/collections/Elytra API/.resources/definition.yaml`](postman/collections/Elytra%20API/.resources/definition.yaml)** | `baseUrl` in `variables` → same as QA environment                                                                                    |
+| **[`server/openapi.yaml`](server/openapi.yaml)**                                                                               | `servers[1].variables.domain.default` → your production domain (e.g. `app.yourdomain.com`)                                           |
+| **[`client/conftest.py`](client/conftest.py)**                                                                                 | Comment on lines 4–5 documents QA URL; tests use `BASE_URL` / `API_BASE_URL` env vars (see [Frontend tests](client/tests/README.md)) |
+
+**Live Preview / clone link** — Update the top-line links in README.md to your own preview URL and repo.
+
+**GitHub Actions** — `.github/workflows/_test-qa.yml` uses `secrets.DOMAIN_NAME` from the `qa` environment; no URL edits needed in workflows.
+
+### 3. Environment Variables
 
 Create environment files from [`server/.env.example`](server/.env.example):
 
@@ -84,7 +100,7 @@ Copy to `server/.env.qa` and `server/.env.prod` for other stages. Fill all requi
 
 S3 bucket names are derived from `DOMAIN_NAME` — no separate config needed.
 
-### 3. Run Locally
+### 4. Run Locally
 
 **Backend** (port 3000):
 
@@ -102,7 +118,7 @@ npm install
 npm run dev
 ```
 
-### 4. Deploy (Optional)
+### 5. Deploy (Optional)
 
 CICD deploys automatically on push. To deploy manually:
 
@@ -113,7 +129,7 @@ npm run deploy:dev   # or deploy:qa, deploy:prod
 
 This deploys backend (Lambda, API Gateway, Cognito, S3, CloudFront, Route 53), then frontend is uploaded to S3 and CloudFront invalidated. CICD performs both steps on push—no manual deploy needed once configured.
 
-### 5. CICD
+### 6. CICD
 
 Push to `dev` / `qa` / `main` triggers full deploy. Set up once (see [CICD Setup](#cicd-setup)) and you're done.
 

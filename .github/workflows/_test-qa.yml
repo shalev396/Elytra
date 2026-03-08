@@ -6,6 +6,9 @@ name: Test QA
 on:
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   test-backend-qa:
     name: Backend Tests (Postman vs QA)

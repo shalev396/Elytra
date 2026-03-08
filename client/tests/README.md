@@ -2,7 +2,7 @@
 
 [← Back to main README](../../README.md)
 
-Run these against a live backend or serverless offline + Vite.
+Run these against a live backend or serverless offline + Vite. For the full list of hardcoded URLs to change, see [Getting Started → Change Hardcoded URLs](../../README.md#2-change-hardcoded-urls-and-branding) in the main README.
 
 ---
 
@@ -36,6 +36,15 @@ Runs pytest via `.venv` with `BASE_URL=http://localhost:5173`, `API_BASE_URL=htt
 | `npm run test:install` | Create .venv, install deps, playwright chromium |
 | `npm run test`         | Run all E2E tests (local)                       |
 | `npm run test:qa`      | Run tests against QA URLs                       |
+
+### URLs and Environment Variables
+
+Tests use `BASE_URL` (frontend) and `API_BASE_URL` (backend). Defaults:
+
+- **Local** (`npm run test`): `BASE_URL=http://localhost:5173`, `API_BASE_URL=http://localhost:3000/api`
+- **QA** (`npm run test:qa`): Set `BASE_URL` and `API_BASE_URL` in your environment. The template documents `https://qa.elytra.shalev396.com` in [`client/conftest.py`](../conftest.py) (comment only); replace with your QA domain.
+
+For QA runs, set `BASE_URL=https://qa.yourdomain.com` and `API_BASE_URL=https://qa.yourdomain.com/api` (or use your QA domain). In CI, the workflow sets these from `secrets.DOMAIN_NAME`.
 
 ---
 
