@@ -8,7 +8,21 @@ Full-stack serverless template built on AWS. React web app, Lambda backend, Cogn
 
 **Frontend** — React 19, TypeScript, Vite, Tailwind, shadcn/ui, Redux Toolkit, React Query, React Router.
 
-**Backend** — Node.js 22, Express, Serverless Framework, AWS Lambda, API Gateway, Cognito, S3, CloudFront, Route 53.
+**Backend** — Node.js 22, Express, Serverless Framework, and these AWS services:
+
+| AWS Service                | Purpose                                                                                       |
+| -------------------------- | --------------------------------------------------------------------------------------------- |
+| **Lambda**                 | Serverless compute for API handlers (auth, user, dev)                                         |
+| **API Gateway** (HTTP API) | REST API routing, CORS, JWT authorizer with Cognito                                           |
+| **S3**                     | Client bucket (React build), assets bucket (images, PDFs, icons)                              |
+| **CloudFront**             | CDN, custom domain, SSL termination, routes `/` and `/media/*` to S3, `/api/*` to API Gateway |
+| **Route 53**               | DNS A record for app domain; CNAME records for SES DKIM                                       |
+| **Cognito**                | User pools, app client, authentication, email verification                                    |
+| **SES**                    | Email identity and DKIM for Cognito verification emails                                       |
+| **ACM**                    | SSL/TLS certificates for CloudFront (create manually in us-east-1)                            |
+| **CloudWatch Logs**        | Lambda log retention (30 days)                                                                |
+| **CloudFormation**         | Infrastructure provisioning (via Serverless Framework)                                        |
+| **IAM**                    | Lambda execution role, policies for Cognito, S3, SES                                          |
 
 **Database** — Multi-provider support via swappable adapters:
 

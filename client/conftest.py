@@ -99,9 +99,7 @@ def authenticated_page(page, app_url, shared_test_user):
     """
     Page with authenticated user. Uses shared_test_user (no new account creation).
     """
-    try:
-        from tests.helpers.mailtm import login_page_with_user
-        login_page_with_user(page, app_url, shared_test_user)
-    except Exception:
-        pass
+    from tests.helpers.mailtm import login_page_with_user
+
+    login_page_with_user(page, app_url, shared_test_user)
     return page

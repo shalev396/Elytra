@@ -48,3 +48,10 @@ jobs:
       - name: Run Playwright against QA
         run: npm run test:qa
         working-directory: client
+      - name: Upload Playwright test report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-qa
+          path: client/artifacts/
+          retention-days: 7
