@@ -45,7 +45,13 @@ def test_forgot_password_form_submits(page: Page, app_url: str, shared_test_user
     page.wait_for_load_state("networkidle")
     page.get_by_role("link", name="Forgot your password?").click(timeout=SHORT_TIMEOUT)
     expect(page).to_have_url(f"{app_url}/auth/forgot-password", timeout=SHORT_TIMEOUT)
-    page.get_by_label("Email").fill(shared_test_user.email, timeout=SHORT_TIMEOUT)
+
+    email_input = page.locator("#email")
+    email_input.click(timeout=SHORT_TIMEOUT)
+    email_input.fill("", timeout=SHORT_TIMEOUT)
+    email_input.fill(shared_test_user.email, timeout=SHORT_TIMEOUT)
+    expect(email_input).to_have_value(shared_test_user.email, timeout=SHORT_TIMEOUT)
+
     page.get_by_role("button", name="Send Reset Link").click(timeout=SHORT_TIMEOUT)
     page.wait_for_load_state("networkidle")
     # Form submitted; redirect may or may not occur depending on Cognito config
@@ -62,9 +68,14 @@ def test_forgot_password_redirects_to_reset(page: Page, app_url: str, shared_tes
     page.get_by_role("link", name="Forgot your password?").click(timeout=SHORT_TIMEOUT)
     expect(page).to_have_url(f"{app_url}/auth/forgot-password", timeout=SHORT_TIMEOUT)
 
-    page.get_by_label("Email").fill(shared_test_user.email, timeout=SHORT_TIMEOUT)
+    email_input = page.locator("#email")
+    email_input.click(timeout=SHORT_TIMEOUT)
+    email_input.fill("", timeout=SHORT_TIMEOUT)
+    email_input.fill(shared_test_user.email, timeout=SHORT_TIMEOUT)
+    expect(email_input).to_have_value(shared_test_user.email, timeout=SHORT_TIMEOUT)
+
     page.get_by_role("button", name="Send Reset Link").click(timeout=SHORT_TIMEOUT)
-    page.wait_for_load_state("networkidle")
+    expect(page.get_by_role("button", name="Sending")).to_be_visible(timeout=SHORT_TIMEOUT)
 
     try:
         page.wait_for_url(
@@ -72,17 +83,13 @@ def test_forgot_password_redirects_to_reset(page: Page, app_url: str, shared_tes
             timeout=FORGOT_PASSWORD_TIMEOUT,
         )
     except Exception:
-        if page.get_by_text("Failed to send reset code", exact=False).is_visible():
-            pytest.fail(
-                "Forgot-password API returned an error (check Cognito config, SES, rate limits)"
-            )
-        if page.get_by_text("Failed to initiate", exact=False).is_visible():
-            pytest.fail(
-                "Forgot-password API returned an error (check Cognito config, SES, rate limits)"
-            )
+        error_el = page.locator(".bg-destructive\\/10")
+        if error_el.is_visible():
+            actual_error = error_el.text_content() or "unknown"
+            pytest.fail(f"Forgot-password API returned an error: {actual_error}")
         pytest.skip(
-            "Cognito forgot-password API failed or not configured; "
-            "redirect to reset-password did not occur"
+            "Cognito forgot-password redirect did not occur (no error visible on page); "
+            f"current URL: {page.url}"
         )
     expect(page.get_by_label("Email")).to_have_value(shared_test_user.email, timeout=SHORT_TIMEOUT)
 

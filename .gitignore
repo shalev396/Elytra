@@ -27,3 +27,4 @@ postman-results.xml
 # Python venv
 *.venv
 *__pycache__
+*.DS_Store

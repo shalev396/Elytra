@@ -53,6 +53,7 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
             <FieldLabel htmlFor="email">{t('auth.forgotPassword.email')}</FieldLabel>
             <Input
               id="email"
+              name="email"
               type="email"
               placeholder={t('auth.forgotPassword.emailPlaceholder')}
               value={email}
