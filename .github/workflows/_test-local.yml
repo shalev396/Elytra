@@ -1,5 +1,6 @@
 # Reusable workflow: Run tests against local servers (serverless offline + Vite)
 # Tests run SEQUENTIALLY: backend first, then frontend (serverless offline can't run twice)
+# Reset and Send Test Email use S3, Cognito, SES — requires AWS credentials in CI
 name: Test Local
 
 on:
@@ -10,6 +11,10 @@ on:
         required: false
         type: string
         default: qa
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   test-backend:
@@ -34,6 +39,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/my-github-actions-role
       - run: npm ci
         working-directory: server
       - name: Start serverless offline and run Postman
@@ -89,6 +99,11 @@ jobs:
         working-directory: client
       - run: npm ci
         working-directory: server
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/my-github-actions-role
       - name: Install Playwright test dependencies
         run: npm run test:install
         working-directory: client
