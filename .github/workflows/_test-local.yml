@@ -1,7 +1,5 @@
 # Reusable workflow: Run tests against local servers (serverless offline + Vite)
 # Tests run SEQUENTIALLY: backend first, then frontend (serverless offline can't run twice)
-# Uses qa environment secrets for testing before merge to qa
-# Requires: Repository secret SERVERLESS_ACCESS_KEY (Serverless Framework v4+ needs auth for offline)
 name: Test Local
 
 on:
@@ -21,6 +19,9 @@ jobs:
       name: ${{ inputs.environment }}
     env:
       SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      HOSTED_ZONE_ID: ${{ secrets.HOSTED_ZONE_ID }}
+      CERTIFICATE_ARN: ${{ secrets.CERTIFICATE_ARN }}
       AWS_REGION: ${{ vars.AWS_REGION }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       DATABASE_PROVIDER: ${{ vars.DATABASE_PROVIDER }}
@@ -42,6 +43,8 @@ jobs:
           for i in $(seq 1 45); do
             if curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 http://localhost:3000 2>/dev/null | grep -qE '^[0-9]+'; then
               echo "API ready on port 3000"
+              echo "Waiting 30s for serverless offline to fully initialize..."
+              sleep 30
               npm run test:local
               TEST_EXIT=$?
               kill $SERVER_PID 2>/dev/null || true
@@ -62,6 +65,9 @@ jobs:
       name: ${{ inputs.environment }}
     env:
       SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      HOSTED_ZONE_ID: ${{ secrets.HOSTED_ZONE_ID }}
+      CERTIFICATE_ARN: ${{ secrets.CERTIFICATE_ARN }}
       AWS_REGION: ${{ vars.AWS_REGION }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       DATABASE_PROVIDER: ${{ vars.DATABASE_PROVIDER }}
@@ -100,6 +106,8 @@ jobs:
             VITE_OK=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 http://localhost:5173 2>/dev/null || echo "000")
             if [ "$API_OK" != "000" ] && [ "$VITE_OK" != "000" ]; then
               echo "Backend (3000) and Vite (5173) ready"
+              echo "Waiting 30s for serverless offline to fully initialize..."
+              sleep 30
               npm run test
               TEST_EXIT=$?
               kill $SERVER_PID $VITE_PID 2>/dev/null || true
