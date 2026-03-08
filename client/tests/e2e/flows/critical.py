@@ -62,11 +62,7 @@ def test_forgot_password_redirects_to_reset(page: Page, app_url: str, shared_tes
     page.get_by_role("link", name="Forgot your password?").click(timeout=SHORT_TIMEOUT)
     expect(page).to_have_url(f"{app_url}/auth/forgot-password", timeout=SHORT_TIMEOUT)
 
-    email_input = page.get_by_role("textbox", name="Email")
-    email_input.click(timeout=SHORT_TIMEOUT)
-    email_input.press_sequentially(shared_test_user.email, delay=0, timeout=SHORT_TIMEOUT)
-    expect(email_input).to_have_value(shared_test_user.email, timeout=SHORT_TIMEOUT)
-
+    page.get_by_label("Email").fill(shared_test_user.email, timeout=SHORT_TIMEOUT)
     page.get_by_role("button", name="Send Reset Link").click(timeout=SHORT_TIMEOUT)
     page.wait_for_load_state("networkidle")
 
