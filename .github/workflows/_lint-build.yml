@@ -4,6 +4,9 @@ name: Lint & Build
 on:
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   lint-build-client:
     name: Lint & Build Client

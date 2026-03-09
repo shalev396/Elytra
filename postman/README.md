@@ -2,7 +2,7 @@
 
 [← Back to main README](../README.md)
 
-Run these against a live API or serverless offline. API tests use the **Postman CLI** or **Postman desktop app**. For frontend E2E tests (Playwright), see [client/tests/README.md](../client/tests/README.md).
+Run these against a live API or serverless offline. For the full list of hardcoded URLs to change, see [Getting Started → Change Hardcoded URLs](../README.md#2-change-hardcoded-urls-and-branding) in the main README. API tests use the **Postman CLI** or **Postman desktop app**. For frontend E2E tests (Playwright), see [client/tests/README.md](../client/tests/README.md).
 
 ## Import
 
@@ -13,10 +13,17 @@ Run these against a live API or serverless offline. API tests use the **Postman 
 
 ### 1. Environment -- Base URL
 
+The template ships with hardcoded URLs. Replace them with your own:
+
+| File                                                        | Variable  | Template value                        | Change to                       |
+| ----------------------------------------------------------- | --------- | ------------------------------------- | ------------------------------- |
+| `postman/environments/Elytra QA.environment.yaml`           | `baseUrl` | `https://qa.elytra.shalev396.com/api` | `https://qa.yourdomain.com/api` |
+| `postman/collections/Elytra API/.resources/definition.yaml` | `baseUrl` | `https://qa.elytra.shalev396.com/api` | Same as QA environment above    |
+
 In your active environment, set `baseUrl`:
 
 - **Local**: `http://localhost:3000/api` (run `npm run dev` from `server/` first)
-- **QA**: Your QA API URL, e.g. `https://qa.elytra.example.com/api`
+- **QA**: Your QA API URL, e.g. `https://qa.yourdomain.com/api`
 
 ### 2. Authentication -- Tokens
 
@@ -36,7 +43,7 @@ npm run test:local  # Against http://localhost:3000/api
 npm run test:qa     # Against QA (baseUrl from Elytra QA.environment.yaml)
 ```
 
-Configure `baseUrl` in each environment file if needed (Local: `postman/environments/Elytra Local.environment.yaml`, QA: `postman/environments/Elytra QA.environment.yaml`).
+Configure `baseUrl` in each environment file (Local: `postman/environments/Elytra Local.environment.yaml`, QA: `postman/environments/Elytra QA.environment.yaml`). The collection `postman/collections/Elytra API/.resources/definition.yaml` also has a `baseUrl` variable — keep it in sync with your QA environment.
 
 ## Collection Structure
 
@@ -99,6 +106,17 @@ User interaction flows that mimic real user journeys, organized by topic:
 ## Auth Middleware Testing
 
 All `/user/*` endpoints use the same `expressAuth` middleware. No-token and invalid-token edge cases are tested comprehensively on `GET /user/me`. Other authenticated endpoints include a single no-token sanity check each.
+
+### 401 Response Format: Local vs QA/Prod
+
+Protected routes (`/user/*`, `/user/dashboard`) use the **API Gateway Cognito JWT authorizer** when deployed. The "Response indicates failure" assertion in no-token and invalid-token tests accepts both formats:
+
+| Environment                    | Who responds                                   | Body                                               |
+| ------------------------------ | ---------------------------------------------- | -------------------------------------------------- |
+| **Local** (serverless-offline) | Lambda + `expressAuth`                         | `{ success: false, message }`                      |
+| **QA/Prod** (deployed)         | API Gateway Cognito authorizer (before Lambda) | `{ message: "Unauthorized" }` (no `success` field) |
+
+Local tests hit the Lambda because serverless-offline bypasses the authorizer (`noAuth: true`). In QA/prod, the authorizer rejects invalid/missing tokens before the Lambda is invoked, so the response comes from API Gateway, not our app.
 
 ## Total: 62 requests
 
