@@ -15,7 +15,7 @@ scripts:
 
       pm.test('Response indicates failure', function () {
           const json = pm.response.json();
-          const indicatesFailure = json.success === false || (pm.response.code === 401 && json.message);
+          const indicatesFailure = json.success === false || (pm.response.code === 401 && !!json.message);
           pm.expect(indicatesFailure).to.be.true;
       });
     language: text/javascript
