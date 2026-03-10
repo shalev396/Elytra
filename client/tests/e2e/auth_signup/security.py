@@ -1,0 +1,13 @@
+"""
+Signup page (auth/signup) security checks.
+"""
+from playwright.sync_api import Page
+
+
+def test_signup_no_tokens_in_visible_content(page: Page, app_url: str):
+    """Asserts the signup page does not expose idToken or refreshToken in visible text."""
+    page.goto(f"{app_url}/auth/signup", wait_until="domcontentloaded")
+    page.wait_for_load_state("networkidle")
+    visible_text = page.locator("body").inner_text()
+    assert "idToken" not in visible_text
+    assert "refreshToken" not in visible_text

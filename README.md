@@ -1,17 +1,46 @@
 # Elytra
 
-[![Live Preview](https://img.shields.io/badge/Live_Preview-elytra.shalev396.com-blue?style=for-the-badge)](https://elytra.shalev396.com)
+**[Live Preview](https://elytra.shalev396.com)** | [Getting Started](#getting-started) | [Tests](#tests) | [Customize](#customizing-the-app)
 
-Full-stack serverless template built on AWS. React frontend, Lambda backend, Cognito authentication -- clone it, configure it, push it, and you have a deployed app.
+---
 
-**Frontend** -- React 19, TypeScript, Vite, Tailwind, shadcn/ui, Redux Toolkit, React Query, React Router.
-**Backend** -- Node.js 22, Express, Serverless Framework, AWS Lambda, API Gateway, Cognito, S3, CloudFront, Route 53.
-**Database** -- Multi-provider support via swappable adapters:
+Full-stack serverless template built on AWS. React web app, Lambda backend, Cognito authentication, frontend E2E tests (Playwright), backend API tests (Postman), and CICD on push to `dev` / `qa` / `main`. Clone it, configure it, push it—you have a deployed app.
+
+**Frontend** — React 19, TypeScript, Vite, Tailwind, shadcn/ui, Redux Toolkit, React Query, React Router.
+
+**Backend** — Node.js 22, Express, Serverless Framework, and these AWS services:
+
+| AWS Service                | Purpose                                                                                       |
+| -------------------------- | --------------------------------------------------------------------------------------------- |
+| **Lambda**                 | Serverless compute for API handlers (auth, user, dev)                                         |
+| **API Gateway** (HTTP API) | REST API routing, CORS, JWT authorizer with Cognito                                           |
+| **S3**                     | Client bucket (React build), assets bucket (images, PDFs, icons)                              |
+| **CloudFront**             | CDN, custom domain, SSL termination, routes `/` and `/media/*` to S3, `/api/*` to API Gateway |
+| **Route 53**               | DNS A record for app domain; CNAME records for SES DKIM                                       |
+| **Cognito**                | User pools, app client, authentication, email verification                                    |
+| **SES**                    | Email identity and DKIM for Cognito verification emails                                       |
+| **ACM**                    | SSL/TLS certificates for CloudFront (create manually in us-east-1)                            |
+| **CloudWatch Logs**        | Lambda log retention (30 days)                                                                |
+| **CloudFormation**         | Infrastructure provisioning (via Serverless Framework)                                        |
+| **IAM**                    | Lambda execution role, policies for Cognito, S3, SES                                          |
+
+**Database** — Multi-provider support via swappable adapters:
 
 | ORM / ODM | Supported Databases                                                                             |
 | --------- | ----------------------------------------------------------------------------------------------- |
 | Sequelize | PostgreSQL, MySQL, MariaDB, SQLite, Microsoft SQL Server, Snowflake, DB2 for LUW, DB2 for IBM i |
 | Mongoose  | MongoDB, Amazon DocumentDB                                                                      |
+
+---
+
+## Requirements
+
+- **Node.js** 22+
+- **Python** 3.x (for frontend E2E tests)
+- **AWS account** — The template uses: Lambda, API Gateway, Cognito, S3, CloudFront, Route 53, ACM, SES, IAM, CloudFormation
+- **Serverless Framework** — access key
+- **Database** — Database from the Supported Databases list
+- **Domain** — Route 53 hosted zone and ACM certificate in `us-east-1`
 
 ---
 
@@ -26,56 +55,54 @@ cd Elytra
 
 Or use GitHub's **"Use this template"** button to create your own copy.
 
-### 2. Customize the Client
+### 2. Change Hardcoded URLs and Branding
 
-Edit `client/src/data/app.ts` with your app name, repository URL, contact emails, and social links:
+Before running or deploying, replace template URLs and branding with your own:
 
-```typescript
-export const app = {
-  name: 'YourAppName',
-  repoUrl: 'https://github.com/your-username/your-repo',
-  contactEmail: 'you@example.com',
-  supportEmail: 'you@example.com',
-  privacyEmail: 'you@example.com',
-  socialLinks: {
-    github: 'https://github.com/your-username/your-repo',
-    linkedin: 'https://www.linkedin.com/in/your-profile',
-  },
-} as const;
+| File                                                                                                                           | What to Change                                                                                                                       |
+| ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **[`client/src/data/app.ts`](client/src/data/app.ts)**                                                                         | `baseUrl`, `repoUrl`, `contactEmail`, `supportEmail`, `privacyEmail`, `socialLinks.github` (and `linkedin` if used)                  |
+| **[`postman/environments/Elytra QA.environment.yaml`](postman/environments/Elytra%20QA.environment.yaml)**                     | `baseUrl` → `https://qa.yourdomain.com/api`                                                                                          |
+| **[`postman/collections/Elytra API/.resources/definition.yaml`](postman/collections/Elytra%20API/.resources/definition.yaml)** | `baseUrl` in `variables` → same as QA environment                                                                                    |
+| **[`server/openapi.yaml`](server/openapi.yaml)**                                                                               | `servers[1].variables.domain.default` → your production domain (e.g. `app.yourdomain.com`)                                           |
+| **[`client/conftest.py`](client/conftest.py)**                                                                                 | Comment on lines 4–5 documents QA URL; tests use `BASE_URL` / `API_BASE_URL` env vars (see [Frontend tests](client/tests/README.md)) |
+
+**Live Preview / clone link** — Update the top-line links in README.md to your own preview URL and repo.
+
+**GitHub Actions** — `.github/workflows/_test-qa.yml` uses `secrets.DOMAIN_NAME` from the `qa` environment; no URL edits needed in workflows.
+
+### 3. Environment Variables
+
+Create environment files from [`server/.env.example`](server/.env.example):
+
+```bash
+cp server/.env.example server/.env.dev
 ```
 
-You can also update the favicon and logo in `client/src/data/assets.ts` and `client/src/data/favicon.ts`.
+Copy to `server/.env.qa` and `server/.env.prod` for other stages. Fill all required values:
 
-### 3. Customize the Server
+| Variable                | Description                                                 |
+| ----------------------- | ----------------------------------------------------------- |
+| `AWS_ACCOUNT_ID`        | Your AWS account ID                                         |
+| `HOSTED_ZONE_ID`        | Route 53 hosted zone ID                                     |
+| `CERTIFICATE_ARN`       | ACM certificate ARN (must be in `us-east-1`)                |
+| `SERVERLESS_ACCESS_KEY` | Serverless Framework dashboard access key                   |
+| `AWS_REGION`            | AWS region (e.g. `us-east-1`)                               |
+| `DOMAIN_NAME`           | Your domain (e.g. `app.example.com`)                        |
+| `DATABASE_URL`          | Database connection string                                  |
+| `ENV`                   | Environment: `dev` \| `qa` \| `prod`                        |
+| `DATABASE_PROVIDER`     | `mongoose` \| `sequelize`                                   |
+| `COGNITO_CLIENT_ID`     | Cognito app client ID (from AWS Console after first deploy) |
+| `COGNITO_USER_POOL_ID`  | Cognito user pool ID (from AWS Console after first deploy)  |
+| `COGNITO_ISSUER`        | Cognito issuer URL (from AWS Console after first deploy)    |
 
-Open `server/serverless.yml` and update these fields to match your app:
+**Note:** Cognito values are created on first deploy. After deploying, copy them from AWS Console into `.env.dev` for local development.
 
-```yaml
-org: your-serverless-org # line 35 — your Serverless Framework org
-# ...
-custom:
-  appName: your-app-name # line 131 — used for service name, stack name, Cognito pool name
-  appDisplayName: Your App Name # line 132 — human-readable name shown in emails and descriptions
-```
+S3 bucket names are derived from `DOMAIN_NAME` — no separate config needed.
 
-For **local development**, create environment files (e.g. `server/.env.dev`) based on `server/.env.example`:
+### 4. Run Locally
 
-| Variable                | Description                                                     |
-| ----------------------- | --------------------------------------------------------------- |
-| `AWS_ACCOUNT_ID`        | Your AWS account ID                                             |
-| `HOSTED_ZONE_ID`        | Route 53 hosted zone ID                                         |
-| `CERTIFICATE_ARN`       | ACM certificate ARN (us-east-1)                                 |
-| `SERVERLESS_ACCESS_KEY` | Serverless Framework dashboard access key                       |
-| `AWS_REGION`            | AWS region (e.g. `us-east-1`)                                   |
-| `DOMAIN_NAME`           | Your domain (e.g. `app.example.com`)                            |
-| `DATABASE_URL`          | Database connection string                                      |
-| `COGNITO_CLIENT_ID`     | Cognito app client ID (get from AWS Console after first deploy) |
-| `COGNITO_USER_POOL_ID`  | Cognito user pool ID (get from AWS Console after first deploy)  |
-| `COGNITO_ISSUER`        | Cognito issuer URL (get from AWS Console after first deploy)    |
-
-S3 bucket names are derived automatically from your domain -- the client bucket is named after `DOMAIN_NAME` and the assets bucket is `DOMAIN_NAME-assets`. No need to configure them separately.
-
-Then run:
+**Backend** (port 3000):
 
 ```bash
 cd server
@@ -83,23 +110,109 @@ npm install
 npm run dev
 ```
 
-### 4. Set Up AWS OIDC for GitHub Actions
+**Frontend** (port 5173):
 
-GitHub Actions needs permission to deploy to your AWS account. Set up OpenID Connect (OIDC) so the workflows can assume an IAM role without storing long-lived credentials:
-
-1. Follow the official guide: [Configuring OpenID Connect in Amazon Web Services](https://docs.github.com/en/actions/security-for-github-actions/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services).
-2. Create an IAM role and attach permissions for S3, CloudFront, CloudFormation, Lambda, API Gateway, Cognito, Route 53, and IAM (as needed by the Serverless Framework).
-3. Update the `role-to-assume` in both workflow files (`.github/workflows/Backend-CICD.yml` and `Frontend-CICD.yml`) to match your role name:
-
-```yaml
-role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/your-role-name
+```bash
+cd client
+npm install
+npm run dev
 ```
 
-### 5. Configure GitHub Secrets and Variables
+### 5. Deploy (Optional)
 
-Add these in your GitHub repository settings under **Settings > Secrets and variables > Actions**.
+CICD deploys automatically on push. To deploy manually:
 
-**Repository secrets** (same across all environments):
+```bash
+cd server
+npm run deploy:dev   # or deploy:qa, deploy:prod
+```
+
+This deploys backend (Lambda, API Gateway, Cognito, S3, CloudFront, Route 53), then frontend is uploaded to S3 and CloudFront invalidated. CICD performs both steps on push—no manual deploy needed once configured.
+
+### 6. CICD
+
+Push to `dev` / `qa` / `main` triggers full deploy. Set up once (see [CICD Setup](#cicd-setup)) and you're done.
+
+---
+
+## Customizing the App
+
+The template uses a single source of truth for branding. Change these files and names propagate everywhere.
+
+### Frontend
+
+**[`client/src/data/app.ts`](client/src/data/app.ts)** — App identity:
+
+- `name`, `repoUrl`, `baseUrl`, `contactEmail`, `supportEmail`, `privacyEmail`, `socialLinks`
+
+**Favicon** — Replace `client/public/favicon-light.svg` and `favicon-dark.svg` (paths in [`client/src/data/favicon.ts`](client/src/data/favicon.ts)).
+
+**Logo / assets** — [`client/src/data/assets.ts`](client/src/data/assets.ts).
+
+**Metadata** (title, description) — [`client/src/data/defaultMetadata.ts`](client/src/data/defaultMetadata.ts).
+
+### Backend
+
+**[`server/serverless.yml`](server/serverless.yml)**:
+
+- `org` (line ~35) — Serverless Framework org
+- `custom.appName` (line ~140) — Service name, stack name, Cognito pool name
+- `custom.appDisplayName` (line ~141) — Human-readable name in emails and descriptions
+
+### Sync
+
+When changing `appName` in `serverless.yml`, also set GitHub variable `APP_NAME` to the same value (CICD uses it for CloudFormation stack lookup). Keep `app.name` in `app.ts` aligned for consistent branding and translations.
+
+---
+
+## Tests
+
+Out of the box:
+
+- **Frontend E2E** — Playwright + Python (smoke, accessibility, visual, responsive, security, flows)
+- **Backend API** — Postman (auth, user, dashboard, flows)
+
+| Doc                                      | Description                         |
+| ---------------------------------------- | ----------------------------------- |
+| [Frontend tests](client/tests/README.md) | Run commands, structure, categories |
+| [Backend tests](postman/README.md)       | Postman collection, CLI commands    |
+
+PRs to `qa` run local tests (serverless offline + Vite). PRs to `main` run tests against live QA.
+
+---
+
+## API Documentation
+
+Full API spec: [`server/openapi.yaml`](server/openapi.yaml) (OpenAPI 3.0). Use it with [Swagger Editor](https://editor.swagger.io), Postman, or [OpenAPI Generator](https://openapi-generator.tech).
+
+---
+
+## CICD Setup
+
+### 1. AWS OIDC for GitHub Actions
+
+[Configure OpenID Connect in AWS](https://docs.github.com/en/actions/security-for-github-actions/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services). Create an IAM role and attach one of:
+
+- **AdministratorAccess** — Easiest; works for all services below.
+- **Least-privilege policy** — Create a custom policy with permissions for these services used by the template:
+  - **CloudFormation** (create/update/describe stacks)
+  - **Lambda** (create, update, invoke)
+  - **API Gateway** (HTTP APIs)
+  - **S3** (buckets, objects — deploy and runtime)
+  - **CloudFront** (distributions, invalidations)
+  - **Cognito** (User Pools, App Clients)
+  - **Route 53** (hosted zones, record sets)
+  - **ACM** (certificates)
+  - **SES** (send email for Cognito verification)
+  - **IAM** (roles, policies for Lambda execution)
+
+Update `role-to-assume` in [`.github/workflows/_deploy.yml`](.github/workflows/_deploy.yml) to match your role name.
+
+### 2. GitHub Secrets and Variables
+
+**Settings > Secrets and variables > Actions**.
+
+**Repository secrets:**
 
 | Secret                  | Description                                  |
 | ----------------------- | -------------------------------------------- |
@@ -108,59 +221,21 @@ Add these in your GitHub repository settings under **Settings > Secrets and vari
 | `CERTIFICATE_ARN`       | ACM certificate ARN (must be in `us-east-1`) |
 | `SERVERLESS_ACCESS_KEY` | Serverless Framework dashboard access key    |
 
-**Repository variables** (same across all environments):
+**Repository variables:**
 
-| Variable     | Description                   |
-| ------------ | ----------------------------- |
-| `AWS_REGION` | AWS region (e.g. `us-east-1`) |
+| Variable            | Description                                   |
+| ------------------- | --------------------------------------------- |
+| `AWS_REGION`        | AWS region (e.g. `us-east-1`)                 |
+| `APP_NAME`          | Must match `custom.appName` in serverless.yml |
+| `ENV`               | Default env: `dev` \| `qa` \| `prod`          |
+| `DATABASE_PROVIDER` | `mongoose` \| `sequelize`                     |
 
 **Per-environment secrets** (set under each GitHub environment: `dev`, `qa`, `prod`):
 
-| Secret         | Description                                          |
-| -------------- | ---------------------------------------------------- |
-| `DOMAIN_NAME`  | Domain for this environment (e.g. `dev.example.com`) |
-| `DATABASE_URL` | Database connection string                           |
-
-### 6. Deploy
-
-Once everything is configured, just push to a branch and CI/CD takes care of the rest:
-
-- Push to `dev` -- deploys to the development environment
-- Push to `qa` -- deploys to QA
-- Push to `main` -- deploys to production
-
-**On your first deploy, push server changes first.** The backend deployment creates the S3 bucket and CloudFront distribution that the frontend deployment depends on. After the initial setup, both can deploy independently.
-
-The backend workflow triggers on changes under `server/`, and the frontend workflow triggers on changes under `client/`. Just commit and push your changes -- the appropriate pipeline runs automatically.
-
----
-
-## API Documentation
-
-The full API specification lives in [`server/openapi.yaml`](server/openapi.yaml) (OpenAPI 3.0). You can use it to:
-
-- **Browse interactively** -- paste the file into [Swagger Editor](https://editor.swagger.io) or [Swagger UI](https://petstore.swagger.io).
-- **Import into Postman** -- use **File > Import** and select the YAML file to generate a complete collection.
-- **Generate clients** -- feed the spec to [OpenAPI Generator](https://openapi-generator.tech) for typed SDKs in any language.
-
----
-
-## Local Development
-
-**Client:**
-
-```bash
-cd client
-npm install
-npm run dev
-```
-
-**Server:**
-
-```bash
-cd server
-npm install
-npm run dev
-```
-
-The client dev server runs on `http://localhost:5173` and the server runs on `http://localhost:3000`.
+| Secret                 | Description                                          |
+| ---------------------- | ---------------------------------------------------- |
+| `DOMAIN_NAME`          | Domain for this environment (e.g. `dev.example.com`) |
+| `DATABASE_URL`         | Database connection string                           |
+| `COGNITO_CLIENT_ID`    | Cognito app client ID                                |
+| `COGNITO_USER_POOL_ID` | Cognito user pool ID                                 |
+| `COGNITO_ISSUER`       | Cognito issuer URL                                   |

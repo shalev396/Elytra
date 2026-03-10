@@ -1,0 +1,115 @@
+# Reusable workflow: Deploy backend + frontend to specified stage
+# Repository secrets: AWS_ACCOUNT_ID, SERVERLESS_ACCESS_KEY, HOSTED_ZONE_ID, CERTIFICATE_ARN
+# Environment secrets (per stage): COGNITO_CLIENT_ID, COGNITO_ISSUER, COGNITO_USER_POOL_ID, DATABASE_URL, DOMAIN_NAME
+# Repository variables: AWS_REGION
+# Environment variables: DATABASE_PROVIDER, ENV
+name: Deploy
+
+on:
+  workflow_call:
+    inputs:
+      stage:
+        description: 'Deployment stage (dev, qa, prod)'
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-backend:
+    name: Deploy Backend (${{ inputs.stage }})
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.stage }}
+    env:
+      # Repository variables
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      # Repository secrets
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
+      HOSTED_ZONE_ID: ${{ secrets.HOSTED_ZONE_ID }}
+      CERTIFICATE_ARN: ${{ secrets.CERTIFICATE_ARN }}
+      # Environment secrets (accessed via environment: name)
+      DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      COGNITO_CLIENT_ID: ${{ secrets.COGNITO_CLIENT_ID }}
+      COGNITO_USER_POOL_ID: ${{ secrets.COGNITO_USER_POOL_ID }}
+      COGNITO_ISSUER: ${{ secrets.COGNITO_ISSUER }}
+      # Environment variables
+      ENV: ${{ vars.ENV }}
+      DATABASE_PROVIDER: ${{ vars.DATABASE_PROVIDER }}
+      APP_NAME: ${{ vars.APP_NAME }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/my-github-actions-role
+      - run: npm ci
+        working-directory: server
+      - run: npm run build
+        working-directory: server
+      - name: Deploy to ${{ inputs.stage }}
+        run: npm run deploy:${{ inputs.stage }}
+        working-directory: server
+
+  deploy-frontend:
+    name: Deploy Frontend (${{ inputs.stage }})
+    runs-on: ubuntu-latest
+    needs: deploy-backend
+    environment:
+      name: ${{ inputs.stage }}
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/my-github-actions-role
+      - run: npm ci
+        working-directory: server
+      - run: npm ci
+        working-directory: client
+      - run: npm run build
+        working-directory: client
+      - name: Get CloudFormation Outputs
+        id: cf
+        run: |
+          # Stack name pattern from serverless.yml: ${appName}-${stage}
+          STACK="${{ vars.APP_NAME }}-${{ inputs.stage }}"
+          # Retry logic for eventual consistency after deploy
+          for i in 1 2 3; do
+            CF_ID=$(aws cloudformation describe-stacks --stack-name "$STACK" --query "Stacks[0].Outputs[?OutputKey=='CloudFrontDistributionId'].OutputValue" --output text 2>/dev/null || echo "")
+            S3_BUCKET=$(aws cloudformation describe-stacks --stack-name "$STACK" --query "Stacks[0].Outputs[?OutputKey=='S3ClientBucketName'].OutputValue" --output text 2>/dev/null || echo "")
+            if [ -n "$CF_ID" ] && [ "$CF_ID" != "None" ] && [ -n "$S3_BUCKET" ] && [ "$S3_BUCKET" != "None" ]; then
+              break
+            fi
+            echo "Waiting for CloudFormation outputs... (attempt $i)"
+            sleep 10
+          done
+          if [ -z "$CF_ID" ] || [ "$CF_ID" = "None" ]; then
+            echo "Error: Could not get CloudFrontDistributionId from stack $STACK"
+            exit 1
+          fi
+          if [ -z "$S3_BUCKET" ] || [ "$S3_BUCKET" = "None" ]; then
+            echo "Error: Could not get S3ClientBucketName from stack $STACK"
+            exit 1
+          fi
+          echo "cf_id=$CF_ID" >> $GITHUB_OUTPUT
+          echo "s3_bucket=$S3_BUCKET" >> $GITHUB_OUTPUT
+      - name: Deploy to S3
+        run: aws s3 sync ./client/dist s3://${{ steps.cf.outputs.s3_bucket }}/ --delete
+      - name: Invalidate CloudFront
+        run: aws cloudfront create-invalidation --distribution-id ${{ steps.cf.outputs.cf_id }} --paths "/*"
