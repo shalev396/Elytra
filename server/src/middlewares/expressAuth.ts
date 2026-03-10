@@ -3,6 +3,8 @@ import { verifyToken } from '../utils/cognitoUtil.js';
 import { getUserRepository } from '../models/index.js';
 import type { AuthenticatedRequest } from '../types/express.js';
 
+//cognito validation fails returns the following payload : { message: 'Unauthorized' }
+
 export const expressAuth: RequestHandler = async (
   req: Request,
   res: Response,
