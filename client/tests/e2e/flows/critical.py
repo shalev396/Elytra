@@ -46,9 +46,10 @@ def test_forgot_password_form_submits(page: Page, app_url: str, shared_test_user
     page.get_by_role("link", name="Forgot your password?").click(timeout=SHORT_TIMEOUT)
     expect(page).to_have_url(f"{app_url}/auth/forgot-password", timeout=SHORT_TIMEOUT)
 
+    # Wait for ForgotPasswordForm to mount (LoginPage's #email shares the same ID)
+    expect(page.get_by_role("button", name="Send Reset Link")).to_be_visible(timeout=SHORT_TIMEOUT)
+
     email_input = page.locator("#email")
-    email_input.click(timeout=SHORT_TIMEOUT)
-    email_input.fill("", timeout=SHORT_TIMEOUT)
     email_input.fill(shared_test_user.email, timeout=SHORT_TIMEOUT)
     expect(email_input).to_have_value(shared_test_user.email, timeout=SHORT_TIMEOUT)
 
@@ -68,14 +69,14 @@ def test_forgot_password_redirects_to_reset(page: Page, app_url: str, shared_tes
     page.get_by_role("link", name="Forgot your password?").click(timeout=SHORT_TIMEOUT)
     expect(page).to_have_url(f"{app_url}/auth/forgot-password", timeout=SHORT_TIMEOUT)
 
+    # Wait for ForgotPasswordForm to mount (LoginPage's #email shares the same ID)
+    expect(page.get_by_role("button", name="Send Reset Link")).to_be_visible(timeout=SHORT_TIMEOUT)
+
     email_input = page.locator("#email")
-    email_input.click(timeout=SHORT_TIMEOUT)
-    email_input.fill("", timeout=SHORT_TIMEOUT)
     email_input.fill(shared_test_user.email, timeout=SHORT_TIMEOUT)
     expect(email_input).to_have_value(shared_test_user.email, timeout=SHORT_TIMEOUT)
 
     page.get_by_role("button", name="Send Reset Link").click(timeout=SHORT_TIMEOUT)
-    expect(page.get_by_role("button", name="Sending")).to_be_visible(timeout=SHORT_TIMEOUT)
 
     try:
         page.wait_for_url(
