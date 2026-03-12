@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Discussions (questions, ideas)
+    url: https://github.com/shalev396/Elytra/discussions
+    about: For questions, ideas, or open-ended discussions, use Discussions instead of Issues.
+  - name: Report a security vulnerability
+    url: https://github.com/shalev396/Elytra/security/policy
+    about: Please report security vulnerabilities privately via our security policy.

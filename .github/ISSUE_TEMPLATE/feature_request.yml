@@ -1,0 +1,55 @@
+name: Feature request
+description: Propose a new feature or enhancement with clear scope.
+title: '[Feature]: '
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For open-ended ideas or proposals, consider using [Discussions > Ideas](https://github.com/shalev396/Elytra/discussions/categories/ideas) instead.
+        Use this form for feature requests with clear scope that can be tracked as work items.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What problem does this solve? What use case does it enable?
+      placeholder: I'm always frustrated when...
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the feature you'd like and how it would work.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Have you considered any alternative solutions or workarounds?
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of the template does this affect?
+      options:
+        - Frontend (client)
+        - Backend (server)
+        - Deployment / CICD
+        - Auth
+        - Documentation
+        - Tests
+        - Other
+    validations:
+      required: true
+  - type: checkboxes
+    id: searched
+    attributes:
+      label: Checklist
+      description: 'Before submitting, please confirm:'
+      options:
+        - label: I have searched existing Issues and Discussions for similar requests.
+          required: true

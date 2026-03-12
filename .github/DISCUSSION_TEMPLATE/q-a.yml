@@ -1,0 +1,32 @@
+title: '[Q&A] '
+labels: ['question']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ask a question about Elytra setup, deployment, or usage. Check existing [Q&A discussions](https://github.com/shalev396/Elytra/discussions/categories/q-a) before posting.
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What would you like to know?
+      placeholder: e.g. How do I configure Cognito for a custom domain?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What are you trying to achieve? Include environment (local, QA, prod), stack, and any relevant config.
+      placeholder: |
+        - Environment: ...
+        - What I'm trying to do: ...
+    validations:
+      required: false
+  - type: textarea
+    id: tried
+    attributes:
+      label: What have you tried?
+      description: Any steps you've already taken, errors you've seen, or docs you've checked.
+    validations:
+      required: false
