@@ -1,0 +1,29 @@
+title: '[Ideas] '
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Share an idea to improve Elytra. For concrete, scoped feature requests, consider opening an [Issue](https://github.com/shalev396/Elytra/issues) instead.
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea
+      description: Describe your idea or proposal.
+      placeholder: e.g. Add support for environment-specific feature flags
+    validations:
+      required: true
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use case
+      description: What problem does this solve? Who would benefit?
+    validations:
+      required: false
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any other approaches you've thought about?
+    validations:
+      required: false

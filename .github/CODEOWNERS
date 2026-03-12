@@ -1,0 +1,11 @@
+# Root documentation (README, CONTRIBUTING, etc.)
+/*.md @shalev396
+
+# Workflows and GitHub config
+.github/ @shalev396
+
+# Client
+/client/ @shalev396
+
+# Server
+/server/ @shalev396
