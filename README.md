@@ -239,3 +239,14 @@ Update `role-to-assume` in [`.github/workflows/_deploy.yml`](.github/workflows/_
 | `COGNITO_CLIENT_ID`    | Cognito app client ID                                |
 | `COGNITO_USER_POOL_ID` | Cognito user pool ID                                 |
 | `COGNITO_ISSUER`       | Cognito issuer URL                                   |
+
+---
+
+## Community & Support
+
+| I want to…                        | Where to go                                                                                      |
+| --------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Ask a question or share an idea   | [Discussions](https://github.com/shalev396/Elytra/discussions) — Q&A, Ideas                      |
+| Report a bug or request a feature | [Issues](https://github.com/shalev396/Elytra/issues) — use the issue forms                       |
+| Contribute code                   | [Pull requests](https://github.com/shalev396/Elytra/pulls) — see [CONTRIBUTING](CONTRIBUTING.md) |
+| Report a security vulnerability   | [SECURITY policy](SECURITY.md) — report privately                                                |

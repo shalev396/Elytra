@@ -4,10 +4,10 @@
 
 Elytra is actively maintained on the `main` branch.
 
-| Version / Branch | Supported |
-| --- | --- |
-| `main` | ✅ |
-| Older commits / forks | ❌ |
+| Version / Branch      | Supported |
+| --------------------- | --------- |
+| `main`                | ✅        |
+| Older commits / forks | ❌        |
 
 ## Reporting a Vulnerability
 
@@ -16,6 +16,7 @@ Please do **not** open a public GitHub issue for security vulnerabilities.
 Use GitHub's private vulnerability reporting for this repository.
 
 Include:
+
 - affected area (`client`, `server`, deployment, auth, storage, email, etc.)
 - reproduction steps
 - impact assessment
@@ -25,6 +26,7 @@ Include:
 ## Response Expectations
 
 I will try to:
+
 - acknowledge reports within 7 days
 - validate and triage as soon as possible
 - coordinate disclosure after a fix is ready
@@ -32,6 +34,7 @@ I will try to:
 ## Scope
 
 Examples of in-scope areas:
+
 - authentication / authorization
 - token handling
 - file upload validation
@@ -41,5 +44,6 @@ Examples of in-scope areas:
 - privilege escalation in template defaults
 
 Out of scope:
+
 - issues only affecting modified downstream forks
 - missing hardening in a user’s custom deployment that is outside Elytra defaults

@@ -1,0 +1,67 @@
+name: Bug report
+description: Report something that isn't working as expected.
+title: '[Bug]: '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please fill out the form below.
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Where does this occur? (e.g. local dev, QA deployment, production)
+      placeholder: e.g. local dev with Node 22
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Describe the steps to reproduce the behavior.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. See error
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happened?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: If applicable, paste relevant log output (server, browser console, etc.).
+      render: shell
+    validations:
+      required: false
+  - type: upload
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: If applicable, add screenshots to help explain the problem.
+    validations:
+      required: false
+  - type: checkboxes
+    id: searched
+    attributes:
+      label: Checklist
+      description: 'Before submitting, please confirm:'
+      options:
+        - label: I have searched existing Issues and Discussions for duplicates.
+          required: true
+        - label: I have read the README and relevant documentation.
+          required: false
