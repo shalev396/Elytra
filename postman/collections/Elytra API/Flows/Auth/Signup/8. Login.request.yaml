@@ -1,5 +1,5 @@
 $kind: http-request
-url: '{{baseUrl}}/auth/login'
+url: '{{baseUrl}}/public/auth/login'
 method: POST
 headers:
   Content-Type: application/json
@@ -32,7 +32,6 @@ scripts:
       });
 
       pm.test('Login successful', function () {
-          pm.expect(json.success).to.be.true;
           pm.expect(json.data.tokens).to.have.property('idToken');
           pm.expect(json.data.tokens).to.have.property('refreshToken');
       });

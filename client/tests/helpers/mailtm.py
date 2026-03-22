@@ -77,16 +77,13 @@ def get_mailtm_token(email: str, mailtm_password: str) -> str:
 
 def signup_elytra(api_base_url: str, email: str, password: str, name: str = "Test User") -> None:
     r = requests.post(
-        f"{api_base_url}/auth/signup",
+        f"{api_base_url}/public/auth/signup",
         json={"email": email, "password": password, "name": name},
         headers={"Content-Type": "application/json"},
         timeout=15,
     )
     if r.status_code != 200:
         raise RuntimeError(f"Elytra signup failed: {r.status_code} {r.text}")
-    data = r.json()
-    if not data.get("success"):
-        raise RuntimeError(f"Elytra signup failed: {data}")
 
 
 def poll_inbox_and_get_code(mailtm_token: str) -> str:
@@ -120,21 +117,18 @@ def poll_inbox_and_get_code(mailtm_token: str) -> str:
 
 def confirm_signup_elytra(api_base_url: str, email: str, code: str) -> None:
     r = requests.post(
-        f"{api_base_url}/auth/confirm",
+        f"{api_base_url}/public/auth/confirm",
         json={"email": email, "code": code},
         headers={"Content-Type": "application/json"},
         timeout=15,
     )
     if r.status_code != 200:
         raise RuntimeError(f"Elytra confirm failed: {r.status_code} {r.text}")
-    data = r.json()
-    if not data.get("success"):
-        raise RuntimeError(f"Elytra confirm failed: {data}")
 
 
 def login_elytra(api_base_url: str, email: str, password: str) -> tuple[str, str]:
     r = requests.post(
-        f"{api_base_url}/auth/login",
+        f"{api_base_url}/public/auth/login",
         json={"email": email, "password": password},
         headers={"Content-Type": "application/json"},
         timeout=15,
@@ -142,8 +136,6 @@ def login_elytra(api_base_url: str, email: str, password: str) -> tuple[str, str
     if r.status_code != 200:
         raise RuntimeError(f"Elytra login failed: {r.status_code} {r.text}")
     data = r.json()
-    if not data.get("success") or "data" not in data:
-        raise RuntimeError(f"Elytra login failed: {data}")
     tokens = data["data"].get("tokens", {})
     id_token = tokens.get("idToken")
     refresh_token = tokens.get("refreshToken")

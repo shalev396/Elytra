@@ -1,5 +1,5 @@
 $kind: http-request
-url: '{{baseUrl}}/user/delete'
+url: '{{baseUrl}}/private/delete'
 method: DELETE
 auth:
   type: bearer
@@ -10,11 +10,6 @@ scripts:
     code: |-
       pm.test('Status code is 200', function () {
           pm.response.to.have.status(200);
-      });
-
-      pm.test('Response indicates success', function () {
-          const json = pm.response.json();
-          pm.expect(json.success).to.be.true;
       });
 
       pm.test('Account deleted', function () {

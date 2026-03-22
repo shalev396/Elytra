@@ -5,7 +5,7 @@ import type {
   MeResponseData,
   DeleteUserResponseData,
   UpdateMeResponseData,
-} from '../routes/user/account.js';
+} from '../routes/private/account.js';
 import { uploadFile, deleteFile } from '../utils/s3Util.js';
 import { createUserExportZip } from '../utils/exportZipUtil.js';
 import { sendEmail, escapeHtml } from '../utils/sesUtil.js';

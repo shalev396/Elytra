@@ -3,7 +3,7 @@ import { DashboardController } from '../../controllers/index.js';
 
 const router = Router();
 
-// ─── GET /api/user/dashboard ─────────────────────────────────────────────────
+// ─── GET /api/private/dashboard ─────────────────────────────────────────────
 
 export interface DashboardResponseData {
   userId: string;

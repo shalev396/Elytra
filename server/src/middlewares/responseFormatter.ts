@@ -18,14 +18,12 @@ export const responseFormatter: RequestHandler = (
 ): void => {
   res.success = function (data: unknown, statusCode = 200): void {
     this.status(statusCode).json({
-      success: true,
       data,
     });
   };
 
   res.error = function (message: string, statusCode = 500): void {
     this.status(statusCode).json({
-      success: false,
       message,
     });
   };
@@ -44,14 +42,12 @@ export const errorHandler: ErrorRequestHandler = (
   const message = error.message || 'Internal server error';
 
   res.status(statusCode).json({
-    success: false,
     message,
   });
 };
 
 export const notFound: RequestHandler = (_req: Request, res: Response): void => {
   res.status(404).json({
-    success: false,
     message: 'Not found',
   });
 };

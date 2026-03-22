@@ -1,5 +1,5 @@
 $kind: http-request
-url: '{{baseUrl}}/user/me'
+url: '{{baseUrl}}/private/me'
 method: GET
 auth:
   type: bearer
@@ -14,7 +14,6 @@ scripts:
 
       pm.test('User identity verified before deletion', function () {
           const json = pm.response.json();
-          pm.expect(json.success).to.be.true;
           const testEmail = pm.collectionVariables.get('testEmail') || pm.environment.get('testEmail');
           pm.expect(json.data.email).to.equal(testEmail);
       });

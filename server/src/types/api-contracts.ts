@@ -4,13 +4,14 @@ export type {
   SignupRequestBody,
   SignupResponseData,
   ConfirmSignupRequestBody,
+  ResendConfirmationRequestBody,
   LoginRequestBody,
   LoginResponseData,
   ForgotPasswordRequestBody,
   ResetPasswordRequestBody,
   RefreshTokenRequestBody,
   RefreshTokenResponseData,
-} from '../routes/auth/index.js';
+} from '../routes/public/auth/index.js';
 
 export type {
   MeResponseData,
@@ -18,6 +19,6 @@ export type {
   UpdateMeResponseData,
   TestEmailResponseData,
   DeleteUserResponseData,
-} from '../routes/user/account.js';
+} from '../routes/private/account.js';
 
-export type { DashboardResponseData } from '../routes/user/dashboard.js';
+export type { DashboardResponseData } from '../routes/private/dashboard.js';

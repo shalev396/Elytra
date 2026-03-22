@@ -17,7 +17,7 @@ const upload = multer({
   },
 });
 
-// ─── GET /api/user/me ────────────────────────────────────────────────────────
+// ─── GET /api/private/me ────────────────────────────────────────────────────
 
 export interface MeResponseData {
   id: string;
@@ -32,7 +32,7 @@ export interface MeResponseData {
 
 router.get('/me', AccountController.getMe);
 
-// ─── PUT /api/user/me ────────────────────────────────────────────────────────
+// ─── PUT /api/private/me ────────────────────────────────────────────────────
 
 export interface UpdateMeRequestBody {
   name?: string;
@@ -44,7 +44,7 @@ export type UpdateMeResponseData = MeResponseData;
 
 router.put('/me', upload.single('photo'), AccountController.updateMe);
 
-// ─── POST /api/user/me/test-email ─────────────────────────────────────────────
+// ─── POST /api/private/me/test-email ─────────────────────────────────────────
 
 export interface TestEmailResponseData {
   message: string;
@@ -52,12 +52,12 @@ export interface TestEmailResponseData {
 
 router.post('/me/test-email', AccountController.sendTest);
 
-// ─── GET /api/user/me/export ──────────────────────────────────────────────────
+// ─── GET /api/private/me/export ──────────────────────────────────────────────
 // Returns binary ZIP (application/zip) with Content-Disposition: attachment
 
 router.get('/me/export', AccountController.exportMyData);
 
-// ─── DELETE /api/user/delete ─────────────────────────────────────────────────
+// ─── DELETE /api/private/delete ─────────────────────────────────────────────
 
 export interface DeleteUserResponseData {
   message: string;
