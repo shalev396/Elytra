@@ -1,5 +1,5 @@
 $kind: http-request
-url: '{{baseUrl}}/user/me/export'
+url: '{{baseUrl}}/private/me/export'
 method: GET
 auth:
   type: inherit

@@ -36,10 +36,9 @@ export default function SignUpPage() {
 
     try {
       await signup({ name, email, password }, { suppressErrorToast: true });
-      void navigate(
-        `${pathTo(ROUTES.AUTH.CONFIRM_SIGNUP, language)}?email=${encodeURIComponent(email)}`,
-        { state: { fromSignup: true } },
-      );
+      void navigate(pathTo(ROUTES.AUTH.CONFIRM_SIGNUP, language), {
+        state: { email },
+      });
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
       setError(axiosError.response?.data.message ?? t('auth.signUp.error'));

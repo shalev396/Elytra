@@ -65,7 +65,7 @@ axiosInstance.interceptors.response.use(
       axiosError.response?.status === 401 &&
       originalRequest &&
       !originalRequest._retry &&
-      !originalRequest.url?.startsWith('/auth/')
+      !originalRequest.url?.startsWith('/public/auth/')
     ) {
       originalRequest._retry = true;
       const currentRefreshToken = selectRefreshToken();
@@ -88,7 +88,7 @@ axiosInstance.interceptors.response.use(
 
       try {
         const response = await axios.post<ApiSuccessResponse<RefreshTokenResponseData>>(
-          `${baseURL}/auth/refresh`,
+          `${baseURL}/public/auth/refresh`,
           { refreshToken: currentRefreshToken },
         );
 

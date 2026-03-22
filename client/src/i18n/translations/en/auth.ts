@@ -18,6 +18,8 @@ export const auth = {
     submit: 'Login',
     loading: 'Logging in...',
     error: 'Login failed. Please try again.',
+    verifyEmailCta: 'Verify your email',
+    verifySending: 'Sending code...',
     noAccount: "Don't have an account?",
     signUp: 'Sign up',
     agreeTo: 'By clicking continue, you agree to our',

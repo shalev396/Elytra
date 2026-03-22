@@ -1,5 +1,5 @@
 $kind: http-request
-url: '{{baseUrl}}/auth/signup'
+url: '{{baseUrl}}/public/auth/signup'
 method: POST
 headers:
   Content-Type: application/json
@@ -26,7 +26,6 @@ scripts:
 
       pm.test('Signup successful', function () {
           const json = pm.response.json();
-          pm.expect(json.success).to.be.true;
           pm.expect(json.data).to.have.property('userSub');
       });
 

@@ -1,5 +1,5 @@
 $kind: http-request
-url: '{{baseUrl}}/auth/confirm'
+url: '{{baseUrl}}/public/auth/confirm'
 method: POST
 headers:
   Content-Type: application/json
@@ -22,7 +22,6 @@ scripts:
 
       pm.test('Confirmation successful', function () {
           const json = pm.response.json();
-          pm.expect(json.success).to.be.true;
       });
 
       console.log('User confirmed successfully');

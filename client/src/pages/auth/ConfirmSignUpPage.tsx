@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useSearchParams, useLocation, Navigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Navigate, Link } from 'react-router-dom';
 import { useTranslation, Trans } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import { Button } from '@/components/ui/button';
@@ -17,20 +17,17 @@ export default function ConfirmSignUpPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { language } = useLanguage();
-  const [searchParams] = useSearchParams();
+  const location = useLocation();
   const isAuthenticated = useSelector(selectIsAuthenticated);
 
-  const location = useLocation();
-  const fromSignup = (location.state as { fromSignup?: boolean } | null)?.fromSignup === true;
-
-  const emailFromSignup = searchParams.get('email') ?? '';
-  const [code, setCode] = useState(searchParams.get('code') ?? '');
+  const emailFromState = (location.state as { email?: string } | null)?.email ?? '';
+  const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
 
-  if (!fromSignup || !emailFromSignup) {
-    return <Navigate to={pathTo(ROUTES.AUTH.SIGNUP, language)} replace />;
+  if (!emailFromState) {
+    return <Navigate to={pathTo(ROUTES.AUTH.LOGIN, language)} replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -39,7 +36,7 @@ export default function ConfirmSignUpPage() {
     setIsLoading(true);
 
     try {
-      await confirmSignup({ email: emailFromSignup, code }, { suppressErrorToast: true });
+      await confirmSignup({ email: emailFromState, code }, { suppressErrorToast: true });
       setIsConfirmed(true);
 
       const target = isAuthenticated
@@ -84,8 +81,8 @@ export default function ConfirmSignUpPage() {
           {t('auth.confirm.title')}
         </h1>
         <p className="text-muted-foreground text-balance">
-          <Trans i18nKey="auth.confirm.codeSentTo" values={{ email: emailFromSignup }}>
-            We sent a code to <strong>{{ email: emailFromSignup } as unknown as string}</strong>.
+          <Trans i18nKey="auth.confirm.codeSentTo" values={{ email: emailFromState }}>
+            We sent a code to <strong>{{ email: emailFromState } as unknown as string}</strong>.
             Check your inbox.
           </Trans>
         </p>

@@ -245,31 +245,31 @@ custom:
 
 # Lambda Functions
 functions:
-  # PUBLIC: Authentication & Health
-  authApi:
-    handler: ${self:custom.handlerBase.${self:custom.useEsbuild}}api/auth-handler.handler
+  # PUBLIC: Authentication & Health (no auth required)
+  publicApi:
+    handler: ${self:custom.handlerBase.${self:custom.useEsbuild}}api/public-handler.handler
     timeout: 30
     memorySize: 256
     package:
       patterns:
-        - 'build/api/auth-handler.mjs'
+        - 'build/api/public-handler.mjs'
     events:
       - httpApi:
-          path: /api/auth/{proxy+}
+          path: /api/public/{proxy+}
           method: ANY
 
-  # PRIVATE: All authenticated user operations
+  # PRIVATE: All authenticated user operations (auth required)
   # Timeout/memory higher for export (ZIP creation) and delete operations
-  userApi:
-    handler: ${self:custom.handlerBase.${self:custom.useEsbuild}}api/user-handler.handler
+  privateApi:
+    handler: ${self:custom.handlerBase.${self:custom.useEsbuild}}api/private-handler.handler
     timeout: 30
     memorySize: 1024
     package:
       patterns:
-        - 'build/api/user-handler.mjs'
+        - 'build/api/private-handler.mjs'
     events:
       - httpApi:
-          path: /api/user/{proxy+}
+          path: /api/private/{proxy+}
           method: ANY
           authorizer:
             name: cognitoAuthorizer
@@ -503,6 +503,7 @@ resources:
         - SesDkimRecord1
         - SesDkimRecord2
         - SesDkimRecord3
+        - CloudFrontDistribution
       Properties:
         UserPoolName: ${self:custom.appName}-${self:provider.stage}
         UserPoolTier: ESSENTIALS

@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { pathTo, ROUTES } from '@/router/routes';
 import { setAuthData } from '@/store/userSlice';
-import { login } from '@/api/services/authService';
+import { login, resendConfirmationCode } from '@/api/services/authService';
 import type { AxiosError } from 'axios';
 import type { ApiErrorResponse } from '@api-types/api-contracts';
 
@@ -22,11 +22,15 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  /** HTTP 403 on POST login = unverified email (see server auth controller). */
+  const [showVerifyEmailLink, setShowVerifyEmailLink] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isVerifyLoading, setIsVerifyLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+    setShowVerifyEmailLink(false);
     setIsLoading(true);
 
     try {
@@ -42,7 +46,9 @@ export default function LoginPage() {
       void navigate(pathTo(ROUTES.DASHBOARD, language));
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
+      const status = axiosError.response?.status;
       setError(axiosError.response?.data.message ?? t('auth.login.error'));
+      setShowVerifyEmailLink(status === 403);
     } finally {
       setIsLoading(false);
     }
@@ -60,7 +66,42 @@ export default function LoginPage() {
 
       <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6">
         {error && (
-          <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+          <div className="space-y-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+            <p>{error}</p>
+            {showVerifyEmailLink && email.trim() !== '' && (
+              <p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void (async () => {
+                      const trimmedEmail = email.trim();
+                      if (trimmedEmail === '' || isVerifyLoading) {
+                        return;
+                      }
+                      setIsVerifyLoading(true);
+                      try {
+                        await resendConfirmationCode(
+                          { email: trimmedEmail },
+                          { suppressErrorToast: true },
+                        );
+                        void navigate(pathTo(ROUTES.AUTH.CONFIRM_SIGNUP, language), {
+                          state: { email: trimmedEmail },
+                        });
+                      } catch {
+                        setError(t('auth.login.error'));
+                      } finally {
+                        setIsVerifyLoading(false);
+                      }
+                    })();
+                  }}
+                  disabled={isVerifyLoading}
+                  className="font-medium text-primary underline underline-offset-4 hover:no-underline disabled:opacity-50"
+                >
+                  {isVerifyLoading ? t('auth.login.verifySending') : t('auth.login.verifyEmailCta')}
+                </button>
+              </p>
+            )}
+          </div>
         )}
 
         <div className="space-y-2">

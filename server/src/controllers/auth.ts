@@ -3,6 +3,7 @@ import {
   CognitoIdentityProviderClient,
   SignUpCommand,
   ConfirmSignUpCommand,
+  ResendConfirmationCodeCommand,
   InitiateAuthCommand,
   ForgotPasswordCommand,
   ConfirmForgotPasswordCommand,
@@ -15,13 +16,14 @@ import type {
   SignupRequestBody,
   SignupResponseData,
   ConfirmSignupRequestBody,
+  ResendConfirmationRequestBody,
   LoginRequestBody,
   LoginResponseData,
   ForgotPasswordRequestBody,
   ResetPasswordRequestBody,
   RefreshTokenRequestBody,
   RefreshTokenResponseData,
-} from '../routes/auth/index.js';
+} from '../routes/public/auth/index.js';
 
 const cognitoClient = new CognitoIdentityProviderClient({
   region: environment.awsRegion,
@@ -90,6 +92,50 @@ const confirmSignup: RequestHandler = async (req, res): Promise<void> => {
   }
 };
 
+const resendConfirmation: RequestHandler = async (req, res): Promise<void> => {
+  try {
+    const { email } = req.body as ResendConfirmationRequestBody;
+
+    const trimmedEmail = typeof email === 'string' ? email.trim() : '';
+    if (trimmedEmail === '') {
+      res.error('Email is required', 400);
+      return;
+    }
+
+    const clientId = environment.cognitoClientId;
+
+    await cognitoClient.send(
+      new ResendConfirmationCodeCommand({
+        ClientId: clientId,
+        Username: trimmedEmail,
+      }),
+    );
+
+    res.success({});
+  } catch (error: unknown) {
+    console.error('Resend confirmation error:', error);
+
+    if (error instanceof Error) {
+      if (error.name === 'UserNotFoundException') {
+        res.success({});
+        return;
+      }
+
+      if (error.name === 'InvalidParameterException' || error.name === 'NotAuthorizedException') {
+        res.error('This email is already verified. You can sign in with your password.', 400);
+        return;
+      }
+
+      if (error.name === 'LimitExceededException') {
+        res.error('Too many requests. Please try again later.', 429);
+        return;
+      }
+    }
+
+    res.error('Failed to resend verification code. Please try again.', 500);
+  }
+};
+
 const login: RequestHandler = async (req, res): Promise<void> => {
   try {
     const { email, password } = req.body as LoginRequestBody;
@@ -145,8 +191,14 @@ const login: RequestHandler = async (req, res): Promise<void> => {
     };
 
     res.success(data);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Login error:', error);
+
+    if (error instanceof Error && error.name === 'UserNotConfirmedException') {
+      res.error('Please verify your email before signing in.', 403);
+      return;
+    }
+
     const errorMessage = error instanceof Error ? error.message : 'Login failed';
     res.error(errorMessage, 401);
   }
@@ -304,6 +356,7 @@ const refreshTokenHandler: RequestHandler = async (req, res): Promise<void> => {
 export const AuthController = {
   signup,
   confirmSignup,
+  resendConfirmation,
   login,
   forgotPassword,
   resetPassword,

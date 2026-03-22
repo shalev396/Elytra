@@ -17,6 +17,8 @@ export const auth = {
     submit: 'התחבר',
     loading: 'מתחבר...',
     error: 'ההתחברות נכשלה. נסה שוב.',
+    verifyEmailCta: 'אמת את האימייל',
+    verifySending: 'שולח קוד...',
     noAccount: 'אין לך חשבון?',
     signUp: 'הירשם',
     agreeTo: 'על ידי לחיצה על המשך, אתה מסכים ל',

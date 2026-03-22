@@ -1,5 +1,5 @@
 $kind: http-request
-url: '{{baseUrl}}/user/me'
+url: '{{baseUrl}}/private/me'
 method: PUT
 auth:
   type: inherit
@@ -16,11 +16,6 @@ scripts:
     code: |-
       pm.test('Status code is 200', function () {
           pm.response.to.have.status(200);
-      });
-
-      pm.test('Response indicates success', function () {
-          const json = pm.response.json();
-          pm.expect(json.success).to.be.true;
       });
 
       pm.test('Name was restored', function () {

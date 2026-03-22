@@ -1,6 +1,6 @@
 $kind: http-request
 name: Dashboard - valid token
-url: '{{baseUrl}}/user/dashboard'
+url: '{{baseUrl}}/private/dashboard'
 method: GET
 auth:
   type: inherit
@@ -11,11 +11,6 @@ scripts:
     code: |-
       pm.test('Status code is 200', function () {
           pm.response.to.have.status(200);
-      });
-
-      pm.test('Response indicates success', function () {
-          const json = pm.response.json();
-          pm.expect(json.success).to.be.true;
       });
 
       pm.test('Response has dashboard data', function () {

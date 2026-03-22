@@ -29,7 +29,7 @@ In your active environment, set `baseUrl`:
 
 Tokens are set automatically when you run the collection (Login and Mail.tm flows save them). If you run individual requests or your environment resets:
 
-- `idToken` -- From login; used for Elytra API (`/user/me`, `/user/me/export`, `/user/dashboard`)
+- `idToken` -- From login; used for Elytra API (`/private/me`, `/private/me/export`, `/private/dashboard`)
 - `mailTmToken` -- From Mail.tm Get Token; used for `api.mail.tm` (Poll Inbox, Read Message)
 
 Paste values into the environment if needed. The collection uses beforeRequest scripts to add `Authorization: Bearer <token>` from these variables.
@@ -57,32 +57,32 @@ Provisions a test account: resets the database, creates a temporary email via Ma
 
 Endpoint coverage for all authentication routes:
 
-| Folder              | Endpoint                     | Requests                                                                                                                     |
-| ------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| **Login**           | `POST /auth/login`           | 7 (valid credentials, wrong password, unregistered email, wrong email+password, missing email, missing password, empty body) |
-| **Signup**          | `POST /auth/signup`          | 5 (missing email, missing password, missing name, duplicate email, weak password)                                            |
-| **Confirm**         | `POST /auth/confirm`         | 3 (missing email, missing code, invalid code)                                                                                |
-| **Token Refresh**   | `POST /auth/refresh`         | 3 (valid token, invalid token, missing token)                                                                                |
-| **Forgot Password** | `POST /auth/forgot-password` | 4 (valid email, nonexistent email, missing email, invalid email format)                                                      |
-| **Reset Password**  | `POST /auth/reset-password`  | 5 (invalid code, missing fields, missing email, missing code, missing password)                                              |
+| Folder              | Endpoint                            | Requests                                                                                                                     |
+| ------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| **Login**           | `POST /public/auth/login`           | 7 (valid credentials, wrong password, unregistered email, wrong email+password, missing email, missing password, empty body) |
+| **Signup**          | `POST /public/auth/signup`          | 5 (missing email, missing password, missing name, duplicate email, weak password)                                            |
+| **Confirm**         | `POST /public/auth/confirm`         | 3 (missing email, missing code, invalid code)                                                                                |
+| **Token Refresh**   | `POST /public/auth/refresh`         | 3 (valid token, invalid token, missing token)                                                                                |
+| **Forgot Password** | `POST /public/auth/forgot-password` | 4 (valid email, nonexistent email, missing email, invalid email format)                                                      |
+| **Reset Password**  | `POST /public/auth/reset-password`  | 5 (invalid code, missing fields, missing email, missing code, missing password)                                              |
 
 ### 3. User (12 requests)
 
-Endpoint coverage for user routes (all require `Authorization: Bearer <idToken>`):
+Endpoint coverage for private account routes (all require `Authorization: Bearer <idToken>`):
 
-| Folder              | Endpoint                   | Requests                                            |
-| ------------------- | -------------------------- | --------------------------------------------------- |
-| **Get Me**          | `GET /user/me`             | 3 (valid token, no token, invalid token)            |
-| **Update Me**       | `PUT /user/me`             | 4 (change name, restore name, no token, no changes) |
-| **Send Test Email** | `POST /user/me/test-email` | 2 (valid token, no token)                           |
-| **Export Me**       | `GET /user/me/export`      | 2 (valid token, no token)                           |
-| **Delete Account**  | `DELETE /user/delete`      | 1 (no token -- expects 401)                         |
+| Folder              | Endpoint                      | Requests                                            |
+| ------------------- | ----------------------------- | --------------------------------------------------- |
+| **Get Me**          | `GET /private/me`             | 3 (valid token, no token, invalid token)            |
+| **Update Me**       | `PUT /private/me`             | 4 (change name, restore name, no token, no changes) |
+| **Send Test Email** | `POST /private/me/test-email` | 2 (valid token, no token)                           |
+| **Export Me**       | `GET /private/me/export`      | 2 (valid token, no token)                           |
+| **Delete Account**  | `DELETE /private/delete`      | 1 (no token -- expects 401)                         |
 
 ### 4. Dashboard (2 requests)
 
-| Endpoint              | Requests                  |
-| --------------------- | ------------------------- |
-| `GET /user/dashboard` | 2 (valid token, no token) |
+| Endpoint                 | Requests                  |
+| ------------------------ | ------------------------- |
+| `GET /private/dashboard` | 2 (valid token, no token) |
 
 ### 5. Flows (21 requests)
 
@@ -105,16 +105,20 @@ User interaction flows that mimic real user journeys, organized by topic:
 
 ## Auth Middleware Testing
 
-All `/user/*` endpoints use the same `expressAuth` middleware. No-token and invalid-token edge cases are tested comprehensively on `GET /user/me`. Other authenticated endpoints include a single no-token sanity check each.
+All `/private/*` endpoints use the same `expressAuth` middleware. No-token and invalid-token edge cases are tested comprehensively on `GET /private/me`. Other authenticated endpoints include a single no-token sanity check each.
+
+### Response shape and status codes
+
+Successful responses use `{ data: T }` (no `success` field). Error responses use `{ message: string }`. Success vs failure is determined by the HTTP status code, not a boolean in the JSON body.
 
 ### 401 Response Format: Local vs QA/Prod
 
-Protected routes (`/user/*`, `/user/dashboard`) use the **API Gateway Cognito JWT authorizer** when deployed. The "Response indicates failure" assertion in no-token and invalid-token tests accepts both formats:
+Protected routes (`/private/*`, `/private/dashboard`) use the **API Gateway Cognito JWT authorizer** when deployed. The "Response indicates failure" assertion in no-token and invalid-token tests checks for a non-2xx status and an error-style body (typically `{ message: ... }`).
 
-| Environment                    | Who responds                                   | Body                                               |
-| ------------------------------ | ---------------------------------------------- | -------------------------------------------------- |
-| **Local** (serverless-offline) | Lambda + `expressAuth`                         | `{ success: false, message }`                      |
-| **QA/Prod** (deployed)         | API Gateway Cognito authorizer (before Lambda) | `{ message: "Unauthorized" }` (no `success` field) |
+| Environment                    | Who responds                                   | Body (typical)                |
+| ------------------------------ | ---------------------------------------------- | ----------------------------- |
+| **Local** (serverless-offline) | Lambda + `expressAuth`                         | `{ message: string }`         |
+| **QA/Prod** (deployed)         | API Gateway Cognito authorizer (before Lambda) | `{ message: "Unauthorized" }` |
 
 Local tests hit the Lambda because serverless-offline bypasses the authorizer (`noAuth: true`). In QA/prod, the authorizer rejects invalid/missing tokens before the Lambda is invoked, so the response comes from API Gateway, not our app.
 
