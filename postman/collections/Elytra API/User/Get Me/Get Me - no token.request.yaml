@@ -1,5 +1,5 @@
 $kind: http-request
-url: '{{baseUrl}}/user/me'
+url: '{{baseUrl}}/private/me'
 method: GET
 auth:
   type: noauth
@@ -10,13 +10,9 @@ scripts:
           pm.response.to.have.status(401);
       });
 
-      // LOCAL: Lambda/expressAuth returns { success: false, message }.
-      // QA/PROD: API Gateway Cognito authorizer rejects first, returns { message: "Unauthorized" } (no success field).
-
       pm.test('Response indicates failure', function () {
           const json = pm.response.json();
-          const indicatesFailure = json.success === false || (pm.response.code === 401 && !!json.message);
-          pm.expect(indicatesFailure).to.be.true;
+          pm.expect(json.message).to.be.a('string');
       });
     language: text/javascript
 order: 2000

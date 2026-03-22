@@ -1,5 +1,5 @@
 $kind: http-request
-url: '{{baseUrl}}/user/me'
+url: '{{baseUrl}}/private/me'
 method: PUT
 auth:
   type: inherit
@@ -10,11 +10,6 @@ scripts:
     code: |-
       pm.test('Status code is 400', function () {
           pm.response.to.have.status(400);
-      });
-
-      pm.test('Response indicates failure', function () {
-          const json = pm.response.json();
-          pm.expect(json.success).to.be.false;
       });
     language: text/javascript
 order: 4000

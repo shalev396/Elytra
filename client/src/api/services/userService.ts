@@ -12,7 +12,7 @@ import type {
 export async function getMe(
   config?: ApiRequestConfig,
 ): Promise<ApiSuccessResponse<MeResponseData>> {
-  const response = await api.get<ApiSuccessResponse<MeResponseData>>('/user/me', config);
+  const response = await api.get<ApiSuccessResponse<MeResponseData>>('/private/me', config);
   return response.data;
 }
 
@@ -20,7 +20,7 @@ export async function getDashboard(
   config?: ApiRequestConfig,
 ): Promise<ApiSuccessResponse<DashboardResponseData>> {
   const response = await api.get<ApiSuccessResponse<DashboardResponseData>>(
-    '/user/dashboard',
+    '/private/dashboard',
     config,
   );
   return response.data;
@@ -31,7 +31,7 @@ export async function updateMe(
   config?: ApiRequestConfig,
 ): Promise<ApiSuccessResponse<UpdateMeResponseData>> {
   const response = await api.put<ApiSuccessResponse<UpdateMeResponseData>>(
-    '/user/me',
+    '/private/me',
     formData,
     config,
   );
@@ -42,7 +42,7 @@ export async function sendTestEmail(
   config?: ApiRequestConfig,
 ): Promise<ApiSuccessResponse<TestEmailResponseData>> {
   const response = await api.post<ApiSuccessResponse<TestEmailResponseData>>(
-    '/user/me/test-email',
+    '/private/me/test-email',
     null,
     config,
   );
@@ -58,7 +58,7 @@ const EXPORT_RESPONSE_TYPE = 'application/zip';
  * Triggers a download in the browser and resolves when done.
  */
 export async function exportMyData(config?: ApiRequestConfig): Promise<void> {
-  const response = await axiosInstance.get<Blob>('/user/me/export', {
+  const response = await axiosInstance.get<Blob>('/private/me/export', {
     ...config,
     responseType: 'blob',
   });
@@ -96,7 +96,7 @@ export async function deleteAccount(
   config?: ApiRequestConfig,
 ): Promise<ApiSuccessResponse<DeleteUserResponseData>> {
   const response = await api.delete<ApiSuccessResponse<DeleteUserResponseData>>(
-    '/user/delete',
+    '/private/delete',
     config,
   );
   return response.data;

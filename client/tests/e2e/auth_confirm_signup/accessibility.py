@@ -6,10 +6,10 @@ from playwright.sync_api import Page, expect
 
 
 def test_confirm_signup_accessibility(page: Page, app_url: str):
-    """Asserts confirm-signup redirects to signup when no signup state, then runs axe on signup page."""
-    page.goto(f"{app_url}/auth/confirm-signup?email=test@example.com", wait_until="domcontentloaded")
+    """Asserts confirm-signup redirects to login when no state, then runs axe on login page."""
+    page.goto(f"{app_url}/auth/confirm-signup", wait_until="domcontentloaded")
     page.wait_for_load_state("networkidle")
-    expect(page).to_have_url(f"{app_url}/auth/signup")
+    expect(page).to_have_url(f"{app_url}/auth/login")
     axe = Axe()
     results = axe.run(page)
     violations = results.response.get("violations", [])

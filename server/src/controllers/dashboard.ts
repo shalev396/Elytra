@@ -1,6 +1,6 @@
 import { type RequestHandler } from 'express';
 import type { AuthenticatedRequest } from '../types/express.js';
-import type { DashboardResponseData } from '../routes/user/dashboard.js';
+import type { DashboardResponseData } from '../routes/private/dashboard.js';
 
 const getDashboard: RequestHandler = (_req, res): void => {
   const authReq = _req as AuthenticatedRequest;

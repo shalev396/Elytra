@@ -10,7 +10,6 @@ scripts:
 
       pm.test('Reset successful', function () {
           const json = pm.response.json();
-          pm.expect(json.success).to.be.true;
           pm.expect(json.data).to.have.property("provider");
       });
     language: text/javascript

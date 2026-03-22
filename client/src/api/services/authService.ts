@@ -5,6 +5,7 @@ import type {
   SignupRequestBody,
   SignupResponseData,
   ConfirmSignupRequestBody,
+  ResendConfirmationRequestBody,
   LoginRequestBody,
   LoginResponseData,
   ForgotPasswordRequestBody,
@@ -18,7 +19,7 @@ export async function signup(
   config?: ApiRequestConfig,
 ): Promise<ApiSuccessResponse<SignupResponseData>> {
   const response = await api.post<ApiSuccessResponse<SignupResponseData>>(
-    '/auth/signup',
+    '/public/auth/signup',
     body,
     config,
   );
@@ -30,7 +31,19 @@ export async function confirmSignup(
   config?: ApiRequestConfig,
 ): Promise<ApiSuccessResponse<Record<string, never>>> {
   const response = await api.post<ApiSuccessResponse<Record<string, never>>>(
-    '/auth/confirm',
+    '/public/auth/confirm',
+    body,
+    config,
+  );
+  return response.data;
+}
+
+export async function resendConfirmationCode(
+  body: ResendConfirmationRequestBody,
+  config?: ApiRequestConfig,
+): Promise<ApiSuccessResponse<Record<string, never>>> {
+  const response = await api.post<ApiSuccessResponse<Record<string, never>>>(
+    '/public/auth/resend-confirmation',
     body,
     config,
   );
@@ -42,7 +55,7 @@ export async function login(
   config?: ApiRequestConfig,
 ): Promise<ApiSuccessResponse<LoginResponseData>> {
   const response = await api.post<ApiSuccessResponse<LoginResponseData>>(
-    '/auth/login',
+    '/public/auth/login',
     body,
     config,
   );
@@ -54,7 +67,7 @@ export async function forgotPassword(
   config?: ApiRequestConfig,
 ): Promise<ApiSuccessResponse<Record<string, never>>> {
   const response = await api.post<ApiSuccessResponse<Record<string, never>>>(
-    '/auth/forgot-password',
+    '/public/auth/forgot-password',
     body,
     config,
   );
@@ -66,7 +79,7 @@ export async function resetPassword(
   config?: ApiRequestConfig,
 ): Promise<ApiSuccessResponse<Record<string, never>>> {
   const response = await api.post<ApiSuccessResponse<Record<string, never>>>(
-    '/auth/reset-password',
+    '/public/auth/reset-password',
     body,
     config,
   );
@@ -78,7 +91,7 @@ export async function refreshToken(
   config?: ApiRequestConfig,
 ): Promise<ApiSuccessResponse<RefreshTokenResponseData>> {
   const response = await api.post<ApiSuccessResponse<RefreshTokenResponseData>>(
-    '/auth/refresh',
+    '/public/auth/refresh',
     body,
     config,
   );
