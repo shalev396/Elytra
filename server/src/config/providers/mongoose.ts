@@ -1,27 +1,34 @@
 import mongoose from 'mongoose';
 import { environment } from '../environment.js';
 
-let isConnected = false;
-
 export async function connectMongo(): Promise<void> {
-  if (isConnected) {
+  const state = mongoose.connection.readyState;
+  if (
+    state === mongoose.ConnectionStates.connected ||
+    state === mongoose.ConnectionStates.connecting
+  ) {
     return;
   }
 
-  await mongoose.connect(environment.databaseUrl);
-  isConnected = true;
+  await mongoose.connect(environment.databaseUrl, {
+    // Atlas + Lambda: https://www.mongodb.com/docs/atlas/manage-connections-aws-lambda/
+    maxPoolSize: 2,
+    minPoolSize: 0,
+    maxIdleTimeMS: 60_000,
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+  });
 }
 
-export async function syncMongo(): Promise<string[]> {
-  await connectMongo();
-
-  const { UserMongoModel } = await import('../../models/mongoose/User.js');
-  const { MediaMongoModel } = await import('../../models/mongoose/Media.js');
-
-  await UserMongoModel.ensureIndexes();
-  await MediaMongoModel.ensureIndexes();
-
-  return ['Mongoose: indexes synced for User, Media'];
+/**
+ * No-op: MongoDB creates collections on first write; indexes follow schema when you opt into
+ * `autoIndex` / app startup patterns. The dev `sync-db` endpoint stays for parity with SQL
+ * (`syncSequelize`) and still returns `string[]` like the Sequelize path.
+ */
+export function syncMongo(): Promise<string[]> {
+  return Promise.resolve([
+    'Mongoose: sync-db skipped (schema is applied at runtime; no manual sync).',
+  ]);
 }
 
 export async function clearAllMongo(): Promise<void> {
