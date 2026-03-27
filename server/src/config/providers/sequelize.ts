@@ -16,6 +16,13 @@ export function getSequelize(): Sequelize {
       connectionTimeoutMillis: 60000,
       statement_timeout: 60000,
     },
+    // Keep pool footprint in line with Mongoose (see mongoose.ts): low max per instance for shared DB limits.
+    pool: {
+      max: 2,
+      min: 0,
+      acquire: 45_000,
+      idle: 60_000,
+    },
     logging: false,
   });
 
@@ -28,8 +35,6 @@ export async function connectSequelize(): Promise<void> {
 }
 
 export async function syncSequelize(): Promise<string[]> {
-  await connectSequelize();
-
   await import('../../models/sequelize/User.js');
   await import('../../models/sequelize/Media.js');
   const { defineAssociations } = await import('../../models/sequelize/associations.js');
@@ -42,7 +47,5 @@ export async function syncSequelize(): Promise<string[]> {
 }
 
 export async function clearAllSequelize(): Promise<void> {
-  const instance = getSequelize();
-  await instance.authenticate();
-  await instance.drop();
+  await getSequelize().drop();
 }
