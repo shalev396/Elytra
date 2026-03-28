@@ -133,6 +133,7 @@ build:
 plugins:
   - serverless-esbuild
   - serverless-offline
+  - serverless-offline-watcher
   - serverless-prune-plugin
 
 # Custom Configuration
@@ -230,11 +231,16 @@ custom:
     httpPort: 3000
     lambdaPort: 3002
     noPrependStageInUrl: true
-    reloadHandler: true
+    reloadHandler: false
     disableCookieValidation: true
     enforceSecureCookies: false
     printOutput: true
     noAuth: true
+
+  serverless-offline-watcher:
+    - path:
+        - .esbuild/.build/**/*
+      hook: offline:functionsUpdated
 
   prune:
     automatic: true
@@ -400,14 +406,17 @@ resources:
 
           ViewerCertificate: ${self:custom.viewerCertificate}
 
-          # Default: serves React app from S3
+          # Map GET / to /index.html at the origin (deep links use S3 website ErrorDocument).
+          DefaultRootObject: index.html
+
+          # Default: React app from S3 website endpoint (IndexDocument / ErrorDocument apply).
           DefaultCacheBehavior:
             TargetOriginId: ClientFilesOrigin
             ViewerProtocolPolicy: redirect-to-https
             AllowedMethods: [GET, HEAD, OPTIONS]
             CachedMethods: [GET, HEAD, OPTIONS]
             Compress: true
-            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # Managed-CachingDisabled
+            CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # Managed-CachingOptimized (matches AssetsOrigin /media/*)
             OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf # Managed-CORS-S3Origin
 
           CacheBehaviors:
@@ -432,14 +441,21 @@ resources:
               OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf # Managed-CORS-S3Origin
 
           Origins:
-            # Origin for React app files (S3 bucket)
+            # S3 static website hostname — WebsiteConfiguration applies; REST endpoint ignores index/error docs.
             - Id: ClientFilesOrigin
               DomainName:
-                Fn::GetAtt:
-                  - ClientFilesBucket
-                  - RegionalDomainName
-              S3OriginConfig:
-                OriginAccessIdentity: ''
+                Fn::Select:
+                  - 1
+                  - Fn::Split:
+                      - '//'
+                      - Fn::GetAtt:
+                          - ClientFilesBucket
+                          - WebsiteURL
+              CustomOriginConfig:
+                HTTPPort: 80
+                HTTPSPort: 443
+                OriginProtocolPolicy: http-only
+                OriginSSLProtocols: [TLSv1.2]
 
             # Origin for assets (S3 bucket — images, PDFs, icons, etc.)
             - Id: AssetsOrigin
@@ -460,16 +476,7 @@ resources:
                 OriginProtocolPolicy: https-only
                 OriginSSLProtocols: [TLSv1.2]
 
-          # SPA routing: redirect 403/404 to index.html
-          CustomErrorResponses:
-            - ErrorCode: 403
-              ResponseCode: 200
-              ResponsePagePath: /index.html
-              ErrorCachingMinTTL: 300
-            - ErrorCode: 404
-              ResponseCode: 200
-              ResponsePagePath: /index.html
-              ErrorCachingMinTTL: 300
+          # No CustomErrorResponses: distribution-wide 403/404 -> index.html would mask API Gateway errors on /api/*.
 
           PriceClass: PriceClass_All
           HttpVersion: http2
