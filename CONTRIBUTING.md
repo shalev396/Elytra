@@ -9,10 +9,10 @@
 ## Local development
 
 1. Clone the repo
-2. Install dependencies
-3. Configure `server/.env.*`
-4. Run client and server locally
-5. Run tests before opening a PR
+2. `cd server && npm install` / `cd client && npm install`
+3. Copy `server/.env.example` to `server/.env.dev` and fill in values
+4. `cd server && npm run dev` (port 3000) / `cd client && npm run dev` (port 5173)
+5. Run tests before opening a PR: `cd server && npm run test:local` / `cd client && npm run test`
 
 ## Pull request rules
 

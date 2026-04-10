@@ -20,7 +20,7 @@ export function getSequelize(): Sequelize {
     pool: {
       max: 2,
       min: 0,
-      acquire: 45_000,
+      acquire: 60_000,
       idle: 60_000,
     },
     logging: false,

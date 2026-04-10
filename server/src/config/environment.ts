@@ -1,5 +1,4 @@
-type DatabaseProvider = 'sequelize' | 'mongoose';
-type Env = 'dev' | 'qa' | 'prod';
+import type { DatabaseProvider, Env } from '../types/env.d.ts';
 
 class Environment {
   readonly #env: Env;
