@@ -27,9 +27,10 @@
 # 6. Upload assets (images, PDFs, icons, etc.) to the stage-specific assets bucket under the /media/ path
 #
 # DEVELOPMENT:
-#   npm run dev          - Hot-reload dev server (esbuild watches and recompiles on save)
-#   npm run start        - Type-check, then run offline
-#   npm run deploy:dev   - Type-check, then deploy to AWS
+#   npm run dev          - Run offline against dev stage (esbuild watches and recompiles on save)
+#   npm run qa           - Run offline against qa stage
+#   npm run prod         - Run offline against prod stage
+#   npm run deploy:dev   - Deploy to AWS (dev stage)
 #
 # ================================
 org: shalev396

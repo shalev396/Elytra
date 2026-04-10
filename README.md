@@ -127,11 +127,11 @@ cd server
 npm run deploy:dev   # or deploy:qa, deploy:prod
 ```
 
-This deploys backend (Lambda, API Gateway, Cognito, S3, CloudFront, Route 53), then frontend is uploaded to S3 and CloudFront invalidated. CICD performs both steps on push—no manual deploy needed once configured.
+This deploys backend (Lambda, API Gateway, Cognito, S3, CloudFront, Route 53), then syncs the database schema via a standalone Lambda, then uploads the frontend to S3 and invalidates CloudFront. CICD performs all three steps on push—no manual deploy needed once configured.
 
 ### 6. CICD
 
-Push to `dev` / `qa` / `main` triggers full deploy. Set up once (see [CICD Setup](#cicd-setup)) and you're done.
+Push to `dev` / `qa` / `main` triggers full deploy (backend → database sync → frontend). Set up once (see [CICD Setup](#cicd-setup)) and you're done.
 
 ---
 
