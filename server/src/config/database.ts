@@ -24,8 +24,8 @@ function registerGracefulShutdown(): void {
 }
 
 export async function clearDB(): Promise<void> {
-  if (environment.env !== 'qa') {
-    throw new Error('clearDB can only run on QA environment');
+  if (environment.env !== 'qa' && environment.env !== 'dev') {
+    throw new Error('clearDB can only run on QA or DEV environment');
   }
 
   if (environment.databaseProvider === 'mongoose') {

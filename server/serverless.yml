@@ -28,8 +28,8 @@
 #
 # DEVELOPMENT:
 #   npm run dev          - Hot-reload dev server (esbuild watches and recompiles on save)
-#   npm run start        - Build with webpack, then run offline (production-like test)
-#   npm run deploy:dev   - Build with webpack, then deploy to AWS
+#   npm run start        - Type-check, then run offline
+#   npm run deploy:dev   - Type-check, then deploy to AWS
 #
 # ================================
 org: shalev396
@@ -42,7 +42,7 @@ frameworkVersion: ^4.0.0
 
 provider:
   name: aws
-  stage: ${opt:stage, 'dev'}
+  stage: ${opt:stage}
   runtime: nodejs22.x
   timeout: 30
   memorySize: 160
@@ -81,7 +81,7 @@ provider:
           - Ref: CognitoUserPoolClient
 
   environment:
-    ENV: ${opt:stage, 'dev'}
+    ENV: ${opt:stage}
     DATABASE_URL: ${env:DATABASE_URL}
     DATABASE_PROVIDER: ${env:DATABASE_PROVIDER}
     S3_ASSETS_BUCKET_NAME: ${self:custom.assetsBucketName}
@@ -147,7 +147,7 @@ custom:
     dev: 'true'
     qa: 'true'
     prod: 'false'
-  enableDevTools: ${env:ENABLE_DEV_TOOLS, self:custom.enableDevToolsByStage.${opt:stage, 'dev'}, 'false'}
+  enableDevTools: ${env:ENABLE_DEV_TOOLS, self:custom.enableDevToolsByStage.${opt:stage}, 'false'}
 
   devApiEvents:
     'true':
@@ -163,11 +163,24 @@ custom:
   cognitoFromEmail: authenticator@${env:DOMAIN_NAME}
   sesIdentityArn: arn:aws:ses:${self:provider.region}:${env:AWS_ACCOUNT_ID}:identity/${env:DOMAIN_NAME}
 
-  useEsbuild: ${param:use-esbuild, 'false'}
+  local: ${param:local, 'false'}
 
-  esbuild: ${self:custom.esbuildConfig.${self:custom.useEsbuild}}
+  esbuild:
+    bundle: true
+    minify: true
+    platform: node
+    target: node22
+    format: esm
+    outputFileExtension: '.mjs'
+    banner:
+      js: "import{createRequire}from'module';const require=createRequire(import.meta.url);"
+    exclude:
+      - '@aws-sdk/*'
+      - 'aws-sdk'
+    watch:
+      pattern: 'src/**/*.ts'
 
-  cognitoEnv: ${self:custom.cognitoEnvConfig.${self:custom.useEsbuild}}
+  cognitoEnv: ${self:custom.cognitoEnvConfig.${self:custom.local}}
   cognitoEnvConfig:
     'true':
       clientId: ${env:COGNITO_CLIENT_ID, ''}
@@ -180,42 +193,6 @@ custom:
         Ref: CognitoUserPool
       issuer:
         Fn::Sub: 'https://cognito-idp.${AWS::Region}.amazonaws.com/${CognitoUserPool}'
-
-  esbuildConfig:
-    'true':
-      bundle: true
-      minify: false
-      platform: node
-      target: node22
-      format: esm
-      outputFileExtension: '.mjs'
-      # Express.js (CJS) bundled into ESM needs a real require() for dynamic node: imports
-      banner:
-        js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);"
-      exclude:
-        - '@aws-sdk/*'
-        - 'aws-sdk'
-      watch:
-        pattern: 'src/**/*.ts'
-    # Webpack mode: re-processes webpack output (bundle must be true or esbuild errors on exclude)
-    'false':
-      bundle: true
-      minify: false
-      platform: node
-      target: node22
-      format: esm
-      outputFileExtension: '.mjs'
-      resolveExtensions:
-        - '.mjs'
-        - '.ts'
-        - '.js'
-      exclude:
-        - '@aws-sdk/*'
-        - 'aws-sdk'
-
-  handlerBase:
-    'true': src/handlers/
-    'false': build/
 
   viewerCertificate:
     AcmCertificateArn: ${env:CERTIFICATE_ARN}
@@ -253,12 +230,9 @@ custom:
 functions:
   # PUBLIC: Authentication & Health (no auth required)
   publicApi:
-    handler: ${self:custom.handlerBase.${self:custom.useEsbuild}}api/public-handler.handler
+    handler: src/handlers/api/public-handler.handler
     timeout: 30
     memorySize: 256
-    package:
-      patterns:
-        - 'build/api/public-handler.mjs'
     events:
       - httpApi:
           path: /api/public/{proxy+}
@@ -267,12 +241,9 @@ functions:
   # PRIVATE: All authenticated user operations (auth required)
   # Timeout/memory higher for export (ZIP creation) and delete operations
   privateApi:
-    handler: ${self:custom.handlerBase.${self:custom.useEsbuild}}api/private-handler.handler
+    handler: src/handlers/api/private-handler.handler
     timeout: 30
     memorySize: 1024
-    package:
-      patterns:
-        - 'build/api/private-handler.mjs'
     events:
       - httpApi:
           path: /api/private/{proxy+}
@@ -283,13 +254,16 @@ functions:
   # DEV: Developer tools (DB sync, etc.)
   # Controlled by custom.enableDevTools — when false, no HTTP event is attached (untriggerable)
   devApi:
-    handler: ${self:custom.handlerBase.${self:custom.useEsbuild}}api/dev-handler.handler
+    handler: src/handlers/api/dev-handler.handler
     timeout: 30
     memorySize: 256
-    package:
-      patterns:
-        - 'build/api/dev-handler.mjs'
     events: ${self:custom.devApiEvents.${self:custom.enableDevTools}}
+
+  # SYNC-DB: Standalone Lambda for CI/CD database migrations (no HTTP event)
+  syncDb:
+    handler: src/handlers/scripts/sync-db.handler
+    timeout: 60
+    memorySize: 256
 
 # AWS Resources Configuration
 resources:
@@ -396,6 +370,10 @@ resources:
 
     CloudFrontDistribution:
       Type: AWS::CloudFront::Distribution
+      DependsOn:
+        - SesDkimRecord1
+        - SesDkimRecord2
+        - SesDkimRecord3
       Properties:
         DistributionConfig:
           Comment: ${self:custom.distributionComment.${self:provider.stage}}
@@ -511,6 +489,7 @@ resources:
         - SesDkimRecord2
         - SesDkimRecord3
         - CloudFrontDistribution
+        - Route53Record
       Properties:
         UserPoolName: ${self:custom.appName}-${self:provider.stage}
         UserPoolTier: ESSENTIALS

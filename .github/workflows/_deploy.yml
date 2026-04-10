@@ -1,8 +1,3 @@
-# Reusable workflow: Deploy backend + frontend to specified stage
-# Repository secrets: AWS_ACCOUNT_ID, SERVERLESS_ACCESS_KEY, HOSTED_ZONE_ID, CERTIFICATE_ARN
-# Environment secrets (per stage): COGNITO_CLIENT_ID, COGNITO_ISSUER, COGNITO_USER_POOL_ID, DATABASE_URL, DOMAIN_NAME
-# Repository variables: AWS_REGION
-# Environment variables: DATABASE_PROVIDER, ENV
 name: Deploy
 
 on:
@@ -59,10 +54,47 @@ jobs:
         run: npm run deploy:${{ inputs.stage }}
         working-directory: server
 
+  sync-database:
+    name: Sync Database Schema (${{ inputs.stage }})
+    runs-on: ubuntu-latest
+    needs: deploy-backend
+    environment:
+      name: ${{ inputs.stage }}
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      APP_NAME: ${{ vars.APP_NAME }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/my-github-actions-role
+      - name: Invoke sync-db Lambda
+        run: |
+          FUNCTION_NAME="${{ vars.APP_NAME }}-${{ inputs.stage }}-syncDb"
+          echo "Invoking $FUNCTION_NAME..."
+          RESPONSE=$(aws lambda invoke \
+            --function-name "$FUNCTION_NAME" \
+            --log-type Tail \
+            --query 'LogResult' \
+            --output text \
+            /tmp/sync-db-response.json)
+          cat /tmp/sync-db-response.json
+          echo ""
+          STATUS=$(cat /tmp/sync-db-response.json | python3 -c "import sys,json; print(json.load(sys.stdin).get('statusCode',500))")
+          if [ "$STATUS" != "200" ]; then
+            echo "sync-db Lambda returned status $STATUS"
+            echo "Logs:"
+            echo "$RESPONSE" | base64 -d
+            exit 1
+          fi
+          echo "Database schema synced successfully"
+
   deploy-frontend:
     name: Deploy Frontend (${{ inputs.stage }})
     runs-on: ubuntu-latest
-    needs: deploy-backend
+    needs: [deploy-backend, sync-database]
     environment:
       name: ${{ inputs.stage }}
     env:
