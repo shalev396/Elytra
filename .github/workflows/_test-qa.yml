@@ -33,8 +33,8 @@ jobs:
     environment:
       name: qa
     env:
-      BASE_URL: https://${{ secrets.DOMAIN_NAME }}
-      API_BASE_URL: https://${{ secrets.DOMAIN_NAME }}/api
+      BASE_URL: https://${{ vars.DOMAIN_NAME }}
+      API_BASE_URL: https://${{ vars.DOMAIN_NAME }}/api
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
