@@ -29,7 +29,7 @@ const TECHNOLOGIES: { slug: string; url: string; icon: LucideIcon }[] = [
   { slug: 'redux', url: 'https://redux-toolkit.js.org', icon: Database },
   { slug: 'query', url: 'https://tanstack.com/query', icon: RefreshCw },
   { slug: 'axios', url: 'https://axios-http.com', icon: Globe },
-  { slug: 'serverless', url: 'https://www.serverless.com', icon: Server },
+  { slug: 'cdk', url: 'https://aws.amazon.com/cdk', icon: Server },
   { slug: 'aws', url: 'https://aws.amazon.com', icon: Cloud },
 ];
 

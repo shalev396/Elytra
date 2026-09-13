@@ -1,252 +1,142 @@
 # Elytra
 
-**[Live Preview](https://elytra.shalev396.com)** | [Getting Started](#getting-started) | [Tests](#tests) | [Customize](#customizing-the-app)
+**[Live Preview](https://elytra.shalev396.com)** · [Intro](#intro) · [Getting Started](#getting-started) · [Customize](#customize)
 
----
+## Intro
 
-Full-stack serverless template built on AWS. React web app, Lambda backend, Cognito authentication, frontend E2E tests (Playwright), backend API tests (Postman), and CICD on push to `dev` / `qa` / `main`. Clone it, configure it, push it—you have a deployed app.
+Full-stack serverless template on AWS: a React web app, an Express API on a single Lambda, Cognito authentication, Playwright and Postman tests, and CICD that deploys `dev` / `qa` / `main` with AWS CDK. Clone it, give it a domain and a database, push.
 
-**Frontend** — React 19, TypeScript, Vite, Tailwind, shadcn/ui, Redux Toolkit, React Query, React Router.
+- **Frontend** — React 19, TypeScript, Vite, Tailwind, shadcn/ui, Redux Toolkit, React Query, React Router
+- **Backend** — Node.js 24, Express on one Lambda (dependencies layer + codebase layer), Sequelize or Mongoose
+- **Infrastructure** — AWS CDK, one CloudFormation stack per stage: CloudFront, S3, API Gateway, Lambda, Cognito, SES, Route 53, ACM, optional WAF
 
-**Backend** — Node.js 22, Express, Serverless Framework, and these AWS services:
+```mermaid
+flowchart LR
+  user((Browser)) --> cf
+  subgraph Edge
+    dns[Route 53 records] --> cf[CloudFront + optional WAF]
+    cert[ACM certificate] --> cf
+    ses[SES identity + DKIM]
+  end
+  subgraph Storage
+    client[(S3 DOMAIN_NAME)]
+    assets[(S3 DOMAIN_NAME-assets)]
+  end
+  subgraph Api
+    api[HTTP API]
+  end
+  subgraph Compute
+    fn[Lambda + role + log group<br/>deps layer + code layer]
+  end
+  subgraph Auth
+    cognito[Cognito user pool + client]
+  end
+  cf -- "/*" --> client
+  cf -- "/media/*" --> assets
+  cf -- "/api/*" --> api
+  api --> fn
+  fn --> cognito
+  fn --> assets
+  fn --> ses
+  fn --> db[(Your database)]
+```
 
-| AWS Service                | Purpose                                                                                       |
-| -------------------------- | --------------------------------------------------------------------------------------------- |
-| **Lambda**                 | Serverless compute for API handlers (auth, user, dev)                                         |
-| **API Gateway** (HTTP API) | REST API routing, CORS, JWT authorizer with Cognito                                           |
-| **S3**                     | Client bucket (React build), assets bucket (images, PDFs, icons)                              |
-| **CloudFront**             | CDN, custom domain, SSL termination, routes `/` and `/media/*` to S3, `/api/*` to API Gateway |
-| **Route 53**               | DNS A record for app domain; CNAME records for SES DKIM                                       |
-| **Cognito**                | User pools, app client, authentication, email verification                                    |
-| **SES**                    | Email identity and DKIM for Cognito verification emails                                       |
-| **ACM**                    | SSL/TLS certificates for CloudFront (create manually in us-east-1)                            |
-| **CloudWatch Logs**        | Lambda log retention (30 days)                                                                |
-| **CloudFormation**         | Infrastructure provisioning (via Serverless Framework)                                        |
-| **IAM**                    | Lambda execution role, policies for Cognito, S3, SES                                          |
+### Infrastructure Composer
 
-**Database** — Multi-provider support via swappable adapters:
+The complete stack — every resource, its IAM role and policy, log group, API routes and DNS records, boxed into **Edge**, **Api**, **Compute**, **Storage** and **Auth** — is committed as an [AWS Infrastructure Composer](https://docs.aws.amazon.com/infrastructure-composer/latest/dg/what-is-composer.html) drawing: [`server/infra/composer/template.json`](server/infra/composer/template.json).
 
-| ORM / ODM | Supported Databases                                                                             |
-| --------- | ----------------------------------------------------------------------------------------------- |
-| Sequelize | PostgreSQL, MySQL, MariaDB, SQLite, Microsoft SQL Server, Snowflake, DB2 for LUW, DB2 for IBM i |
-| Mongoose  | MongoDB, Amazon DocumentDB                                                                      |
+- **View it:** in VS Code with the [AWS Toolkit](https://marketplace.visualstudio.com/items?itemName=AmazonWebServices.aws-toolkit-vscode), right-click the file → **Open with Infrastructure Composer**.
+- **It stays current by itself:** the pre-commit hook regenerates and stages it whenever `server/` changes, and CI fails if it is stale. To regenerate by hand: `cd server && npm run synth:composer` (no AWS access needed).
+- It uses placeholder values (`dev.example.com`, account `123456789012`) and is never deployed. Details in [Infrastructure](docs/infrastructure.md#visualizing-in-infrastructure-composer).
 
----
+| Docs                                                                                                       | What's inside                                                   |
+| ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| [Infrastructure](docs/infrastructure.md)                                                                   | Resources, one-function design, layers, inputs/outputs, cdk-nag |
+| [Deployment](docs/deployment.md)                                                                           | Branch → stage, one-time AWS/GitHub setup, troubleshooting      |
+| [Staging access](docs/staging-access.md)                                                                   | Locking dev/qa behind a login with WAF                          |
+| [Frontend tests](client/tests/README.md) · [API tests](postman/README.md) · [OpenAPI](server/openapi.yaml) | Test suites and API spec                                        |
 
-## Requirements
-
-- **Node.js** 22+
-- **Python** 3.x (for frontend E2E tests)
-- **AWS account** — The template uses: Lambda, API Gateway, Cognito, S3, CloudFront, Route 53, ACM, SES, IAM, CloudFormation
-- **Serverless Framework** — access key
-- **Database** — Database from the Supported Databases list
-- **Domain** — Route 53 hosted zone and ACM certificate in `us-east-1`
-
----
+Questions in [Discussions](https://github.com/shalev396/Elytra/discussions), bugs in [Issues](https://github.com/shalev396/Elytra/issues), code via [CONTRIBUTING](CONTRIBUTING.md), vulnerabilities via [SECURITY](SECURITY.md).
 
 ## Getting Started
 
-### 1. Clone the Repository
+**You need:** Node.js 22+ (CI uses 24), Python 3 (E2E tests), an AWS account, a Route 53 hosted zone, and a [supported database](docs/infrastructure.md#inputs-and-outputs) (Sequelize: PostgreSQL, MySQL, …; Mongoose: MongoDB, DocumentDB).
+
+### 1. Clone
 
 ```bash
-git clone https://github.com/shalev396/Elytra.git
-cd Elytra
+git clone https://github.com/shalev396/Elytra.git && cd Elytra
 ```
 
-Or use GitHub's **"Use this template"** button to create your own copy.
+Or click **Use this template** on GitHub.
 
-### 2. Change Hardcoded URLs and Branding
+### 2. Configure a stage
 
-Before running or deploying, replace template URLs and branding with your own:
-
-| File                                                                                                                           | What to Change                                                                                                                       |
-| ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| **[`client/src/data/app.ts`](client/src/data/app.ts)**                                                                         | `baseUrl`, `repoUrl`, `contactEmail`, `supportEmail`, `privacyEmail`, `socialLinks.github` (and `linkedin` if used)                  |
-| **[`postman/environments/Elytra QA.environment.yaml`](postman/environments/Elytra%20QA.environment.yaml)**                     | `baseUrl` → `https://qa.yourdomain.com/api`                                                                                          |
-| **[`postman/collections/Elytra API/.resources/definition.yaml`](postman/collections/Elytra%20API/.resources/definition.yaml)** | `baseUrl` in `variables` → same as QA environment                                                                                    |
-| **[`server/openapi.yaml`](server/openapi.yaml)**                                                                               | `servers[1].variables.domain.default` → your production domain (e.g. `app.yourdomain.com`)                                           |
-| **[`client/conftest.py`](client/conftest.py)**                                                                                 | Comment on lines 4–5 documents QA URL; tests use `BASE_URL` / `API_BASE_URL` env vars (see [Frontend tests](client/tests/README.md)) |
-
-**Live Preview / clone link** — Update the top-line links in README.md to your own preview URL and repo.
-
-**GitHub Actions** — `.github/workflows/_test-qa.yml` uses `secrets.DOMAIN_NAME` from the `qa` environment; no URL edits needed in workflows.
-
-### 3. Environment Variables
-
-Create environment files from [`server/.env.example`](server/.env.example):
+[`server/.env.example`](server/.env.example) lists every GitHub secret and variable; the same keys go in `server/.env.<stage>` for local deploys and the local API.
 
 ```bash
-cp server/.env.example server/.env.dev
+cp server/.env.example server/.env.dev   # and .env.qa, .env.prod
 ```
 
-Copy to `server/.env.qa` and `server/.env.prod` for other stages. Fill all required values:
+| Name              | GitHub              | Required                                | Description                                                                                                                    |
+| ----------------- | ------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `AWS_ACCOUNT_ID`  | repository secret   | CI                                      | Builds the OIDC role ARN                                                                                                       |
+| `AWS_ROLE_NAME`   | repository variable | CI                                      | Name of the GitHub OIDC role CI assumes                                                                                        |
+| `AWS_REGION`      | repository variable | no                                      | Stack region, defaults to `us-east-1`                                                                                          |
+| `DOMAIN_NAME`     | environment secret  | yes                                     | Stage domain (e.g. `dev.example.com`) inside a Route 53 public hosted zone; also names the S3 buckets                          |
+| `DATABASE_URL`    | environment secret  | yes                                     | `postgres://…` uses Sequelize, `mongodb+srv://…` uses Mongoose                                                                 |
+| `CERTIFICATE_ARN` | environment secret  | only if `AWS_REGION` is not `us-east-1` | ACM certificate for `DOMAIN_NAME` in `us-east-1`. When set it is always used; when unset in `us-east-1`, the stack creates one |
+| `WAF_WEB_ACL_ARN` | environment secret  | no                                      | Existing global WAF web ACL to attach to CloudFront                                                                            |
 
-| Variable                | Description                                                 |
-| ----------------------- | ----------------------------------------------------------- |
-| `AWS_ACCOUNT_ID`        | Your AWS account ID                                         |
-| `HOSTED_ZONE_ID`        | Route 53 hosted zone ID                                     |
-| `CERTIFICATE_ARN`       | ACM certificate ARN (must be in `us-east-1`)                |
-| `SERVERLESS_ACCESS_KEY` | Serverless Framework dashboard access key                   |
-| `AWS_REGION`            | AWS region (e.g. `us-east-1`)                               |
-| `DOMAIN_NAME`           | Your domain (e.g. `app.example.com`)                        |
-| `DATABASE_URL`          | Database connection string                                  |
-| `ENV`                   | Environment: `dev` \| `qa` \| `prod`                        |
-| `DATABASE_PROVIDER`     | `mongoose` \| `sequelize`                                   |
-| `COGNITO_CLIENT_ID`     | Cognito app client ID (from AWS Console after first deploy) |
-| `COGNITO_USER_POOL_ID`  | Cognito user pool ID (from AWS Console after first deploy)  |
-| `COGNITO_ISSUER`        | Cognito issuer URL (from AWS Console after first deploy)    |
+Nothing account-specific is committed. The account comes from your credentials, the hosted zone is found in Route 53 at deploy time, and Cognito ids and bucket names are read from the deployed stack.
 
-**Note:** Cognito values are created on first deploy. After deploying, copy them from AWS Console into `.env.dev` for local development.
+> **Planned:** if `WAF_WEB_ACL_ARN` is not set, the stack will create a web ACL for you. Today it simply deploys without WAF.
 
-S3 bucket names are derived from `DOMAIN_NAME` — no separate config needed.
+### 3. Deploy
 
-### 4. Run Locally
+One-time per AWS account: `cd server && npx cdk bootstrap aws://<ACCOUNT_ID>/<REGION>`, a GitHub OIDC role, and the GitHub secrets and variables above. Full steps in [Deployment](docs/deployment.md).
 
-**Backend** (port 3000):
+Then push `dev`, `qa` or `main`: CICD deploys the stack, syncs the database schema and publishes the frontend. CI only runs the Node scripts in [`server/scripts`](server/scripts), so a manual deploy is the same two commands:
 
 ```bash
-cd server
-npm install
-npm run dev
+aws sso login                        # any credentials for the account
+cd server && npm install && (cd ../client && npm install)
+npm run deploy:backend -- dev        # stack + database schema (dev, qa or prod)
+npm run deploy:frontend -- dev       # client to S3 + CloudFront invalidation
 ```
 
-**Frontend** (port 5173):
+### 4. Run locally
+
+The local API is the same Express app the Lambda runs, wired to the deployed stage, so it needs AWS credentials and a deployed `dev` stack.
 
 ```bash
-cd client
-npm install
-npm run dev
+cd server && npm run dev   # API on http://localhost:3000
+cd client && npm install && npm run dev   # app on http://localhost:5173
 ```
 
-### 5. Deploy (Optional)
-
-CICD deploys automatically on push. To deploy manually:
+### 5. Test
 
 ```bash
-cd server
-npm run deploy:dev   # or deploy:qa, deploy:prod
+cd server && npm run test:infra && npm run test:local   # infra assertions + Postman API tests
+cd client && npm run test:install && npm run test       # Playwright E2E
 ```
 
-This deploys backend (Lambda, API Gateway, Cognito, S3, CloudFront, Route 53), then syncs the database schema via a standalone Lambda, then uploads the frontend to S3 and invalidates CloudFront. CICD performs all three steps on push—no manual deploy needed once configured.
+PRs to `qa` run local tests; PRs to `main` run tests against live qa.
 
-### 6. CICD
+## Customize
 
-Push to `dev` / `qa` / `main` triggers full deploy (backend → database sync → frontend). Set up once (see [CICD Setup](#cicd-setup)) and you're done.
+Single sources of truth — change these and names propagate everywhere.
 
----
+| What                               | Where                                                                                                                                                                                                        |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| App identity, URLs, emails, social | [`client/src/data/app.ts`](client/src/data/app.ts)                                                                                                                                                           |
+| Title and description metadata     | [`client/src/data/defaultMetadata.ts`](client/src/data/defaultMetadata.ts)                                                                                                                                   |
+| Logo and assets                    | [`client/src/data/assets.ts`](client/src/data/assets.ts)                                                                                                                                                     |
+| Favicon                            | `client/public/favicon-light.svg`, `favicon-dark.svg` ([paths](client/src/data/favicon.ts))                                                                                                                  |
+| Stack and resource names           | `APP_NAME`, `APP_DISPLAY_NAME` in [`server/infra/lib/constants.ts`](server/infra/lib/constants.ts) (also the `Project` tag; scripts and workflows derive everything from it)                                 |
+| Verification email                 | [`server/email-templates/cognito-verification.html`](server/email-templates/cognito-verification.html)                                                                                                       |
+| QA URLs for API tests              | [`postman/environments/Elytra QA.environment.yaml`](postman/environments/Elytra%20QA.environment.yaml) and the collection's [`definition.yaml`](postman/collections/Elytra%20API/.resources/definition.yaml) |
+| API spec domain                    | `servers[1].variables.domain.default` in [`server/openapi.yaml`](server/openapi.yaml)                                                                                                                        |
+| E2E test URLs                      | `BASE_URL` / `API_BASE_URL` env vars ([Frontend tests](client/tests/README.md))                                                                                                                              |
 
-## Customizing the App
-
-The template uses a single source of truth for branding. Change these files and names propagate everywhere.
-
-### Frontend
-
-**[`client/src/data/app.ts`](client/src/data/app.ts)** — App identity:
-
-- `name`, `repoUrl`, `baseUrl`, `contactEmail`, `supportEmail`, `privacyEmail`, `socialLinks`
-
-**Favicon** — Replace `client/public/favicon-light.svg` and `favicon-dark.svg` (paths in [`client/src/data/favicon.ts`](client/src/data/favicon.ts)).
-
-**Logo / assets** — [`client/src/data/assets.ts`](client/src/data/assets.ts).
-
-**Metadata** (title, description) — [`client/src/data/defaultMetadata.ts`](client/src/data/defaultMetadata.ts).
-
-### Backend
-
-**[`server/serverless.yml`](server/serverless.yml)**:
-
-- `org` (line ~35) — Serverless Framework org
-- `custom.appName` (line ~140) — Service name, stack name, Cognito pool name
-- `custom.appDisplayName` (line ~141) — Human-readable name in emails and descriptions
-
-### Sync
-
-When changing `appName` in `serverless.yml`, also set GitHub variable `APP_NAME` to the same value (CICD uses it for CloudFormation stack lookup). Keep `app.name` in `app.ts` aligned for consistent branding and translations.
-
----
-
-## Tests
-
-Out of the box:
-
-- **Frontend E2E** — Playwright + Python (smoke, accessibility, visual, responsive, security, flows)
-- **Backend API** — Postman (auth, user, dashboard, flows)
-
-| Doc                                      | Description                         |
-| ---------------------------------------- | ----------------------------------- |
-| [Frontend tests](client/tests/README.md) | Run commands, structure, categories |
-| [Backend tests](postman/README.md)       | Postman collection, CLI commands    |
-
-PRs to `qa` run local tests (serverless offline + Vite). PRs to `main` run tests against live QA.
-
----
-
-## API Documentation
-
-Full API spec: [`server/openapi.yaml`](server/openapi.yaml) (OpenAPI 3.0). Use it with [Swagger Editor](https://editor.swagger.io), Postman, or [OpenAPI Generator](https://openapi-generator.tech).
-
----
-
-## CICD Setup
-
-### 1. AWS OIDC for GitHub Actions
-
-[Configure OpenID Connect in AWS](https://docs.github.com/en/actions/security-for-github-actions/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services). Create an IAM role and attach one of:
-
-- **AdministratorAccess** — Easiest; works for all services below.
-- **Least-privilege policy** — Create a custom policy with permissions for these services used by the template:
-  - **CloudFormation** (create/update/describe stacks)
-  - **Lambda** (create, update, invoke)
-  - **API Gateway** (HTTP APIs)
-  - **S3** (buckets, objects — deploy and runtime)
-  - **CloudFront** (distributions, invalidations)
-  - **Cognito** (User Pools, App Clients)
-  - **Route 53** (hosted zones, record sets)
-  - **ACM** (certificates)
-  - **SES** (send email for Cognito verification)
-  - **IAM** (roles, policies for Lambda execution)
-
-Update `role-to-assume` in [`.github/workflows/_deploy.yml`](.github/workflows/_deploy.yml) to match your role name.
-
-### 2. GitHub Secrets and Variables
-
-**Settings > Secrets and variables > Actions**.
-
-**Repository secrets:**
-
-| Secret                  | Description                                  |
-| ----------------------- | -------------------------------------------- |
-| `AWS_ACCOUNT_ID`        | Your AWS account ID                          |
-| `HOSTED_ZONE_ID`        | Route 53 hosted zone ID                      |
-| `CERTIFICATE_ARN`       | ACM certificate ARN (must be in `us-east-1`) |
-| `SERVERLESS_ACCESS_KEY` | Serverless Framework dashboard access key    |
-
-**Repository variables:**
-
-| Variable            | Description                                   |
-| ------------------- | --------------------------------------------- |
-| `AWS_REGION`        | AWS region (e.g. `us-east-1`)                 |
-| `APP_NAME`          | Must match `custom.appName` in serverless.yml |
-| `ENV`               | Default env: `dev` \| `qa` \| `prod`          |
-| `DATABASE_PROVIDER` | `mongoose` \| `sequelize`                     |
-
-**Per-environment secrets** (set under each GitHub environment: `dev`, `qa`, `prod`):
-
-| Secret                 | Description                                          |
-| ---------------------- | ---------------------------------------------------- |
-| `DOMAIN_NAME`          | Domain for this environment (e.g. `dev.example.com`) |
-| `DATABASE_URL`         | Database connection string                           |
-| `COGNITO_CLIENT_ID`    | Cognito app client ID                                |
-| `COGNITO_USER_POOL_ID` | Cognito user pool ID                                 |
-| `COGNITO_ISSUER`       | Cognito issuer URL                                   |
-
----
-
-## Community & Support
-
-| I want to…                        | Where to go                                                                                      |
-| --------------------------------- | ------------------------------------------------------------------------------------------------ |
-| Ask a question or share an idea   | [Discussions](https://github.com/shalev396/Elytra/discussions) — Q&A, Ideas                      |
-| Report a bug or request a feature | [Issues](https://github.com/shalev396/Elytra/issues) — use the issue forms                       |
-| Contribute code                   | [Pull requests](https://github.com/shalev396/Elytra/pulls) — see [CONTRIBUTING](CONTRIBUTING.md) |
-| Report a security vulnerability   | [SECURITY policy](SECURITY.md) — report privately                                                |
+Also update the Live Preview link at the top of this README. Keep `app.name` in `app.ts` aligned with `APP_DISPLAY_NAME` for consistent branding and translations.

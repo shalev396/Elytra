@@ -10,9 +10,11 @@
 
 1. Clone the repo
 2. `cd server && npm install` / `cd client && npm install`
-3. Copy `server/.env.example` to `server/.env.dev` and fill in values
-4. `cd server && npm run dev` (port 3000) / `cd client && npm run dev` (port 5173)
-5. Run tests before opening a PR: `cd server && npm run test:local` / `cd client && npm run test`
+3. Copy `server/.env.example` to `server/.env.dev` and set `DOMAIN_NAME` + `DATABASE_URL`
+4. Log in to AWS (`aws sso login`) — the local API reads Cognito and S3 wiring from the deployed `elytra-dev` stack
+5. `cd server && npm run dev` (port 3000) / `cd client && npm run dev` (port 5173)
+6. Before opening a PR: `cd server && npm run lint && npm run build && npm run test:infra && npm run test:local` / `cd client && npm run test`
+7. Infrastructure changes: see [docs/infrastructure.md](docs/infrastructure.md). The pre-commit hook regenerates and stages the Infrastructure Composer drawing (`server/infra/composer/template.json`); open it in VS Code with **Open with Infrastructure Composer**
 
 ## Pull request rules
 
