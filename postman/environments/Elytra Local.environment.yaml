@@ -4,7 +4,7 @@ values:
     value: 'http://localhost:3000/api'
     enabled: true
     description:
-      content: Local serverless-offline API (port 3000)
+      content: Local API from `cd server && npm run dev` (port 3000)
       type: text/plain
   - key: testEmail
     value: ''

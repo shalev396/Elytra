@@ -2,7 +2,7 @@
 
 [← Back to main README](../../README.md)
 
-Run these against a live backend or serverless offline + Vite. For the full list of hardcoded URLs to change, see [Getting Started → Change Hardcoded URLs](../../README.md#2-change-hardcoded-urls-and-branding) in the main README.
+Run these against a live backend or the local API (`cd server && npm run dev`) + Vite. For the full list of hardcoded URLs to change, see [Getting Started → Change Hardcoded URLs](../../README.md#2-change-hardcoded-urls-and-branding) in the main README.
 
 ---
 

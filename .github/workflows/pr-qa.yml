@@ -1,4 +1,4 @@
-# PR to qa: lint, build, then run local tests (serverless offline + Postman + Playwright)
+# PR to qa: lint, build, then local tests (local API + Postman + Playwright)
 name: PR to QA
 
 on:

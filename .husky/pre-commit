@@ -24,5 +24,8 @@ if git diff --cached --name-only | grep -q "^server/"; then
     cd server
     npm run build
     npx eslint . --max-warnings 0
+    # Keep the committed Infrastructure Composer drawing in sync with infra/ (no AWS access needed).
+    npm run synth:composer
   )
+  git add server/infra/composer/template.json
 fi
