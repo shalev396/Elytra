@@ -23,20 +23,6 @@ function registerGracefulShutdown(): void {
   });
 }
 
-export async function clearDB(): Promise<void> {
-  if (environment.env !== 'qa') {
-    throw new Error('clearDB can only run on QA environment');
-  }
-
-  if (environment.databaseProvider === 'mongoose') {
-    const { clearAllMongo } = await import('./providers/mongoose.js');
-    await clearAllMongo();
-  } else {
-    const { clearAllSequelize } = await import('./providers/sequelize.js');
-    await clearAllSequelize();
-  }
-}
-
 export async function initDB(): Promise<void> {
   if (environment.databaseProvider === 'mongoose') {
     const { connectMongo } = await import('./providers/mongoose.js');
@@ -49,20 +35,6 @@ export async function initDB(): Promise<void> {
   }
 
   registerGracefulShutdown();
-}
-
-export async function disconnectDB(): Promise<void> {
-  try {
-    if (environment.databaseProvider === 'mongoose') {
-      const mongoose = await import('mongoose');
-      await mongoose.default.disconnect();
-    } else {
-      const { getSequelize } = await import('./providers/sequelize.js');
-      await getSequelize().close();
-    }
-  } catch {
-    // Best-effort cleanup
-  }
 }
 
 export async function syncDB(): Promise<string[]> {

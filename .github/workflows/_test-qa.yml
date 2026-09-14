@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
       - run: npm ci
         working-directory: server
       - name: Run Postman against QA API
@@ -33,13 +33,13 @@ jobs:
     environment:
       name: qa
     env:
-      BASE_URL: https://${{ secrets.DOMAIN_NAME }}
-      API_BASE_URL: https://${{ secrets.DOMAIN_NAME }}/api
+      BASE_URL: https://${{ vars.DOMAIN_NAME }}
+      API_BASE_URL: https://${{ vars.DOMAIN_NAME }}/api
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'

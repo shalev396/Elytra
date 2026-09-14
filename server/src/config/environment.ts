@@ -1,28 +1,25 @@
-type DatabaseProvider = 'sequelize' | 'mongoose';
-type Env = 'dev' | 'qa' | 'prod';
+import type { DatabaseProvider, Env } from '../types/env.d.ts';
 
+/**
+ * Runtime configuration. Only DOMAIN_NAME and DATABASE_URL are human inputs; everything else is
+ * wired by the CDK stack (Lambda) or read from its outputs (local dev, see local.ts).
+ */
 class Environment {
   readonly #env: Env;
   readonly #awsRegion: string;
   readonly #databaseUrl: string;
-  readonly #databaseProvider: DatabaseProvider;
   readonly #s3AssetsBucketName: string;
-  readonly #s3ClientBucketName: string;
   readonly #cognitoClientId: string;
   readonly #cognitoUserPoolId: string;
-  readonly #cognitoIssuer: string;
   readonly #domainName: string;
 
   constructor() {
     this.#env = process.env.ENV;
     this.#awsRegion = process.env.AWS_REGION;
     this.#databaseUrl = process.env.DATABASE_URL;
-    this.#databaseProvider = process.env.DATABASE_PROVIDER;
     this.#s3AssetsBucketName = process.env.S3_ASSETS_BUCKET_NAME;
-    this.#s3ClientBucketName = process.env.S3_CLIENT_BUCKET_NAME;
     this.#cognitoClientId = process.env.COGNITO_CLIENT_ID;
     this.#cognitoUserPoolId = process.env.COGNITO_USER_POOL_ID;
-    this.#cognitoIssuer = process.env.COGNITO_ISSUER;
     this.#domainName = process.env.DOMAIN_NAME;
   }
 
@@ -38,16 +35,13 @@ class Environment {
     return this.#databaseUrl;
   }
 
+  /** Derived from the connection string scheme: mongodb:// or mongodb+srv:// → mongoose. */
   get databaseProvider(): DatabaseProvider {
-    return this.#databaseProvider;
+    return /^mongodb(\+srv)?:\/\//i.test(this.#databaseUrl) ? 'mongoose' : 'sequelize';
   }
 
   get s3AssetsBucketName(): string {
     return this.#s3AssetsBucketName;
-  }
-
-  get s3ClientBucketName(): string {
-    return this.#s3ClientBucketName;
   }
 
   get cognitoClientId(): string {
@@ -58,12 +52,18 @@ class Environment {
     return this.#cognitoUserPoolId;
   }
 
+  /** Derived from region + user pool id. */
   get cognitoIssuer(): string {
-    return this.#cognitoIssuer;
+    return `https://cognito-idp.${this.#awsRegion}.amazonaws.com/${this.#cognitoUserPoolId}`;
   }
 
   get domainName(): string {
     return this.#domainName;
+  }
+
+  /** Developer tools (/api/dev) exist on every stage except prod. */
+  get enableDevTools(): boolean {
+    return this.#env !== 'prod';
   }
 }
 

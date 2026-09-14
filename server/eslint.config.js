@@ -14,7 +14,8 @@ export default tseslint.config(
       ecmaVersion: 2022,
       globals: globals.node,
       parserOptions: {
-        project: ['./tsconfig.json'],
+        // src/ is checked by tsconfig.json; infra/ and scripts/ by infra/tsconfig.json.
+        project: ['./tsconfig.json', './infra/tsconfig.json'],
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -35,19 +36,26 @@ export default tseslint.config(
     },
   },
   {
-    files: ['tests/**/*.ts'],
+    // CDK constructs are instantiated for their side effects (new CfnOutput(...)).
+    files: ['infra/**/*.ts'],
     rules: {
-      'no-console': 'off',
+      'no-new': 'off',
+      '@typescript-eslint/no-extraneous-class': 'off',
     },
+  },
+  {
+    // node:test describe/it return promises the runner tracks itself.
+    files: ['infra/test/**/*.ts'],
+    rules: { '@typescript-eslint/no-floating-promises': 'off' },
   },
   {
     ignores: [
       'node_modules/**',
-      'dist/**',
-      'build/**',
-      '.serverless/**',
-      '.esbuild/**',
-      'webpack.config.cjs',
+      'cdk.out/**',
+      '.build/**',
+      'infra/functions/**',
+      'infra/composer/**',
+      'infra/fixtures/**',
       'eslint.config.js',
     ],
   },

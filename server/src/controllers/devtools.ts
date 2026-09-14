@@ -22,6 +22,7 @@ const syncDatabase: RequestHandler = async (_req, res): Promise<void> => {
 const resetDatabase: RequestHandler = async (_req, res): Promise<void> => {
   try {
     await resetDb();
+    await syncDB();
     await clearUserUploadedAssets();
     await clearAllCognitoUsers();
 

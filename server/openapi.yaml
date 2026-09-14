@@ -24,8 +24,7 @@ tags:
   - name: Dev
     description: |
       Development-only endpoints for local testing and debugging.
-      These endpoints are **disabled by default** in deployed environments.
-      To enable them, set `custom.enableDevTools: true` in `serverless.yml` before deploying.
+      Available on the dev and qa stages (and locally); never routed or mounted on prod.
 
 security: []
 

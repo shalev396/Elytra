@@ -2,7 +2,7 @@
 
 [← Back to main README](../README.md)
 
-Run these against a live API or serverless offline. For the full list of hardcoded URLs to change, see [Getting Started → Change Hardcoded URLs](../README.md#2-change-hardcoded-urls-and-branding) in the main README. API tests use the **Postman CLI** or **Postman desktop app**. For frontend E2E tests (Playwright), see [client/tests/README.md](../client/tests/README.md).
+Run these against a live API or the local API (`cd server && npm run dev`). For the full list of hardcoded URLs to change, see [Getting Started → Change Hardcoded URLs](../README.md#2-change-hardcoded-urls-and-branding) in the main README. API tests use the **Postman CLI** or **Postman desktop app**. For frontend E2E tests (Playwright), see [client/tests/README.md](../client/tests/README.md).
 
 ## Import
 
@@ -115,12 +115,12 @@ Successful responses use `{ data: T }` (no `success` field). Error responses use
 
 Protected routes (`/private/*`, `/private/dashboard`) use the **API Gateway Cognito JWT authorizer** when deployed. The "Response indicates failure" assertion in no-token and invalid-token tests checks for a non-2xx status and an error-style body (typically `{ message: ... }`).
 
-| Environment                    | Who responds                                   | Body (typical)                |
-| ------------------------------ | ---------------------------------------------- | ----------------------------- |
-| **Local** (serverless-offline) | Lambda + `expressAuth`                         | `{ message: string }`         |
-| **QA/Prod** (deployed)         | API Gateway Cognito authorizer (before Lambda) | `{ message: "Unauthorized" }` |
+| Environment               | Who responds                                   | Body (typical)                |
+| ------------------------- | ---------------------------------------------- | ----------------------------- |
+| **Local** (`npm run dev`) | Express app + `expressAuth`                    | `{ message: string }`         |
+| **QA/Prod** (deployed)    | API Gateway Cognito authorizer (before Lambda) | `{ message: "Unauthorized" }` |
 
-Local tests hit the Lambda because serverless-offline bypasses the authorizer (`noAuth: true`). In QA/prod, the authorizer rejects invalid/missing tokens before the Lambda is invoked, so the response comes from API Gateway, not our app.
+Local tests hit the Express app directly (there is no API Gateway locally), so `expressAuth` answers. In QA/prod, the authorizer rejects invalid/missing tokens before the Lambda is invoked, so the response comes from API Gateway, not our app.
 
 ## Total: 62 requests
 
