@@ -78,15 +78,15 @@ Or click **Use this template** on GitHub.
 cp server/.env.example server/.env.dev   # and .env.qa, .env.prod
 ```
 
-| Name              | GitHub              | Required                                | Description                                                                                                                    |
-| ----------------- | ------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `AWS_ACCOUNT_ID`  | repository secret   | CI                                      | Builds the OIDC role ARN                                                                                                       |
-| `AWS_ROLE_NAME`   | repository variable | CI                                      | Name of the GitHub OIDC role CI assumes                                                                                        |
-| `AWS_REGION`      | repository variable | no                                      | Stack region, defaults to `us-east-1`                                                                                          |
-| `DOMAIN_NAME`     | environment secret  | yes                                     | Stage domain (e.g. `dev.example.com`) inside a Route 53 public hosted zone; also names the S3 buckets                          |
-| `DATABASE_URL`    | environment secret  | yes                                     | `postgres://…` uses Sequelize, `mongodb+srv://…` uses Mongoose                                                                 |
-| `CERTIFICATE_ARN` | environment secret  | only if `AWS_REGION` is not `us-east-1` | ACM certificate for `DOMAIN_NAME` in `us-east-1`. When set it is always used; when unset in `us-east-1`, the stack creates one |
-| `WAF_WEB_ACL_ARN` | environment secret  | no                                      | Existing global WAF web ACL to attach to CloudFront                                                                            |
+| Name              | GitHub               | Required                                | Description                                                                                                                    |
+| ----------------- | -------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `AWS_ACCOUNT_ID`  | repository secret    | CI                                      | Builds the OIDC role ARN                                                                                                       |
+| `AWS_ROLE_NAME`   | repository variable  | CI                                      | Name of the GitHub OIDC role CI assumes                                                                                        |
+| `AWS_REGION`      | repository variable  | no                                      | Stack region, defaults to `us-east-1`                                                                                          |
+| `DOMAIN_NAME`     | environment variable | yes                                     | Stage domain (e.g. `dev.example.com`) inside a Route 53 public hosted zone; also names the S3 buckets                          |
+| `DATABASE_URL`    | environment secret   | yes                                     | `postgres://…` uses Sequelize, `mongodb+srv://…` uses Mongoose                                                                 |
+| `CERTIFICATE_ARN` | environment secret   | only if `AWS_REGION` is not `us-east-1` | ACM certificate for `DOMAIN_NAME` in `us-east-1`. When set it is always used; when unset in `us-east-1`, the stack creates one |
+| `WAF_WEB_ACL_ARN` | environment secret   | no                                      | Existing global WAF web ACL to attach to CloudFront                                                                            |
 
 Nothing account-specific is committed. The account comes from your credentials, the hosted zone is found in Route 53 at deploy time, and Cognito ids and bucket names are read from the deployed stack.
 

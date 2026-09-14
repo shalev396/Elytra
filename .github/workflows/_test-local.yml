@@ -27,7 +27,7 @@ jobs:
     environment:
       name: ${{ inputs.environment }}
     env:
-      DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
+      DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
     steps:
       - uses: actions/checkout@v4
@@ -67,7 +67,7 @@ jobs:
     environment:
       name: ${{ inputs.environment }}
     env:
-      DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
+      DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       BASE_URL: http://localhost:5173
       API_BASE_URL: http://localhost:3000/api
