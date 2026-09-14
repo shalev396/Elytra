@@ -12,7 +12,7 @@
 
 All deploy logic is in Node scripts under [`server/scripts`](../server/scripts); the workflows only install dependencies and run them. Every deploy ([`_deploy.yml`](../.github/workflows/_deploy.yml)) runs two jobs in order, never two deploys at once per stage:
 
-1. **Backend** — `npm run deploy:backend -- <stage>` ([`deploy-backend.ts`](../server/scripts/deploy-backend.ts)): refuse a stack that is not this app's (no `Project`/`Stage` tags), find the hosted zone, build + verify the layers, `cdk deploy`, sync the database schema by invoking `ApiFunctionName` with `{"action":"sync-db"}` (fails on a function error or non-200), then activate the `Project` and `Stage` cost allocation tags for billing (never fails the deploy).
+1. **Backend** — `npm run deploy:backend -- <stage>` ([`deploy-backend.ts`](../server/scripts/deploy-backend.ts)): find the hosted zone, build + verify the layers, `cdk deploy`, sync the database schema by invoking `ApiFunctionName` with `{"action":"sync-db"}` (fails on a function error or non-200), then activate the `Project` and `Stage` cost allocation tags for billing (never fails the deploy).
 2. **Frontend** — `npm run deploy:frontend -- <stage>` ([`deploy-frontend.ts`](../server/scripts/deploy-frontend.ts)): build the client, upload changed files to `S3ClientBucketName` (hashed `assets/` cached for a year, `index.html` last and never cached), delete files no longer in the build, invalidate `CloudFrontDistributionId`.
 
 ## One-time setup (per AWS account)
@@ -146,14 +146,12 @@ Expect **30–60 minutes**: certificate validation, CloudFront rollout, and SES 
 
 ## Troubleshooting
 
-| Symptom                                                         | Fix                                                                                                        |
-| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `elytra-<stage> exists but is not tagged as elytra's CDK stack` | A stack with that name was not created by this app. Empty its buckets, delete it, then deploy again.       |
-| `is ROLLBACK_COMPLETE and cannot be updated`                    | Empty the stack's buckets, delete the stack in the CloudFormation console, deploy again.                   |
-| `Lambda layers are not built`                                   | `npm run build:layers` (the backend deploy does this for you).                                             |
-| `No AWS account resolved from credentials`                      | Log in (`aws sso login`) or export credentials, then retry.                                                |
-| `No public Route 53 hosted zone contains …`                     | Create a public hosted zone for `DOMAIN_NAME` or one of its parents in the account you deploy to.          |
-| `No hosted zone for stage …` from a plain `cdk` command         | Run `npm run deploy:backend -- <stage>`; it resolves the zone and passes it to CDK.                        |
-| Bucket `… already exists`                                       | Bucket names are `DOMAIN_NAME` and `DOMAIN_NAME-assets` and are global: delete the old buckets using them. |
-| Prod stack deleted and re-created fails on bucket or user pool  | Prod retains its assets bucket and user pool by design. Delete (or import) the retained resources first.   |
-| Deleting a dev/qa stack fails on a bucket                       | Buckets are not auto-emptied. Empty both (all versions for assets) and retry.                              |
+| Symptom                                                        | Fix                                                                                                        |
+| -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `Lambda layers are not built`                                  | `npm run build:layers` (the backend deploy does this for you).                                             |
+| `No AWS account resolved from credentials`                     | Log in (`aws sso login`) or export credentials, then retry.                                                |
+| `No public Route 53 hosted zone contains …`                    | Create a public hosted zone for `DOMAIN_NAME` or one of its parents in the account you deploy to.          |
+| `No hosted zone for stage …` from a plain `cdk` command        | Run `npm run deploy:backend -- <stage>`; it resolves the zone and passes it to CDK.                        |
+| Bucket `… already exists`                                      | Bucket names are `DOMAIN_NAME` and `DOMAIN_NAME-assets` and are global: delete the old buckets using them. |
+| Prod stack deleted and re-created fails on bucket or user pool | Prod retains its assets bucket and user pool by design. Delete (or import) the retained resources first.   |
+| Deleting a dev/qa stack fails on a bucket                      | Buckets are not auto-emptied. Empty both (all versions for assets) and retry.                              |

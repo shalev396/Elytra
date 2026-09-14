@@ -66,8 +66,7 @@ export type OutputName = keyof typeof OUTPUTS;
 
 /**
  * The only tags, on the stack and on every resource that can carry tags (infra/lib/tags.ts). The
- * keys match the account's active cost allocation tags; the backend deploy activates them if needed
- * and uses them to recognise this app's own stack.
+ * keys match the account's active cost allocation tags; the backend deploy activates them if needed.
  */
 export const TAG_KEYS = { project: 'Project', stage: 'Stage' } as const;
 

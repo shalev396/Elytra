@@ -105,7 +105,7 @@ Tagging is app-wide and automatic: [`infra/lib/tags.ts`](../server/infra/lib/tag
 | `Project` | `APP_NAME` (`elytra`) |
 | `Stage`   | `dev`, `qa` or `prod` |
 
-CloudFormation cannot tag bucket policies, Route 53 records, API routes, integrations and authorizers, Lambda permissions and layer versions, the origin access control, the user pool client, the IAM inline policies, the SES verification custom resource, or the WaitCondition and its handle. [`infra/test/stack.test.ts`](../server/infra/test/stack.test.ts) fails if any other resource is missing a tag or has an extra one. The backend deploy also uses the two tags to recognise its own stack.
+CloudFormation cannot tag bucket policies, Route 53 records, API routes, integrations and authorizers, Lambda permissions and layer versions, the origin access control, the user pool client, the IAM inline policies, the SES verification custom resource, or the WaitCondition and its handle. [`infra/test/stack.test.ts`](../server/infra/test/stack.test.ts) fails if any other resource is missing a tag or has an extra one.
 
 **Billing.** CloudFormation cannot activate cost allocation tags (it is an account-wide billing setting), so `npm run deploy:backend` activates `Project` and `Stage` through the Cost Explorer API after every deploy. It never fails a deploy: keys billing has not seen yet (up to a day after the first tagged resources exist) are activated on a later deploy, and in an AWS Organizations member account only the management account can activate them. Then filter or group by `Project` and `Stage` in Cost Explorer.
 
