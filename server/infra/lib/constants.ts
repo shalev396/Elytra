@@ -41,6 +41,7 @@ export const CONTEXT = {
   region: 'region',
   certificateArn: 'certificateArn',
   webAclArn: 'webAclArn',
+  wwwAlias: 'wwwAlias',
 } as const;
 
 /**
@@ -73,6 +74,20 @@ export const TAG_KEYS = { project: 'Project', stage: 'Stage' } as const;
 export function stackTags(stage: Stage): Record<string, string> {
   return { [TAG_KEYS.project]: APP_NAME, [TAG_KEYS.stage]: stage };
 }
+
+/**
+ * Assets bucket layout. Only `media/` is served (CloudFront `/media/*`); `tmp/` holds objects that
+ * must never be public (staged browser uploads, export ZIPs) and expires after a day.
+ */
+export const S3_PREFIXES = {
+  media: 'media',
+  tmp: 'tmp',
+  staging: 'tmp/staging',
+  exports: 'tmp/exports',
+} as const;
+
+/** Days before a lifecycle rule deletes a staged upload or an export ZIP. */
+export const TMP_OBJECT_EXPIRATION_DAYS = 1;
 
 /** Direct-invoke event `{ action }` that makes the API function sync the database schema. */
 export const SYNC_DB_ACTION = 'sync-db';

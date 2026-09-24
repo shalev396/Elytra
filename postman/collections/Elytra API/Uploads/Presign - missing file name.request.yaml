@@ -1,0 +1,24 @@
+$kind: http-request
+url: '{{baseUrl}}/private/uploads/presign'
+method: POST
+auth:
+  type: inherit
+  credentials:
+    id: 383fc78f-96ef-47d9-81d5-e4c7dada7326
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: '{"purpose":"account-photo","mimeType":"image/png"}'
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 400', function () {
+          pm.response.to.have.status(400);
+      });
+
+      pm.test('Response indicates failure', function () {
+          pm.expect(pm.response.json().message).to.equal('fileName is required');
+      });
+    language: text/javascript
+order: 2500

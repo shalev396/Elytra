@@ -48,6 +48,11 @@ export function applyNagSuppressions(stack: Stack, config: StageConfig): void {
   // Edge
   ack('Edge/Distribution', 'AwsSolutions-CFR3', noAccessLogs);
   ack('Edge/Distribution', 'AwsSolutions-CFR1', 'The app is served globally; no geo restrictions.');
+  ack(
+    'Edge/Distribution/Origin1',
+    'Annotation::@aws-cdk/aws-cloudfront-origins:listBucketSecurityRisk',
+    'defaultRootObject is index.html and the SPA rewrite sends every extension-less path (including /) to /index.html, so no request reaches the bucket root; ListBucket only turns a missing file into a 404.',
+  );
   if (config.webAclArn === undefined) {
     ack(
       'Edge/Distribution',
@@ -81,6 +86,11 @@ export function applyNagSuppressions(stack: Stack, config: StageConfig): void {
     'Compute/Function/ServiceRole/DefaultPolicy',
     `AwsSolutions-IAM5[Resource::<${logicalId('Storage/AssetsBucket/Resource')}.Arn>/media/*]`,
     'Object access is limited to the media/ prefix where user uploads live; keys are generated per upload.',
+  );
+  ack(
+    'Compute/Function/ServiceRole/DefaultPolicy',
+    `AwsSolutions-IAM5[Resource::<${logicalId('Storage/AssetsBucket/Resource')}.Arn>/tmp/*]`,
+    'Object access is limited to the tmp/ prefix (staged uploads, export ZIPs); keys are generated per request and expire after a day.',
   );
   ack(
     'Compute/Function/ServiceRole/DefaultPolicy',

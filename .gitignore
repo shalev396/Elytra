@@ -28,7 +28,11 @@ postman-results.xml
 *artifacts
 *translations.json
 
-# Python venv
+# Python venv and caches
 *.venv
 *__pycache__
+*.pytest_cache
 *.DS_Store
+
+# Serverless CLI state (its mcp command writes .serverless/meta.json with org and user ids)
+.serverless/

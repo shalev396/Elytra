@@ -9,6 +9,17 @@ on:
 permissions:
   contents: read
 
+# Merging into qa starts the QA deploy (push-qa.yml) and, through the open qa -> main PR, this suite,
+# seconds apart. Sharing _deploy.yml's `deploy-${{ inputs.stage }}` group (deploy-qa for qa) makes
+# this run wait for a running QA deploy instead of testing a half-deployed stage. Keep the two
+# names equal, or the wait silently stops working. GitHub keeps only one pending run per group: a
+# newly queued run replaces an older pending one even with cancel-in-progress: false, so rapid
+# pushes to qa can drop a pending deploy or test run (re-run it). Don't move this suite into
+# push-qa.yml behind the deploy: it is the gate in front of prod.
+concurrency:
+  group: deploy-qa
+  cancel-in-progress: false
+
 jobs:
   test-backend-qa:
     name: Backend Tests (Postman vs QA)

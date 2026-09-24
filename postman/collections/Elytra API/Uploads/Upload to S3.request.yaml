@@ -1,0 +1,30 @@
+$kind: http-request
+url: '{{uploadUrl}}'
+method: POST
+# The policy in the form fields is the credential: an Authorization header would make S3 reject it.
+# The presigned fields are prepended before the file at run time, because S3 ignores every field
+# after `file`. The fixture path is relative to the repo root (run with --working-dir .).
+auth:
+  type: noauth
+body:
+  type: formdata
+  content:
+    - key: file
+      type: file
+      src: postman/fixtures/test-image.png
+      contentType: image/png
+scripts:
+  - type: beforeRequest
+    code: |-
+      const fields = JSON.parse(pm.collectionVariables.get('uploadFields') || '{}');
+      Object.keys(fields).reverse().forEach(function (key) {
+          pm.request.body.formdata.prepend({ key: key, value: fields[key], type: 'text' });
+      });
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test('S3 accepts the presigned POST', function () {
+          pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);
+      });
+    language: text/javascript
+order: 4000

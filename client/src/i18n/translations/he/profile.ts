@@ -56,6 +56,7 @@ export const profile = {
     chooseFile: 'בחר תמונה',
     changeFile: 'שנה תמונה',
     removeFile: 'הסר',
+    photoPreviewAlt: 'תצוגה מקדימה של התמונה',
     emailNotice: 'שליחת הטופס תשלח לך אימייל אישור עם פרטי החשבון המעודכנים שלך.',
     submit: 'שמור שינויים',
     submitting: 'שומר...',

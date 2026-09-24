@@ -11,6 +11,7 @@ flowchart LR
   user((Browser)) --> cf[CloudFront<br/>DOMAIN_NAME]
   cf -- "/*" --> client[(S3 client bucket<br/>private, OAC)]
   cf -- "/media/*" --> assets[(S3 assets bucket<br/>private, OAC)]
+  user -- "presigned POST / GET (tmp/)" --> assets
   cf -- "/api/*" --> api[HTTP API]
   api -- "/api/public/*" --> fn[Lambda elytra-stage-api]
   api -- "/api/private/* (Cognito JWT)" --> fn
@@ -23,14 +24,14 @@ flowchart LR
 
 ## Resources (one stack, ~30 resources)
 
-| Construct ([`infra/lib/constructs`](../server/infra/lib/constructs)) | Creates                                                                                                                                                                                |
-| -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Storage`                                                            | Client bucket `DOMAIN_NAME` (Vite build) and assets bucket `DOMAIN_NAME-assets` (`media/` uploads). Both block all public access; CloudFront reads them through origin access control. |
-| `Email`                                                              | SES domain identity for `DOMAIN_NAME`, its three DKIM CNAME records, and the deploy-time wait until SES has verified them (see below).                                                 |
-| `Api`                                                                | HTTP API with routes `/api/public/{proxy+}`, `/api/private/{proxy+}` (Cognito JWT authorizer) and `/api/dev/{proxy+}` (dev/qa only), throttled 100/200.                                |
-| `Edge`                                                               | ACM certificate (imported or created), optional WAF attachment, CloudFront distribution, SPA rewrite CloudFront Function, Route 53 alias record.                                       |
-| `Auth`                                                               | Cognito user pool (email sign-in, SES sender `authenticator@DOMAIN_NAME`) and app client.                                                                                              |
-| `Compute`                                                            | **One** Lambda function, **one** dependencies layer, **one** codebase layer, its log group (30 days) and least-privilege role.                                                         |
+| Construct ([`infra/lib/constructs`](../server/infra/lib/constructs)) | Creates                                                                                                                                                                             |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Storage`                                                            | Client bucket `DOMAIN_NAME` (Vite build) and assets bucket `DOMAIN_NAME-assets` (layout below). Both block all public access; CloudFront reads them through origin access control.  |
+| `Email`                                                              | SES domain identity for `DOMAIN_NAME`, its three DKIM CNAME records, and the deploy-time wait until SES has verified them (see below).                                              |
+| `Api`                                                                | HTTP API with routes `/api/public/{proxy+}`, `/api/private/{proxy+}` (Cognito JWT authorizer) and `/api/dev/{proxy+}` (dev/qa only), throttled 100/200.                             |
+| `Edge`                                                               | ACM certificate (imported or created), optional WAF attachment, CloudFront distribution, SPA rewrite CloudFront Function, Route 53 alias record (plus `www` with `WWW_ALIAS=true`). |
+| `Auth`                                                               | Cognito user pool (email sign-in, SES sender `authenticator@DOMAIN_NAME`) and app client.                                                                                           |
+| `Compute`                                                            | **One** Lambda function, **one** dependencies layer, **one** codebase layer, its log group (30 days) and least-privilege role.                                                      |
 
 Besides the API function, the stack creates exactly one helper: the SES verification wait below. No auto-delete, log-retention or other custom resources. [`infra/test/stack.test.ts`](../server/infra/test/stack.test.ts) fails if another one appears.
 
@@ -54,13 +55,14 @@ Both layers are built by [`scripts/build-layers.ts`](../server/scripts/build-lay
 
 **Inputs (per stage):**
 
-| Input             | Required                           | Notes                                                                                                          |
-| ----------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `DOMAIN_NAME`     | yes                                | Must sit inside a Route 53 public hosted zone; also the client bucket name (`<DOMAIN_NAME>-assets` for assets) |
-| `DATABASE_URL`    | yes                                | NoEcho CloudFormation parameter (see below)                                                                    |
-| `AWS_REGION`      | no — defaults to `us-east-1`       | Region of the whole stack                                                                                      |
-| `CERTIFICATE_ARN` | only if `AWS_REGION` ≠ `us-east-1` | ACM certificate for `DOMAIN_NAME`, always in `us-east-1`. Used as-is whenever it is set                        |
-| `WAF_WEB_ACL_ARN` | no                                 | Existing global (CloudFront scope) web ACL to attach; no WAF when unset                                        |
+| Input             | Required                           | Notes                                                                                                                |
+| ----------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `DOMAIN_NAME`     | yes                                | Must sit inside a Route 53 public hosted zone; also the client bucket name (`<DOMAIN_NAME>-assets` for assets)       |
+| `DATABASE_URL`    | yes                                | NoEcho CloudFormation parameter (see below)                                                                          |
+| `AWS_REGION`      | no — defaults to `us-east-1`       | Region of the whole stack                                                                                            |
+| `CERTIFICATE_ARN` | only if `AWS_REGION` ≠ `us-east-1` | ACM certificate for `DOMAIN_NAME`, always in `us-east-1`. Used as-is whenever it is set                              |
+| `WAF_WEB_ACL_ARN` | no                                 | Existing global (CloudFront scope) web ACL to attach; no WAF when unset                                              |
+| `WWW_ALIAS`       | no                                 | `true` also serves `www.DOMAIN_NAME` from the same distribution ([Deployment](deployment.md#4-github-configuration)) |
 
 Certificate rule, checked before synth: `CERTIFICATE_ARN` set → use it (it must be a `us-east-1` ACM ARN). Not set → the stack creates and DNS-validates one, which is only possible when the stack itself is in `us-east-1`; any other region fails with an explanation.
 
@@ -86,9 +88,36 @@ Planned: when `WAF_WEB_ACL_ARN` is not set, the stack will create a web ACL for 
 | `CognitoUserPoolId`, `CognitoClientId` | Local API server ([`src/local.ts`](../server/src/local.ts)) |
 | `S3AssetsBucketName`                   | Local API server                                            |
 
+## Assets bucket layout
+
+| Prefix         | Holds                                                    | Served by CloudFront | Lifecycle                    |
+| -------------- | -------------------------------------------------------- | -------------------- | ---------------------------- |
+| `media/`       | User media                                               | yes, `/media/*`      | noncurrent versions: 30 days |
+| `tmp/staging/` | Browser uploads (presigned POST), consumed by the API    | never                | deleted after 1 day          |
+| `tmp/exports/` | Account export ZIPs, downloaded once via a presigned GET | never                | deleted after 1 day          |
+
+The prefixes and the expiry are `S3_PREFIXES` / `TMP_OBJECT_EXPIRATION_DAYS` in [`infra/lib/constants.ts`](../server/infra/lib/constants.ts); the lifecycle rules are `DeleteOldVersions`, `DeleteStagedUploads` and `DeleteExportZips`. `/media/*` is the only CloudFront behavior on the assets bucket, so nothing under `tmp/` is ever public; the browser reaches it only through short-lived presigned requests. The function's role may read, write and delete only `media/*` and `tmp/*`, and list only those prefixes.
+
+Bucket CORS allows `GET`, `HEAD` and `POST` from `http://localhost:5173` and `https://DOMAIN_NAME` (plus `https://www.DOMAIN_NAME` with `WWW_ALIAS=true`), never `*`. A CORS change only takes effect once the stage is deployed, so a PR that needs it can fail its own browser tests against the currently deployed stage.
+
+### File transfer limits
+
+Files never pass through the API. A Lambda request or response payload is capped at 6,291,556 bytes, and API Gateway base64-encodes binary bodies, so only about 4.72 MB of file would get through; the HTTP API also gives up after 30 seconds. So:
+
+- **Uploads** go from the browser straight to S3: the API returns a presigned POST for `tmp/staging/` (size range and content type are part of the signed policy), the browser posts the file, and the API then validates and moves it into `media/`.
+- **Exports** are written to `tmp/exports/` and the API returns a presigned GET URL the browser downloads directly.
+
+## Missing files return 404
+
+With origin access control, S3 answers a missing key with **403** unless the caller may list the bucket. The client bucket grants CloudFront `s3:GetObject` and `s3:ListBucket` in one statement with the same `AWS:SourceArn` condition (this distribution only), so a missing file (an old `/assets` chunk) is a proper **404**. The bucket stays private, and no request can reach the bucket root: `defaultRootObject` and the SPA rewrite send `/` and every extension-less path to `/index.html`. The assets bucket is not listable by CloudFront.
+
+## Database network access
+
+Lambda has no fixed outbound IP. With MongoDB Atlas, **Network Access must allow `0.0.0.0/0`**, or the deploy's schema sync fails with `MongooseServerSelectionError`. Rely on the database user's credentials (and TLS) instead of an IP allowlist.
+
 ## Waiting for SES before Cognito
 
-Cognito rejects an SES sender whose domain identity is not verified yet, and SES verifies a new domain some time after its DKIM records appear (usually minutes; 44 minutes has been seen). The stack waits for it, so the first deploy of a stage behaves like every other deploy:
+Cognito rejects an SES sender whose domain identity is not verified yet, and SES verifies a new domain some time after its DKIM records appear (typically about 1–2 minutes; 44 minutes has been seen). The stack waits for it, so the first deploy of a stage behaves like every other deploy:
 
 1. `Email/VerificationCheck` (custom resource, after the identity and DKIM records) starts a background check in [`infra/functions/ses-domain-verification`](../server/infra/functions/ses-domain-verification/index.mjs) and returns immediately.
 2. The check polls SES every 30 seconds, handing over to a fresh Lambda invocation every 15 minutes, and signals the `Email/DomainVerified…` **WaitCondition** once SES reports the domain verified.
@@ -123,7 +152,7 @@ Buckets are never auto-emptied; empty them before deleting a stack.
 
 ## cdk-nag
 
-Every synth runs the [cdk-nag](https://github.com/cdklabs/cdk-nag) AwsSolutions pack; any unacknowledged finding fails synth (and `npm run test:infra`). Acknowledgements live in [`infra/lib/nag.ts`](../server/infra/lib/nag.ts), each scoped to one construct with its reason: no access logs (S1, APIG1, CFR3), public auth routes and dev routes (APIG4), no geo restriction (CFR1), no WAF when `WAF_WEB_ACL_ARN` is unset (CFR2), Essentials tier and no MFA (COG8, COG2), `AWSLambdaBasicExecutionRole` (IAM4), and the prefix-scoped `media/*` and condition-scoped SES `identity/*` statements (IAM5).
+Every synth runs the [cdk-nag](https://github.com/cdklabs/cdk-nag) AwsSolutions pack; any unacknowledged finding fails synth (and `npm run test:infra`). Acknowledgements live in [`infra/lib/nag.ts`](../server/infra/lib/nag.ts), each scoped to one construct with its reason: no access logs (S1, APIG1, CFR3), public auth routes and dev routes (APIG4), no geo restriction (CFR1), no WAF when `WAF_WEB_ACL_ARN` is unset (CFR2), Essentials tier and no MFA (COG8, COG2), `AWSLambdaBasicExecutionRole` (IAM4), and the prefix-scoped `media/*` and `tmp/*` and condition-scoped SES `identity/*` statements (IAM5). The CDK warning about CloudFront listing the client bucket is acknowledged there too (see [Missing files return 404](#missing-files-return-404)).
 
 ## Commands (`cd server`)
 
@@ -137,13 +166,13 @@ Every synth runs the [cdk-nag](https://github.com/cdklabs/cdk-nag) AwsSolutions 
 | `npm run synth`                      | no         | `cdk synth` of `elytra-dev` with fixture values                                                                          |
 | `npm run synth:composer`             | no         | Write the Infrastructure Composer drawing (below)                                                                        |
 | `npm run deploy:backend -- <stage>`  | yes        | Guard, find the hosted zone, build + verify layers, `cdk deploy`, sync the database schema ([Deployment](deployment.md)) |
-| `npm run deploy:frontend -- <stage>` | yes        | Build the client, upload it to the client bucket, invalidate CloudFront                                                  |
+| `npm run deploy:frontend -- <stage>` | yes        | Build the client, upload it to the client bucket, invalidate CloudFront and wait for it                                  |
 
 ## Visualizing in Infrastructure Composer
 
 [`server/infra/composer/template.json`](../server/infra/composer/template.json) is committed. In VS Code with the AWS Toolkit, right-click it → **Open with Infrastructure Composer**.
 
-It is regenerated by [`scripts/composer-template.ts`](../server/scripts/composer-template.ts) (`npm run synth:composer`) from a fixture synth of the dev stack, so it needs no credentials and contains no real account, domain or zone. The pre-commit hook runs it and stages the file whenever `server/` changes, and `npm run test:infra` (CI) fails if the committed file is stale.
+It is regenerated by [`scripts/composer-template.ts`](../server/scripts/composer-template.ts) (`npm run synth:composer`) from a fixture synth of the dev stack, so it needs no credentials and contains no real account, domain or zone. The pre-commit hook runs it and stages the file whenever a commit touches `server/infra/`, and `npm run test:infra` (CI) fails if the committed file is stale.
 
 What the drawing contains ([`infra/lib/composer.ts`](../server/infra/lib/composer.ts)):
 

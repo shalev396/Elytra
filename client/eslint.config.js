@@ -22,7 +22,13 @@ export default defineConfig([
       ecmaVersion: 2022,
       globals: globals.browser,
       parserOptions: {
-        project: ['./tsconfig.app.json', './tsconfig.node.json'],
+        // The project service resolves the nearest tsconfig for each file (following the
+        // solution-style references in tsconfig.json). Standalone scripts that no tsconfig
+        // includes (scripts/) fall back to the default project, built from the Node tsconfig.
+        projectService: {
+          allowDefaultProject: ['scripts/*.ts'],
+          defaultProject: 'tsconfig.node.json',
+        },
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -61,7 +67,7 @@ export default defineConfig([
     },
   },
   {
-    files: ['tests/scripts/**/*.ts'],
+    files: ['tests/scripts/**/*.ts', 'scripts/**/*.ts'],
     rules: { 'no-console': 'off' },
   },
 ]);

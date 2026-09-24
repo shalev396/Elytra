@@ -8,3 +8,7 @@ collections:
 environments:
   - postman/environments/Elytra Local.environment.yaml
   - postman/environments/Elytra QA.environment.yaml
+
+localResources:
+  specs:
+    - ../server/openapi.yaml

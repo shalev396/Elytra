@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { DEFAULT_METADATA, getBaseUrl } from '@/data/defaultMetadata';
+import { useTranslation } from 'react-i18next';
+import { app } from '@/data/app';
+import { DEFAULT_METADATA, getBaseUrl, getOgLocale } from '@/data/defaultMetadata';
 
 export interface PageMetadataProps {
   title?: string;
@@ -49,6 +51,8 @@ export function PageMetadata({
   noIndex,
 }: PageMetadataProps) {
   const { pathname } = useLocation();
+  const { i18n } = useTranslation();
+  const ogLocale = getOgLocale(i18n.language);
   const baseUrl = getBaseUrl();
 
   const resolvedTitle = title ?? DEFAULT_METADATA.title;
@@ -77,6 +81,13 @@ export function PageMetadata({
     setMetaTag('meta', 'property', 'og:title', resolvedTitle);
     setMetaTag('meta', 'property', 'og:description', resolvedDescription);
     setMetaTag('meta', 'property', 'og:image', imageUrl);
+    setMetaTag('meta', 'property', 'og:site_name', app.name);
+    setMetaTag('meta', 'property', 'og:locale', ogLocale);
+    setMetaTag('meta', 'name', 'twitter:card', DEFAULT_METADATA.twitterCard);
+    setMetaTag('meta', 'name', 'twitter:url', ogUrl);
+    setMetaTag('meta', 'name', 'twitter:title', resolvedTitle);
+    setMetaTag('meta', 'name', 'twitter:description', resolvedDescription);
+    setMetaTag('meta', 'name', 'twitter:image', imageUrl);
     setCanonical(canonical);
   }, [
     resolvedTitle,
@@ -87,6 +98,7 @@ export function PageMetadata({
     ogUrl,
     imageUrl,
     canonical,
+    ogLocale,
   ]);
 
   return null;

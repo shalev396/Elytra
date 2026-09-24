@@ -16,6 +16,7 @@ import {
   type LayerManifest,
 } from '../../../scripts/paths.js';
 import type { StageConfig } from '../config.js';
+import { S3_PREFIXES } from '../constants.js';
 import { resourceName } from '../naming.js';
 
 export interface ComputeProps {
@@ -106,18 +107,32 @@ export class Compute extends Construct {
       }),
     );
 
-    // User media lives under media/ in the assets bucket.
+    // User media lives under media/; staged uploads and export ZIPs under tmp/ (Storage).
     this.function.addToRolePolicy(
       new iam.PolicyStatement({
         actions: ['s3:GetObject', 's3:PutObject', 's3:DeleteObject'],
-        resources: [props.assetsBucket.arnForObjects('media/*')],
+        resources: [
+          props.assetsBucket.arnForObjects(`${S3_PREFIXES.media}/*`),
+          props.assetsBucket.arnForObjects(`${S3_PREFIXES.tmp}/*`),
+        ],
       }),
     );
+    // ListBucket on the same prefixes: listing a user's media, and S3 answers a missing key with
+    // 404 (rather than 403) only to callers allowed to list.
     this.function.addToRolePolicy(
       new iam.PolicyStatement({
         actions: ['s3:ListBucket'],
         resources: [props.assetsBucket.bucketArn],
-        conditions: { StringLike: { 's3:prefix': ['media', 'media/*'] } },
+        conditions: {
+          StringLike: {
+            's3:prefix': [
+              S3_PREFIXES.media,
+              `${S3_PREFIXES.media}/*`,
+              S3_PREFIXES.tmp,
+              `${S3_PREFIXES.tmp}/*`,
+            ],
+          },
+        },
       }),
     );
 

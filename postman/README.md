@@ -43,6 +43,14 @@ npm run test:local  # Against http://localhost:3000/api
 npm run test:qa     # Against QA (baseUrl from Elytra QA.environment.yaml)
 ```
 
+Both scripts `cd ..` and run the collection from the repo root with `--working-dir .`, because the "Upload to S3" request reads its file body from `postman/fixtures/test-image.png`. When running the Postman CLI yourself, do the same from the repo root:
+
+```bash
+postman collection run "postman/collections/Elytra API" --environment "postman/environments/Elytra Local.environment.yaml" --working-dir .
+```
+
+`.postman/resources.yaml` also links the OpenAPI spec (`server/openapi.yaml`) into the Postman workspace.
+
 Configure `baseUrl` in each environment file (Local: `postman/environments/Elytra Local.environment.yaml`, QA: `postman/environments/Elytra QA.environment.yaml`). The collection `postman/collections/Elytra API/.resources/definition.yaml` also has a `baseUrl` variable — keep it in sync with your QA environment.
 
 ## Collection Structure
@@ -66,25 +74,43 @@ Endpoint coverage for all authentication routes:
 | **Forgot Password** | `POST /public/auth/forgot-password` | 4 (valid email, nonexistent email, missing email, invalid email format)                                                      |
 | **Reset Password**  | `POST /public/auth/reset-password`  | 5 (invalid code, missing fields, missing email, missing code, missing password)                                              |
 
-### 3. User (12 requests)
+### 3. User (13 requests)
 
 Endpoint coverage for private account routes (all require `Authorization: Bearer <idToken>`):
 
-| Folder              | Endpoint                      | Requests                                            |
-| ------------------- | ----------------------------- | --------------------------------------------------- |
-| **Get Me**          | `GET /private/me`             | 3 (valid token, no token, invalid token)            |
-| **Update Me**       | `PUT /private/me`             | 4 (change name, restore name, no token, no changes) |
-| **Send Test Email** | `POST /private/me/test-email` | 2 (valid token, no token)                           |
-| **Export Me**       | `GET /private/me/export`      | 2 (valid token, no token)                           |
-| **Delete Account**  | `DELETE /private/delete`      | 1 (no token -- expects 401)                         |
+| Folder              | Endpoint                      | Requests                                                                       |
+| ------------------- | ----------------------------- | ------------------------------------------------------------------------------ |
+| **Get Me**          | `GET /private/me`             | 3 (valid token, no token, invalid token)                                       |
+| **Update Me**       | `PUT /private/me` (JSON)      | 5 (change name, restore name, no token, no changes, non-boolean `removePhoto`) |
+| **Send Test Email** | `POST /private/me/test-email` | 2 (valid token, no token)                                                      |
+| **Export Me**       | `GET /private/me/export`      | 2 (valid token: JSON `downloadUrl`, no token)                                  |
+| **Delete Account**  | `DELETE /private/delete`      | 1 (no token -- expects 401)                                                    |
 
-### 4. Dashboard (2 requests)
+### 4. Uploads (9 requests)
+
+Presigned browser uploads, end to end. Files never pass through the API: the presign response is a presigned S3 POST, the file goes straight to the assets bucket, and `PUT /private/me` consumes it by `stagingKey`.
+
+| Request                          | Checks                                                                                            |
+| -------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Presign - valid                  | `POST /private/uploads/presign` → 200; saves `stagingKey`, `uploadUrl`, `uploadFields`            |
+| Presign - disallowed MIME type   | `image/svg+xml` → 400                                                                             |
+| Presign - missing file name      | → 400                                                                                             |
+| Presign - no token               | → 401                                                                                             |
+| Upload to S3                     | `POST {{uploadUrl}}`, `auth: noauth`, form fields then `file` (`postman/fixtures/test-image.png`) |
+| Update Me - with photo           | `{ photo: { stagingKey, fileName } }` → 200, `photoUrl` under `/media/users/`                     |
+| Update Me - replayed staging key | Same key again → 404 (a staged upload is consumed once)                                           |
+| Update Me - foreign staging key  | Another user's staging folder → 400                                                               |
+| Update Me - remove photo         | `{ removePhoto: true }` → 200, `photoUrl` is `null`                                               |
+
+The S3 request has no preflight, so it passes even when the bucket's CORS rules would block a browser.
+
+### 5. Dashboard (2 requests)
 
 | Endpoint                 | Requests                  |
 | ------------------------ | ------------------------- |
 | `GET /private/dashboard` | 2 (valid token, no token) |
 
-### 5. Flows (21 requests)
+### 6. Flows (24 requests)
 
 User interaction flows that mimic real user journeys, organized by topic:
 
@@ -122,12 +148,13 @@ Protected routes (`/private/*`, `/private/dashboard`) use the **API Gateway Cogn
 
 Local tests hit the Express app directly (there is no API Gateway locally), so `expressAuth` answers. In QA/prod, the authorizer rejects invalid/missing tokens before the Lambda is invoked, so the response comes from API Gateway, not our app.
 
-## Total: 62 requests
+## Total: 84 requests
 
 - Setup: 9
 - Auth: 27
-- User: 12
+- User: 13
+- Uploads: 9
 - Dashboard: 2
-- Flows: 22 (Auth: 18 + User: 4)
+- Flows: 24 (Auth: 18 + User: 6)
 
 Note: The Setup account is not explicitly deleted -- it is cleaned up by the "Reset Database" step at the start of the next run. The Signup flow creates a separate account for flow testing, which is deleted by the Delete Account flow at the end.

@@ -47,6 +47,9 @@ process.env.AWS_REGION = resolveRegion();
 process.env.COGNITO_USER_POOL_ID = outputs.userPoolId;
 process.env.COGNITO_CLIENT_ID = outputs.userPoolClientId;
 process.env.S3_ASSETS_BUCKET_NAME = outputs.assetsBucketName;
+// A local server sees every request from one IP, so per-IP limits would throttle a single test
+// run. Never set on Lambda.
+process.env.DISABLE_RATE_LIMIT = 'true';
 
 // Imported only after the environment is populated: config/environment.ts reads it at load time.
 const { createApp } = await import('./app.js');

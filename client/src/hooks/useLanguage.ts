@@ -1,7 +1,12 @@
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { useCallback } from 'react';
-import { isValidLanguage, type Language, SUPPORTED_LANGUAGES } from '@/i18n/config';
+import {
+  isValidLanguage,
+  storeLanguagePreference,
+  type Language,
+  SUPPORTED_LANGUAGES,
+} from '@/i18n/config';
 
 export function useLanguage() {
   const { i18n } = useTranslation();
@@ -29,6 +34,9 @@ export function useLanguage() {
   const changeLanguage = useCallback(
     (newLang: Language) => {
       const currentLang = getCurrentLanguage();
+
+      // Remember the explicit choice for unprefixed URLs (getDefaultLanguage)
+      storeLanguagePreference(newLang);
 
       // If already on the correct language, do nothing
       if (currentLang === newLang) {

@@ -1,7 +1,11 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { extname, join, relative, sep } from 'node:path';
-import { CloudFrontClient, CreateInvalidationCommand } from '@aws-sdk/client-cloudfront';
+import {
+  CloudFrontClient,
+  CreateInvalidationCommand,
+  waitUntilInvalidationCompleted,
+} from '@aws-sdk/client-cloudfront';
 import {
   DeleteObjectsCommand,
   paginateListObjectsV2,
@@ -20,7 +24,8 @@ import { fail, runNpm, stageFromArgs } from './stage.js';
  *   2. upload it to the stage's client bucket (S3ClientBucketName): hashed assets/ cached for a
  *      year, other files for 5 minutes, index.html last and never cached, so it only ever points
  *      at uploaded assets. Unchanged files are skipped; files no longer in the build are deleted.
- *   3. invalidate the CloudFront distribution (CloudFrontDistributionId)
+ *   3. invalidate the CloudFront distribution (CloudFrontDistributionId) and wait until the
+ *      invalidation completes, so nothing that runs next (CI tests) sees the previous build
  *
  * Inputs: AWS credentials and a deployed stack. Run `npm ci` in server/ and client/ first.
  */
@@ -168,3 +173,13 @@ const { Invalidation } = await cloudFront.send(
   }),
 );
 console.warn(`[${LABEL}] invalidation ${Invalidation?.Id ?? '?'} created for ${distributionId}`);
+
+// The CI role needs cloudfront:GetInvalidation for this. The waiter retries on every error,
+// AccessDenied included, so a missing permission shows up as a 10-minute hang and a TimeoutError.
+if (Invalidation?.Id !== undefined) {
+  await waitUntilInvalidationCompleted(
+    { client: cloudFront, maxWaitTime: 600 },
+    { DistributionId: distributionId, Id: Invalidation.Id },
+  );
+  console.warn(`[${LABEL}] invalidation ${Invalidation.Id} completed`);
+}

@@ -18,6 +18,8 @@ import {
  *   CERTIFICATE_ARN   ACM certificate in us-east-1 for DOMAIN_NAME; optional only when the stack
  *                     region is us-east-1 (the stack then creates the certificate itself)
  *   WAF_WEB_ACL_ARN   optional existing global (CLOUDFRONT scope) web ACL to attach
+ *   WWW_ALIAS         'true' also serves www.DOMAIN_NAME from the same distribution (opt-in;
+ *                     CERTIFICATE_ARN, when given, must cover it too)
  *
  * The hosted zone is never configured or cached: scripts/stage.ts finds the public Route 53 zone
  * that owns DOMAIN_NAME at deploy time and passes it as `-c hostedZoneId=` / `-c hostedZoneName=`.
@@ -25,8 +27,8 @@ import {
  * deploying credentials.
  *
  * `-c fixture=true` swaps in fake values so tests and the Infrastructure Composer drawing synth
- * without credentials, env files or built layers (`-c region=`, `-c certificateArn=` and
- * `-c webAclArn=` override them).
+ * without credentials, env files or built layers (`-c region=`, `-c certificateArn=`,
+ * `-c webAclArn=` and `-c wwwAlias=true` override them).
  */
 export interface StageConfig {
   readonly stage: Stage;
@@ -41,6 +43,8 @@ export interface StageConfig {
   readonly certificateArn: string | undefined;
   /** Existing global WAF web ACL to attach; undefined means no WAF. */
   readonly webAclArn: string | undefined;
+  /** `www.<domainName>`, served by the same distribution when WWW_ALIAS=true; otherwise undefined. */
+  readonly wwwDomainName?: string;
   readonly fixture: boolean;
 }
 
@@ -149,6 +153,17 @@ export function validateEdgeInputs(input: {
   }
 }
 
+/**
+ * `www.<DOMAIN_NAME>` when the alias is switched on. Opt-in rather than tied to a stage: a domain
+ * like `app.example.com` would otherwise get `www.app.example.com`.
+ */
+export function wwwDomainNameFor(
+  domainName: string,
+  enabled: string | undefined,
+): string | undefined {
+  return enabled === 'true' ? `www.${domainName}` : undefined;
+}
+
 export function loadConfig(app: App): StageConfig {
   const context = (key: string): string | undefined => optional(app.node.tryGetContext(key));
 
@@ -163,6 +178,7 @@ export function loadConfig(app: App): StageConfig {
     const region = context(CONTEXT.region) ?? DEFAULT_REGION;
     const certificateArn = context(CONTEXT.certificateArn);
     const webAclArn = context(CONTEXT.webAclArn);
+    const wwwDomainName = wwwDomainNameFor(domainName, context(CONTEXT.wwwAlias));
     validateDomainName(stage, domainName);
     validateEdgeInputs({ stage, region, certificateArn, webAclArn });
     return {
@@ -175,6 +191,7 @@ export function loadConfig(app: App): StageConfig {
       region,
       certificateArn,
       webAclArn,
+      ...(wwwDomainName === undefined ? {} : { wwwDomainName }),
       fixture,
     };
   }
@@ -204,6 +221,7 @@ export function loadConfig(app: App): StageConfig {
   const region = resolveRegion();
   const certificateArn = optional(process.env['CERTIFICATE_ARN']);
   const webAclArn = optional(process.env['WAF_WEB_ACL_ARN']);
+  const wwwDomainName = wwwDomainNameFor(domainName, optional(process.env['WWW_ALIAS']));
   validateEdgeInputs({ stage, region, certificateArn, webAclArn });
 
   return {
@@ -215,6 +233,7 @@ export function loadConfig(app: App): StageConfig {
     region,
     certificateArn,
     webAclArn,
+    ...(wwwDomainName === undefined ? {} : { wwwDomainName }),
     fixture,
   };
 }

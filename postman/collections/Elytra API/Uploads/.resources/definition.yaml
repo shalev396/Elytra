@@ -1,0 +1,12 @@
+$kind: collection
+name: Uploads
+description: 'Presigned browser uploads: presign, POST the file straight to S3, then commit it
+  with Update Me. Runs after User, so the name tests there see no photo.'
+order: 3500
+auth:
+  - id: 383fc78f-96ef-47d9-81d5-e4c7dada7326
+    type: bearer
+    name: API Token
+    description: API Token
+    credentials:
+      token: '{{idToken}}'

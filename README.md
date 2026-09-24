@@ -46,7 +46,7 @@ flowchart LR
 The complete stack — every resource, its IAM role and policy, log group, API routes and DNS records, boxed into **Edge**, **Api**, **Compute**, **Storage** and **Auth** — is committed as an [AWS Infrastructure Composer](https://docs.aws.amazon.com/infrastructure-composer/latest/dg/what-is-composer.html) drawing: [`server/infra/composer/template.json`](server/infra/composer/template.json).
 
 - **View it:** in VS Code with the [AWS Toolkit](https://marketplace.visualstudio.com/items?itemName=AmazonWebServices.aws-toolkit-vscode), right-click the file → **Open with Infrastructure Composer**.
-- **It stays current by itself:** the pre-commit hook regenerates and stages it whenever `server/` changes, and CI fails if it is stale. To regenerate by hand: `cd server && npm run synth:composer` (no AWS access needed).
+- **It stays current by itself:** the pre-commit hook regenerates and stages it whenever a staged file is under `server/infra/`, and CI fails if it is stale. To regenerate by hand: `cd server && npm run synth:composer` (no AWS access needed).
 - It uses placeholder values (`dev.example.com`, account `123456789012`) and is never deployed. Details in [Infrastructure](docs/infrastructure.md#visualizing-in-infrastructure-composer).
 
 | Docs                                                                                                       | What's inside                                                   |
@@ -78,15 +78,15 @@ Or click **Use this template** on GitHub.
 cp server/.env.example server/.env.dev   # and .env.qa, .env.prod
 ```
 
-| Name              | GitHub               | Required                                | Description                                                                                                                    |
-| ----------------- | -------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `AWS_ACCOUNT_ID`  | repository secret    | CI                                      | Builds the OIDC role ARN                                                                                                       |
-| `AWS_ROLE_NAME`   | repository variable  | CI                                      | Name of the GitHub OIDC role CI assumes                                                                                        |
-| `AWS_REGION`      | repository variable  | no                                      | Stack region, defaults to `us-east-1`                                                                                          |
-| `DOMAIN_NAME`     | environment variable | yes                                     | Stage domain (e.g. `dev.example.com`) inside a Route 53 public hosted zone; also names the S3 buckets                          |
-| `DATABASE_URL`    | environment secret   | yes                                     | `postgres://…` uses Sequelize, `mongodb+srv://…` uses Mongoose                                                                 |
-| `CERTIFICATE_ARN` | environment secret   | only if `AWS_REGION` is not `us-east-1` | ACM certificate for `DOMAIN_NAME` in `us-east-1`. When set it is always used; when unset in `us-east-1`, the stack creates one |
-| `WAF_WEB_ACL_ARN` | environment secret   | no                                      | Existing global WAF web ACL to attach to CloudFront                                                                            |
+| Name              | GitHub               | Required                                | Description                                                                                                                                        |
+| ----------------- | -------------------- | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AWS_ACCOUNT_ID`  | repository secret    | CI                                      | Builds the OIDC role ARN                                                                                                                           |
+| `AWS_ROLE_NAME`   | repository variable  | CI                                      | Name of the GitHub OIDC role CI assumes                                                                                                            |
+| `AWS_REGION`      | repository variable  | no                                      | Stack region, defaults to `us-east-1`                                                                                                              |
+| `DOMAIN_NAME`     | environment variable | yes                                     | Stage domain (e.g. `dev.example.com`) inside a Route 53 public hosted zone; also names the S3 buckets                                              |
+| `DATABASE_URL`    | environment secret   | yes                                     | `postgres://…` uses Sequelize, `mongodb+srv://…` uses Mongoose                                                                                     |
+| `CERTIFICATE_ARN` | repository secret    | only if `AWS_REGION` is not `us-east-1` | ACM certificate in `us-east-1` covering every stage domain. When set it is always used; when unset in `us-east-1`, the stack creates one per stage |
+| `WAF_WEB_ACL_ARN` | repository secret    | no                                      | Existing global WAF web ACL to attach to CloudFront                                                                                                |
 
 Nothing account-specific is committed. The account comes from your credentials, the hosted zone is found in Route 53 at deploy time, and Cognito ids and bucket names are read from the deployed stack.
 
@@ -117,11 +117,17 @@ cd client && npm install && npm run dev   # app on http://localhost:5173
 ### 5. Test
 
 ```bash
+cd server && npm run test:unit                          # server unit tests (node:test)
 cd server && npm run test:infra && npm run test:local   # infra assertions + Postman API tests
 cd client && npm run test:install && npm run test       # Playwright E2E
 ```
 
+> [!WARNING]
+> The E2E suite **wipes the stage the API is bound to** (database, S3 uploads, Cognito users) at the start of every run: `dev` with `npm run dev`, `qa` with `--stage qa` or `npm run test:qa`. Read [Frontend tests](client/tests/README.md) before running it.
+
 PRs to `qa` run local tests; PRs to `main` run tests against live qa.
+
+The pre-commit hook (Husky) formats and lints only the staged files (Prettier, then each package's ESLint), and regenerates the Infrastructure Composer drawing only when `server/infra/` changes. Type checks and builds run in CI.
 
 ## Customize
 

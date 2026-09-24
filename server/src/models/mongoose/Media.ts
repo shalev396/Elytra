@@ -1,5 +1,5 @@
+import { randomUUID } from 'node:crypto';
 import mongoose from 'mongoose';
-import { v4 as uuidv4 } from 'uuid';
 import { type MediaData, type IMediaRepository, MEDIA_TABLE_NAME } from '../definitions/Media.js';
 
 interface MediaFields {
@@ -21,7 +21,7 @@ const mediaSchema = new mongoose.Schema<MediaDocument>(
   {
     _id: {
       type: String,
-      default: uuidv4,
+      default: (): string => randomUUID(),
     },
     s3Key: {
       type: String,
@@ -97,7 +97,7 @@ export const MediaRepository: IMediaRepository = {
     uploadedBy: string;
   }): Promise<MediaData> {
     const doc = await MediaMongoModel.create({
-      _id: uuidv4(),
+      _id: randomUUID(),
       ...data,
     });
     return toMediaData(doc);

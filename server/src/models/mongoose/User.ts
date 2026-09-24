@@ -1,5 +1,5 @@
+import { randomUUID } from 'node:crypto';
 import mongoose from 'mongoose';
-import { v4 as uuidv4 } from 'uuid';
 import { type UserData, type IUserRepository, USER_TABLE_NAME } from '../definitions/User.js';
 
 interface UserFields {
@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema<UserDocument>(
   {
     _id: {
       type: String,
-      default: uuidv4,
+      default: (): string => randomUUID(),
     },
     cognitoSub: {
       type: String,
@@ -101,7 +101,7 @@ export const UserRepository: IUserRepository = {
           lastLoginAt: data.lastLoginAt,
         },
         $setOnInsert: {
-          _id: uuidv4(),
+          _id: randomUUID(),
         },
       },
       { upsert: true, new: true, setDefaultsOnInsert: true },

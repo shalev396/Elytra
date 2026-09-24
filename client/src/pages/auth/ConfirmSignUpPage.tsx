@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { pathTo, ROUTES } from '@/router/routes';
 import { useLanguage } from '@/hooks/useLanguage';
 import { PageMetadata } from '@/components/shared/PageMetadata';
+import { pageTitle } from '@/data/pageTitles';
 import { confirmSignup } from '@/api/services/authService';
 import { selectIsAuthenticated } from '@/store/userSlice';
 import type { AxiosError } from 'axios';
@@ -57,7 +58,7 @@ export default function ConfirmSignUpPage() {
   if (isConfirmed) {
     return (
       <>
-        <PageMetadata title="Confirm Sign Up | Elytra" noIndex />
+        <PageMetadata title={pageTitle('Confirm Sign Up')} noIndex />
         <div className="flex flex-col gap-2 text-center">
           <h1 className="text-3xl font-bold bg-linear-to-r from-gradient-from to-gradient-to bg-clip-text text-transparent">
             {t('auth.confirm.title')}
@@ -75,7 +76,7 @@ export default function ConfirmSignUpPage() {
 
   return (
     <>
-      <PageMetadata title="Confirm Sign Up | Elytra" noIndex />
+      <PageMetadata title={pageTitle('Confirm Sign Up')} noIndex />
       <div className="flex flex-col gap-2 text-center">
         <h1 className="text-3xl font-bold bg-linear-to-r from-gradient-from to-gradient-to bg-clip-text text-transparent">
           {t('auth.confirm.title')}

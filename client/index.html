@@ -3,7 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon-light.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- Home Screen web app (keep name/colors in sync with public/manifest.webmanifest) -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="Elytra" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- Match --background in src/index.css; ThemeProvider overrides both once a theme is set -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fafcff" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#04050d" />
 
     <!-- Primary Meta Tags -->
     <title>Elytra | Full-Stack Serverless Template</title>
@@ -27,6 +36,18 @@
       content="A production-ready full-stack serverless template with authentication, file uploads, and modern UI components."
     />
     <meta property="og:image" content="__VITE_APP_URL__/og-default.png" />
+    <meta property="og:site_name" content="Elytra" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter (static for crawlers that do not run JavaScript; PageMetadata updates them) -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="__VITE_APP_URL__/" />
+    <meta name="twitter:title" content="Elytra | Full-Stack Serverless Template" />
+    <meta
+      name="twitter:description"
+      content="A production-ready full-stack serverless template with authentication, file uploads, and modern UI components."
+    />
+    <meta name="twitter:image" content="__VITE_APP_URL__/og-default.png" />
 
     <!-- Robots -->
     <meta name="robots" content="index, follow" />

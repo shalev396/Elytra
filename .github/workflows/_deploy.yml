@@ -4,8 +4,10 @@
 #   deploy-frontend  npm run deploy:frontend -- <stage>  build client, upload to S3, invalidate CloudFront
 #
 # Inputs (see server/.env.example): AWS_ACCOUNT_ID secret + AWS_ROLE_NAME variable build the OIDC role
-# ARN; DOMAIN_NAME environment variable; DATABASE_URL, CERTIFICATE_ARN (optional) and
-# WAF_WEB_ACL_ARN (optional) environment secrets; AWS_REGION (optional) variable. See docs/deployment.md.
+# ARN; CERTIFICATE_ARN (optional) and WAF_WEB_ACL_ARN (optional) repository secrets; DOMAIN_NAME and
+# WWW_ALIAS (optional) environment variables; DATABASE_URL environment secret; AWS_REGION (optional)
+# variable.
+# See docs/deployment.md.
 name: Deploy
 
 on:
@@ -36,6 +38,7 @@ jobs:
       name: ${{ inputs.stage }}
     env:
       DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
+      WWW_ALIAS: ${{ vars.WWW_ALIAS }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       CERTIFICATE_ARN: ${{ secrets.CERTIFICATE_ARN }}
       WAF_WEB_ACL_ARN: ${{ secrets.WAF_WEB_ACL_ARN }}
