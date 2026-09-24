@@ -16,7 +16,9 @@ import { SYNC_DB_ACTION } from '../infra/lib/constants.js';
 
 await initDB();
 
-const http = serverlessHttp(createApp(), { binary: ['application/zip'] });
+// No binary types: every response is JSON (files are served by S3 through presigned URLs). If
+// the app ever sends binary bodies, list their content types in a `binary` option here.
+const http = serverlessHttp(createApp());
 
 interface SyncDbEvent {
   action: typeof SYNC_DB_ACTION;

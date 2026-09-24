@@ -1,6 +1,10 @@
 import { useParams, Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { selectIsAuthenticated, selectIsRestoringSession } from '@/store/userSlice';
+import {
+  selectIsAuthenticated,
+  selectIsRestoringSession,
+  selectSignedOut,
+} from '@/store/userSlice';
 import { pathTo, ROUTES } from '@/router/routes';
 
 interface ProtectedRouteProps {
@@ -10,6 +14,7 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const isRestoring = useSelector(selectIsRestoringSession);
+  const signedOut = useSelector(selectSignedOut);
   const { lng } = useParams<{ lng: string }>();
   const language = lng ?? 'en';
 
@@ -19,7 +24,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to={pathTo(ROUTES.AUTH.LOGIN, language)} replace />;
+    // A user who just logged out or deleted their account goes home, not to the login page.
+    const target = signedOut ? ROUTES.HOME : ROUTES.AUTH.LOGIN;
+    return <Navigate to={pathTo(target, language)} replace />;
   }
 
   return <>{children}</>;

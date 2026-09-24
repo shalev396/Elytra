@@ -154,7 +154,10 @@
 							]
 						},
 						{
-							"Action": "s3:GetObject",
+							"Action": [
+								"s3:GetObject",
+								"s3:ListBucket"
+							],
 							"Condition": {
 								"StringEquals": {
 									"AWS:SourceArn": {
@@ -182,20 +185,28 @@
 							"Principal": {
 								"Service": "cloudfront.amazonaws.com"
 							},
-							"Resource": {
-								"Fn::Join": [
-									"",
-									[
-										{
-											"Fn::GetAtt": [
-												"ClientBucket",
-												"Arn"
-											]
-										},
-										"/*"
+							"Resource": [
+								{
+									"Fn::GetAtt": [
+										"ClientBucket",
+										"Arn"
 									]
-								]
-							}
+								},
+								{
+									"Fn::Join": [
+										"",
+										[
+											{
+												"Fn::GetAtt": [
+													"ClientBucket",
+													"Arn"
+												]
+											},
+											"/*"
+										]
+									]
+								}
+							]
 						}
 					],
 					"Version": "2012-10-17"
@@ -230,10 +241,15 @@
 							],
 							"AllowedMethods": [
 								"GET",
-								"HEAD"
+								"HEAD",
+								"POST"
 							],
 							"AllowedOrigins": [
-								"*"
+								"http://localhost:5173",
+								"https://dev.example.com"
+							],
+							"ExposedHeaders": [
+								"ETag"
 							],
 							"MaxAge": 3600
 						}
@@ -242,9 +258,22 @@
 				"LifecycleConfiguration": {
 					"Rules": [
 						{
+							"Id": "DeleteOldVersions",
 							"NoncurrentVersionExpiration": {
 								"NoncurrentDays": 30
 							},
+							"Status": "Enabled"
+						},
+						{
+							"ExpirationInDays": 1,
+							"Id": "DeleteExportZips",
+							"Prefix": "tmp/exports/",
+							"Status": "Enabled"
+						},
+						{
+							"ExpirationInDays": 1,
+							"Id": "DeleteStagedUploads",
+							"Prefix": "tmp/staging/",
 							"Status": "Enabled"
 						}
 					]
@@ -1340,20 +1369,36 @@
 								"s3:PutObject"
 							],
 							"Effect": "Allow",
-							"Resource": {
-								"Fn::Join": [
-									"",
-									[
-										{
-											"Fn::GetAtt": [
-												"AssetsBucket",
-												"Arn"
-											]
-										},
-										"/media/*"
+							"Resource": [
+								{
+									"Fn::Join": [
+										"",
+										[
+											{
+												"Fn::GetAtt": [
+													"AssetsBucket",
+													"Arn"
+												]
+											},
+											"/media/*"
+										]
 									]
-								]
-							}
+								},
+								{
+									"Fn::Join": [
+										"",
+										[
+											{
+												"Fn::GetAtt": [
+													"AssetsBucket",
+													"Arn"
+												]
+											},
+											"/tmp/*"
+										]
+									]
+								}
+							]
 						},
 						{
 							"Action": "s3:ListBucket",
@@ -1361,7 +1406,9 @@
 								"StringLike": {
 									"s3:prefix": [
 										"media",
-										"media/*"
+										"media/*",
+										"tmp",
+										"tmp/*"
 									]
 								}
 							},

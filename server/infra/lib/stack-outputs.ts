@@ -5,21 +5,22 @@ import {
 } from '@aws-sdk/client-cloudformation';
 import { OUTPUTS, resolveRegion, stackName, type OutputName, type Stage } from './constants.js';
 
-// Created on first use so AWS_REGION from an env file loaded by the caller is honoured.
-let client: CloudFormationClient | undefined;
-const cloudFormation = (): CloudFormationClient =>
-  (client ??= new CloudFormationClient({ region: resolveRegion() }));
-
 /** Returns the stack description, or undefined when the stack does not exist. */
 export async function describeStack(stage: Stage): Promise<CfnStack | undefined> {
+  // A new client per call, destroyed afterwards: it is created after the caller has loaded its env
+  // file (AWS_REGION), and a cached client's keep-alive socket can go stale during a long
+  // `cdk deploy` (the next call then failed with `write ECONNABORTED`).
+  const client = new CloudFormationClient({ region: resolveRegion() });
   try {
-    const { Stacks } = await cloudFormation().send(
+    const { Stacks } = await client.send(
       new DescribeStacksCommand({ StackName: stackName(stage) }),
     );
     return Stacks?.[0];
   } catch (error) {
     if (error instanceof Error && error.name === 'ValidationError') return undefined;
     throw error;
+  } finally {
+    client.destroy();
   }
 }
 

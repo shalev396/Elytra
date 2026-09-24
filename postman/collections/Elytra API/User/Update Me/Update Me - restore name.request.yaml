@@ -5,12 +5,11 @@ auth:
   type: inherit
   credentials:
     id: 383fc78f-96ef-47d9-81d5-e4c7dada7326
+headers:
+  Content-Type: application/json
 body:
-  type: formdata
-  content:
-    - type: text
-      key: name
-      value: Test User
+  type: text
+  content: '{"name":"Test User"}'
 scripts:
   - type: afterResponse
     code: |-

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 interface CountUpProps {
   end: number;
@@ -19,34 +20,39 @@ export function CountUp({
   prefix = '',
   className = '',
 }: CountUpProps) {
-  const [count, setCount] = useState(start);
+  const [animatedCount, setAnimatedCount] = useState(start);
+  const reducedMotion = useReducedMotion();
   const countRef = useRef<HTMLSpanElement>(null);
-  const [hasAnimated, setHasAnimated] = useState(false);
+  const hasAnimatedRef = useRef(false);
+
+  // Reduced motion: show the final value straight away.
+  const count = reducedMotion ? end : animatedCount;
 
   useEffect(() => {
+    if (reducedMotion) {
+      return;
+    }
+
+    let timer: ReturnType<typeof setInterval> | undefined;
     const observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
-        if (entry?.isIntersecting && !hasAnimated) {
-          setHasAnimated(true);
+        if (entry?.isIntersecting && !hasAnimatedRef.current) {
+          hasAnimatedRef.current = true;
           const increment = (end - start) / (duration / 16);
           let current = start;
 
-          const timer = setInterval(() => {
+          timer = setInterval(() => {
             current += increment;
             if (current >= end) {
-              setCount(end);
+              setAnimatedCount(end);
               clearInterval(timer);
+              timer = undefined;
             } else {
-              setCount(Math.floor(current));
+              setAnimatedCount(Math.floor(current));
             }
           }, 16);
-
-          return () => {
-            clearInterval(timer);
-          };
         }
-        return undefined;
       },
       { threshold: 0.1 },
     );
@@ -58,8 +64,13 @@ export function CountUp({
 
     return () => {
       observer.disconnect();
+      if (timer !== undefined) {
+        // Interrupted mid-count: restart on the next run instead of freezing on a partial value.
+        clearInterval(timer);
+        hasAnimatedRef.current = false;
+      }
     };
-  }, [end, start, duration, hasAnimated]);
+  }, [end, start, duration, reducedMotion]);
 
   return (
     <span ref={countRef} className={className}>

@@ -45,7 +45,7 @@ export default tseslint.config(
   },
   {
     // node:test describe/it return promises the runner tracks itself.
-    files: ['infra/test/**/*.ts'],
+    files: ['infra/test/**/*.ts', 'src/**/*.test.ts'],
     rules: { '@typescript-eslint/no-floating-promises': 'off' },
   },
   {

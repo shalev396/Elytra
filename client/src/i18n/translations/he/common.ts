@@ -14,4 +14,19 @@ export const common = {
     logOut: 'התנתק',
     guest: 'אורח',
   },
+  imageUpload: {
+    choose: 'בחר תמונה',
+    change: 'החלף תמונה',
+    remove: 'הסר תמונה',
+
+    dragHint: 'או גרור ושחרר קובץ לכאן',
+    previewAlt: 'תצוגה מקדימה של התמונה שנבחרה',
+  },
+  upload: {
+    errors: {
+      tooLarge: 'הקובץ גדול מדי. הגודל המרבי הוא {{maxMb}} MB.',
+      invalidType: 'סוג הקובץ אינו נתמך. סוגים מותרים: {{types}}.',
+      uploadFailed: 'ההעלאה נכשלה. נסה שוב.',
+    },
+  },
 };

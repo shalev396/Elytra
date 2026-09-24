@@ -13,8 +13,10 @@
 3. Copy `server/.env.example` to `server/.env.dev` and set `DOMAIN_NAME` + `DATABASE_URL`
 4. Log in to AWS (`aws sso login`) — the local API reads Cognito and S3 wiring from the deployed `elytra-dev` stack
 5. `cd server && npm run dev` (port 3000) / `cd client && npm run dev` (port 5173)
-6. Before opening a PR: `cd server && npm run lint && npm run build && npm run test:infra && npm run test:local` / `cd client && npm run test`
-7. Infrastructure changes: see [docs/infrastructure.md](docs/infrastructure.md). The pre-commit hook regenerates and stages the Infrastructure Composer drawing (`server/infra/composer/template.json`); open it in VS Code with **Open with Infrastructure Composer**
+6. Before opening a PR: `cd server && npm run lint && npm run build && npm run test:unit && npm run test:infra && npm run test:local` / `cd client && npm run lint && npm run test`
+   - **`cd client && npm run test` wipes the database, S3 uploads and Cognito users of the stage your local API is bound to** (dev by default). See [client/tests/README.md](client/tests/README.md).
+7. The pre-commit hook formats (Prettier) and lints (ESLint) only the staged files; it does not type-check or build, so run the commands above before pushing
+8. Infrastructure changes: see [docs/infrastructure.md](docs/infrastructure.md). When a staged file is under `server/infra/`, the pre-commit hook regenerates and stages the Infrastructure Composer drawing (`server/infra/composer/template.json`); open it in VS Code with **Open with Infrastructure Composer**
 
 ## Pull request rules
 

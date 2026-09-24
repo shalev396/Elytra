@@ -11,6 +11,8 @@ declare global {
       COGNITO_CLIENT_ID: string;
       COGNITO_USER_POOL_ID: string;
       DOMAIN_NAME: string;
+      /** 'true' turns off in-app rate limits. Set only by the local dev server; never on Lambda. */
+      DISABLE_RATE_LIMIT?: 'true';
     }
   }
 }

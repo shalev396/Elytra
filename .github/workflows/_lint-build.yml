@@ -46,6 +46,8 @@ jobs:
         run: npm run lint
       - name: Typecheck (src + infra)
         run: npm run build
+      - name: Unit tests
+        run: npm run test:unit
       - name: Infra tests (synth dev/qa/prod, cdk-nag, committed Composer drawing is current)
         run: npm run test:infra
       - name: Build Lambda layers

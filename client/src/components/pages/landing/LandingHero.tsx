@@ -7,6 +7,7 @@ import { BeamsBackground } from '@/components/animations/backgrounds/BeamsBackgr
 import { app } from '@/data';
 import { pathTo, ROUTES } from '@/router/routes';
 import { useLanguage } from '@/hooks/useLanguage';
+import { prefersReducedMotion } from '@/hooks/useReducedMotion';
 import { Code, Sparkles, Zap, Layers, DollarSign } from 'lucide-react';
 
 const sectionNavItems = [
@@ -22,7 +23,7 @@ export function LandingHero() {
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+      element.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
     }
   };
 

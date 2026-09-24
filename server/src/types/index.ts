@@ -6,11 +6,15 @@ export type {
   ApiResponse,
 } from './express.js';
 
+export type { EmptySuccessResponseData } from './response.js';
+
 export type {
   SignupRequestBody,
   SignupResponseData,
   ConfirmSignupRequestBody,
+  ResendConfirmationRequestBody,
   LoginRequestBody,
+  LoginUserPayload,
   LoginResponseData,
   ForgotPasswordRequestBody,
   ResetPasswordRequestBody,
@@ -19,6 +23,10 @@ export type {
   MeResponseData,
   UpdateMeRequestBody,
   UpdateMeResponseData,
+  ExportMyDataResponseData,
+  PresignUploadRequestBody,
+  PresignUploadResponseData,
+  UploadPurpose,
   DashboardResponseData,
   DeleteUserResponseData,
 } from './api-contracts.js';

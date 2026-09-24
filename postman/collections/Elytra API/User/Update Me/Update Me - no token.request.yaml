@@ -3,12 +3,11 @@ url: '{{baseUrl}}/private/me'
 method: PUT
 auth:
   type: noauth
+headers:
+  Content-Type: application/json
 body:
-  type: formdata
-  content:
-    - type: text
-      key: name
-      value: Hacker User
+  type: text
+  content: '{"name":"Hacker User"}'
 scripts:
   - type: afterResponse
     code: |-

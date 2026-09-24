@@ -2,10 +2,15 @@ import { zipSync } from 'fflate';
 import type { UserData } from '../models/definitions/User.js';
 import type { MediaData } from '../models/definitions/Media.js';
 import { userDataToCsv } from './csvUtil.js';
-import { getObjectBuffer } from './s3Util.js';
+import { runWithConcurrency } from './concurrency.js';
+import { getObjectBuffer, isS3NotFound } from './s3Util.js';
+
+/** Parallel S3 reads while building an export. */
+const EXPORT_S3_CONCURRENCY = 30;
 
 /**
- * Creates a ZIP buffer containing user-data.csv and user assets from S3.
+ * Creates a ZIP buffer containing user-data.csv and user assets from S3. A Media row whose object
+ * is missing from S3 is skipped (and logged) rather than failing the whole export.
  */
 export async function createUserExportZip(
   user: UserData,
@@ -13,7 +18,19 @@ export async function createUserExportZip(
   photoUrl: string | null,
 ): Promise<Buffer> {
   const csv = userDataToCsv(user, media, photoUrl);
-  const mediaBuffers = await Promise.all(media.map((m) => getObjectBuffer(m.s3Key)));
+  const mediaBuffers = await runWithConcurrency(
+    media,
+    EXPORT_S3_CONCURRENCY,
+    async (m): Promise<Buffer | null> => {
+      try {
+        return await getObjectBuffer(m.s3Key);
+      } catch (error) {
+        if (!isS3NotFound(error)) throw error;
+        console.warn(`Export: skipping media ${m.id}, S3 object ${m.s3Key} is missing`);
+        return null;
+      }
+    },
+  );
 
   const files: Record<string, Uint8Array> = {
     'user-data.csv': new TextEncoder().encode(csv),
@@ -23,7 +40,7 @@ export async function createUserExportZip(
   for (let i = 0; i < media.length; i++) {
     const m = media[i];
     const buf = mediaBuffers[i];
-    if (m === undefined || buf === undefined) continue;
+    if (m === undefined || buf === undefined || buf === null) continue;
 
     let assetName = m.fileName;
     if (usedNames.has(assetName)) {

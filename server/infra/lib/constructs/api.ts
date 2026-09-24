@@ -30,7 +30,11 @@ export class Api extends Construct {
     this.httpApi = new apigwv2.HttpApi(this, 'HttpApi', {
       apiName: resourceName(config.stage, 'api'),
       corsPreflight: {
-        allowOrigins: ['http://localhost:5173', `https://${config.domainName}`],
+        allowOrigins: [
+          'http://localhost:5173',
+          `https://${config.domainName}`,
+          ...(config.wwwDomainName === undefined ? [] : [`https://${config.wwwDomainName}`]),
+        ],
         allowHeaders: ['Content-Type', 'Authorization'],
         allowMethods: [
           apigwv2.CorsHttpMethod.GET,

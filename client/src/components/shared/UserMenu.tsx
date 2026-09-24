@@ -40,7 +40,7 @@ export function UserMenu() {
   const photoUrl = meData?.photoUrl ?? null;
 
   const handleLogout = () => {
-    dispatch(logout());
+    dispatch(logout({ signedOut: true }));
     void navigate(pathTo(ROUTES.HOME, language));
   };
 

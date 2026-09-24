@@ -12,6 +12,7 @@ class Environment {
   readonly #cognitoClientId: string;
   readonly #cognitoUserPoolId: string;
   readonly #domainName: string;
+  readonly #rateLimitEnabled: boolean;
 
   constructor() {
     this.#env = process.env.ENV;
@@ -21,6 +22,7 @@ class Environment {
     this.#cognitoClientId = process.env.COGNITO_CLIENT_ID;
     this.#cognitoUserPoolId = process.env.COGNITO_USER_POOL_ID;
     this.#domainName = process.env.DOMAIN_NAME;
+    this.#rateLimitEnabled = process.env.DISABLE_RATE_LIMIT !== 'true';
   }
 
   get env(): Env {
@@ -59,6 +61,11 @@ class Environment {
 
   get domainName(): string {
     return this.#domainName;
+  }
+
+  /** In-app rate limits. Only the local dev server turns them off (DISABLE_RATE_LIMIT, local.ts). */
+  get rateLimitEnabled(): boolean {
+    return this.#rateLimitEnabled;
   }
 
   /** Developer tools (/api/dev) exist on every stage except prod. */

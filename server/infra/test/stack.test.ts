@@ -1,10 +1,21 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, it } from 'node:test';
+import { runInNewContext } from 'node:vm';
 import { CfnResource as CdkCfnResource, TagManager, Validations } from 'aws-cdk-lib';
 import { Match, Template } from 'aws-cdk-lib/assertions';
+import { SERVER_ROOT } from '../../scripts/paths.js';
 import { buildApp } from '../lib/app.js';
 import { FIXTURE_ZONE_ID, validateDomainName, validateHostedZone } from '../lib/config.js';
-import { APP_NAME, OUTPUTS, STAGES, type Stage } from '../lib/constants.js';
+import {
+  APP_NAME,
+  OUTPUTS,
+  S3_PREFIXES,
+  STAGES,
+  TMP_OBJECT_EXPIRATION_DAYS,
+  type Stage,
+} from '../lib/constants.js';
 
 interface CfnResource {
   Type: string;
@@ -13,14 +24,73 @@ interface CfnResource {
   DeletionPolicy?: string;
 }
 
-function synth(stage: Stage): { template: Template; resources: Record<string, CfnResource> } {
-  const { app, stack } = buildApp({ context: { stage, fixture: 'true' } });
+interface DistributionConfig {
+  Aliases: string[];
+  DefaultCacheBehavior: Record<string, unknown>;
+  CacheBehaviors: Record<string, unknown>[];
+  Origins: { Id: string; DomainName: unknown }[];
+}
+
+interface CorsRule {
+  AllowedMethods: string[];
+  AllowedOrigins: string[];
+  AllowedHeaders: string[];
+  ExposedHeaders: string[];
+  MaxAge: number;
+}
+
+type Statement = Record<string, unknown>;
+
+function synth(
+  stage: Stage,
+  extraContext: Record<string, string> = {},
+): { template: Template; resources: Record<string, CfnResource> } {
+  const { app, stack } = buildApp({ context: { stage, fixture: 'true', ...extraContext } });
   // Runs cdk-nag: any unacknowledged finding throws here.
   const assembly = app.synth();
   const template = Template.fromJSON(assembly.getStackByName(stack.stackName).template as object);
   const resources = template.toJSON()['Resources'] as Record<string, CfnResource>;
   return { template, resources };
 }
+
+function distributionConfig(template: Template): DistributionConfig {
+  const [distribution] = Object.values(
+    template.findResources('AWS::CloudFront::Distribution'),
+  ) as CfnResource[];
+  return distribution?.Properties?.['DistributionConfig'] as DistributionConfig;
+}
+
+function assetsCorsRule(template: Template, domain: string): CorsRule {
+  const [bucket] = Object.values(
+    template.findResources('AWS::S3::Bucket', { Properties: { BucketName: `${domain}-assets` } }),
+  ) as CfnResource[];
+  const cors = bucket?.Properties?.['CorsConfiguration'] as { CorsRules: CorsRule[] };
+  const [rule, ...others] = cors.CorsRules;
+  assert.ok(rule);
+  assert.deepEqual(others, []);
+  return rule;
+}
+
+function httpApiCorsOrigins(template: Template): string[] {
+  const [api] = Object.values(template.findResources('AWS::ApiGatewayV2::Api')) as CfnResource[];
+  return (api?.Properties?.['CorsConfiguration'] as { AllowOrigins: string[] }).AllowOrigins;
+}
+
+function aliasRecordNames(resources: Record<string, CfnResource>): string[] {
+  return Object.values(resources)
+    .filter(
+      (r) => r.Type === 'AWS::Route53::RecordSet' && r.Properties?.['AliasTarget'] !== undefined,
+    )
+    .map((r) => r.Properties?.['Name'] as string)
+    .sort();
+}
+
+const actionsOf = (statement: Statement): string[] => [statement['Action']].flat() as string[];
+
+/** The real CloudFront Function file, run exactly as it is uploaded. */
+const spaRewrite = runInNewContext(
+  `${readFileSync(join(SERVER_ROOT, 'infra/functions/spa-rewrite.js'), 'utf8')}; handler`,
+) as (event: { request: { uri: string } }) => { uri: string };
 
 for (const stage of STAGES) {
   describe(`elytra-${stage}`, () => {
@@ -98,6 +168,128 @@ for (const stage of STAGES) {
       template.resourceCountIs('AWS::CloudFront::OriginAccessControl', 1);
     });
 
+    it('rewrites SPA routes to /index.html and leaves files alone', () => {
+      const rewrite = (uri: string): string => spaRewrite({ request: { uri } }).uri;
+      for (const route of ['/', '/en', '/en/', '/en/legal/terms', '/en/dashboard/projects/new']) {
+        assert.equal(rewrite(route), '/index.html', route);
+      }
+      for (const file of [
+        '/index.html',
+        '/robots.txt',
+        '/assets/index-abc.js',
+        '/icon-192.png',
+        '/manifest.webmanifest',
+      ]) {
+        assert.equal(rewrite(file), file, file);
+      }
+    });
+
+    it('runs the SPA rewrite on the default behavior only (viewer request)', () => {
+      const config = distributionConfig(template);
+      const associations = config.DefaultCacheBehavior['FunctionAssociations'] as {
+        EventType: string;
+      }[];
+      assert.deepEqual(
+        associations.map((a) => a.EventType),
+        ['viewer-request'],
+      );
+      for (const behavior of config.CacheBehaviors) {
+        assert.equal(behavior['FunctionAssociations'], undefined, String(behavior['PathPattern']));
+      }
+      template.resourceCountIs('AWS::CloudFront::Function', 1);
+      template.hasResourceProperties('AWS::CloudFront::Function', {
+        FunctionConfig: Match.objectLike({ Runtime: 'cloudfront-js-2.0' }),
+      });
+    });
+
+    it('serves only /media/* from the assets bucket, never tmp/', () => {
+      const config = distributionConfig(template);
+      const assetsOrigins = config.Origins.filter((o) =>
+        JSON.stringify(o.DomainName).includes('StorageAssetsBucket'),
+      ).map((o) => o.Id);
+      assert.equal(assetsOrigins.length, 1);
+      const assetsBehaviors = config.CacheBehaviors.filter((b) =>
+        assetsOrigins.includes(b['TargetOriginId'] as string),
+      ).map((b) => b['PathPattern']);
+      assert.deepEqual(assetsBehaviors, [`/${S3_PREFIXES.media}/*`]);
+      for (const behavior of config.CacheBehaviors) {
+        assert.ok(!String(behavior['PathPattern']).startsWith('/tmp'));
+      }
+    });
+
+    it('lets CloudFront list the client bucket, so a missing file is a 404 (not 403)', () => {
+      const cloudFrontStatements = (bucketPrefix: string): Statement[] => {
+        const policy = Object.values(resources).find(
+          (r) =>
+            r.Type === 'AWS::S3::BucketPolicy' &&
+            JSON.stringify(r.Properties?.['Bucket']).includes(bucketPrefix),
+        );
+        const { Statement } = policy?.Properties?.['PolicyDocument'] as { Statement: Statement[] };
+        return Statement.filter((st) =>
+          JSON.stringify(st['Principal']).includes('cloudfront.amazonaws.com'),
+        );
+      };
+
+      // One grant, so ListBucket carries exactly the GetObject condition (this distribution only).
+      const [client, ...otherClient] = cloudFrontStatements('StorageClientBucket');
+      assert.ok(client);
+      assert.deepEqual(otherClient, []);
+      assert.equal(client['Effect'], 'Allow');
+      assert.deepEqual([...actionsOf(client)].sort(), ['s3:GetObject', 's3:ListBucket']);
+      const resourcesJson = JSON.stringify(client['Resource']);
+      assert.match(resourcesJson, /\{"Fn::GetAtt":\["StorageClientBucket\w+","Arn"\]\}/);
+      assert.match(resourcesJson, /"\/\*"/);
+      assert.match(JSON.stringify(client['Condition']), /AWS:SourceArn.*EdgeDistribution/);
+
+      // The assets bucket stays unlistable: tmp/ keys must not be discoverable.
+      for (const st of cloudFrontStatements('StorageAssetsBucket')) {
+        assert.ok(!actionsOf(st).includes('s3:ListBucket'));
+      }
+    });
+
+    it('expires export ZIPs and staged uploads after a day, old asset versions after 30', () => {
+      assert.equal(TMP_OBJECT_EXPIRATION_DAYS, 1);
+      template.hasResourceProperties('AWS::S3::Bucket', {
+        BucketName: `${stage}.example.com-assets`,
+        LifecycleConfiguration: {
+          Rules: Match.arrayWith([
+            Match.objectLike({
+              Id: 'DeleteOldVersions',
+              NoncurrentVersionExpiration: { NoncurrentDays: 30 },
+            }),
+            Match.objectLike({
+              Id: 'DeleteExportZips',
+              Prefix: 'tmp/exports/',
+              ExpirationInDays: 1,
+            }),
+            Match.objectLike({
+              Id: 'DeleteStagedUploads',
+              Prefix: 'tmp/staging/',
+              ExpirationInDays: 1,
+            }),
+          ]),
+        },
+      });
+    });
+
+    it('allows presigned browser POSTs to the assets bucket from the stage origins only', () => {
+      const rule = assetsCorsRule(template, `${stage}.example.com`);
+      assert.deepEqual([...rule.AllowedMethods].sort(), ['GET', 'HEAD', 'POST']);
+      assert.deepEqual(rule.AllowedOrigins, [
+        'http://localhost:5173',
+        `https://${stage}.example.com`,
+      ]);
+      assert.ok(!rule.AllowedOrigins.includes('*'));
+      assert.deepEqual(rule.ExposedHeaders, ['ETag']);
+      assert.equal(rule.MaxAge, 3600);
+    });
+
+    it('serves DOMAIN_NAME only while WWW_ALIAS is off', () => {
+      assert.deepEqual(distributionConfig(template).Aliases, [`${stage}.example.com`]);
+      assert.deepEqual(aliasRecordNames(resources), [`${stage}.example.com.`]);
+      assert.ok(!JSON.stringify(template.toJSON()).includes('www.'));
+    });
+
     it('passes DATABASE_URL only as a NoEcho parameter', () => {
       template.hasParameter('DatabaseUrl', { Type: 'String', NoEcho: true });
       template.hasResourceProperties('AWS::Lambda::Function', {
@@ -158,6 +350,33 @@ for (const stage of STAGES) {
       assert.ok(!policy.includes('ses:SendRawEmail'));
       assert.ok(!policy.includes('userpool/*'));
       assert.ok(policy.includes('ses:FromAddress'));
+    });
+
+    it('limits the API to media/ and tmp/ in the assets bucket', () => {
+      const statements = Object.values(template.findResources('AWS::IAM::Policy')).flatMap(
+        (p) =>
+          (p['Properties'] as { PolicyDocument: { Statement: Statement[] } }).PolicyDocument
+            .Statement,
+      );
+      const s3Statements = statements.filter((st) =>
+        actionsOf(st).some((a) => a.startsWith('s3:')),
+      );
+      assert.equal(s3Statements.length, 2, 'no other S3 access');
+
+      const objects = s3Statements.find((st) => actionsOf(st).includes('s3:GetObject'));
+      assert.deepEqual([...actionsOf(objects ?? {})].sort(), [
+        's3:DeleteObject',
+        's3:GetObject',
+        's3:PutObject',
+      ]);
+      const objectResources = JSON.stringify(objects?.['Resource']);
+      const suffixes = [...objectResources.matchAll(/"(\/[^"]*)"/g)].map((m) => m[1]);
+      assert.deepEqual(suffixes, ['/media/*', '/tmp/*']);
+
+      const list = s3Statements.find((st) => actionsOf(st).includes('s3:ListBucket'));
+      assert.deepEqual(list?.['Condition'], {
+        StringLike: { 's3:prefix': ['media', 'media/*', 'tmp', 'tmp/*'] },
+      });
     });
 
     it('exposes exactly the consumer outputs', () => {
@@ -273,6 +492,46 @@ describe('domain and hosted zone inputs', () => {
     assert.throws(() => {
       validateDomainName('dev', `${'a'.repeat(55)}.example.com`);
     }, /too long/);
+  });
+});
+
+describe('www alias (WWW_ALIAS=true)', () => {
+  for (const stage of STAGES) {
+    const domain = `${stage}.example.com`;
+    const www = `www.${domain}`;
+
+    it(`also serves ${www} from the same distribution (${stage})`, () => {
+      const { template, resources } = synth(stage, { wwwAlias: 'true' });
+      template.resourceCountIs('AWS::CloudFront::Distribution', 1);
+      assert.deepEqual(distributionConfig(template).Aliases, [domain, www]);
+      assert.deepEqual(aliasRecordNames(resources), [`${domain}.`, `${www}.`]);
+      assert.ok(Object.keys(resources).some((id) => id.startsWith('EdgeWwwAliasRecord')));
+
+      const origins = ['http://localhost:5173', `https://${domain}`, `https://${www}`];
+      assert.deepEqual(assetsCorsRule(template, domain).AllowedOrigins, origins);
+      assert.deepEqual(httpApiCorsOrigins(template), origins);
+    });
+  }
+
+  it('adds www to a certificate the stack creates', () => {
+    synth('dev', { wwwAlias: 'true' }).template.hasResourceProperties(
+      'AWS::CertificateManager::Certificate',
+      { DomainName: 'dev.example.com', SubjectAlternativeNames: ['www.dev.example.com'] },
+    );
+  });
+
+  it('leaves the certificate, aliases and CORS alone when off', () => {
+    const { template, resources } = synth('dev', { wwwAlias: 'false' });
+    template.hasResourceProperties('AWS::CertificateManager::Certificate', {
+      DomainName: 'dev.example.com',
+      SubjectAlternativeNames: Match.absent(),
+    });
+    assert.deepEqual(distributionConfig(template).Aliases, ['dev.example.com']);
+    assert.deepEqual(aliasRecordNames(resources), ['dev.example.com.']);
+    assert.deepEqual(httpApiCorsOrigins(template), [
+      'http://localhost:5173',
+      'https://dev.example.com',
+    ]);
   });
 });
 

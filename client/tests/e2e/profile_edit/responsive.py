@@ -1,7 +1,6 @@
 """
 Edit Profile page (profile/edit) responsive tests.
 """
-import pytest
 from playwright.sync_api import Page, expect
 
 from tests.config import NORMAL_TIMEOUT
@@ -13,8 +12,7 @@ from tests.viewports import VIEWPORTS
 def test_edit_profile_responsive(page: Page, app_url: str, authenticated_page: Page):
     """Asserts Edit Profile elements visible at all viewports when authenticated; no horizontal overflow."""
     navigate_to_profile_via_ui(page, app_url, timeout_ms=NORMAL_TIMEOUT)
-    if "/auth/login" in page.url:
-        pytest.skip("Authentication fixture not available")
+    assert "/auth/login" not in page.url, "Authentication failed: redirected to login page"
     page.get_by_role("link", name="Edit Profile").click(timeout=NORMAL_TIMEOUT)
     page.wait_for_load_state("networkidle")
     for vp in VIEWPORTS:
