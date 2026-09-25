@@ -5,11 +5,20 @@ auth:
   type: inherit
   credentials:
     id: 383fc78f-96ef-47d9-81d5-e4c7dada7326
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: '{}'
 scripts:
   - type: afterResponse
     code: |-
       pm.test('Status code is 400', function () {
           pm.response.to.have.status(400);
+      });
+
+      pm.test('Explains that nothing changed', function () {
+          pm.expect(pm.response.json().message).to.equal('No changes provided');
       });
     language: text/javascript
 order: 4000

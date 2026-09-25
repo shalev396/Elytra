@@ -1,21 +1,7 @@
 import { Router } from 'express';
-import multer from 'multer';
 import { AccountController } from '../../controllers/index.js';
 
 const router = Router();
-
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    if (allowed.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only JPEG, PNG, WebP, and GIF images are allowed'));
-    }
-  },
-});
 
 // ─── GET /api/private/me ────────────────────────────────────────────────────
 
@@ -34,15 +20,25 @@ router.get('/me', AccountController.getMe);
 
 // ─── PUT /api/private/me ────────────────────────────────────────────────────
 
+/** A file already uploaded through POST /api/private/uploads/presign (purpose "account-photo"). */
+export interface StagedFileReference {
+  stagingKey: string;
+  /** Original file name, kept on the Media record and used in the data export. */
+  fileName: string;
+}
+
+/** JSON. At least one field must change something, or the response is 400 "No changes provided". */
 export interface UpdateMeRequestBody {
   name?: string;
-  /** Send 'true' to delete the current photo without uploading a replacement */
-  removePhoto?: string;
+  /** Delete the current photo without a replacement. Ignored when `photo` is present. */
+  removePhoto?: boolean;
+  /** Replace the current photo with a staged upload. */
+  photo?: StagedFileReference;
 }
 
 export type UpdateMeResponseData = MeResponseData;
 
-router.put('/me', upload.single('photo'), AccountController.updateMe);
+router.put('/me', AccountController.updateMe);
 
 // ─── POST /api/private/me/test-email ─────────────────────────────────────────
 
@@ -53,7 +49,12 @@ export interface TestEmailResponseData {
 router.post('/me/test-email', AccountController.sendTest);
 
 // ─── GET /api/private/me/export ──────────────────────────────────────────────
-// Returns binary ZIP (application/zip) with Content-Disposition: attachment
+
+/** A presigned GET for the ZIP (user-data.csv + assets/), valid for 15 minutes. */
+export interface ExportMyDataResponseData {
+  downloadUrl: string;
+  filename: string;
+}
 
 router.get('/me/export', AccountController.exportMyData);
 

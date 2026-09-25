@@ -1,4 +1,4 @@
-import { useState, useRef, type FormEvent, type ChangeEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -6,26 +6,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { FadeContent } from '@/components/animations/FadeContent';
-import { Upload, X, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { PageMetadata } from '@/components/shared/PageMetadata';
+import { ImageUpload } from '@/components/shared/ImageUpload';
 import { useMe, useUpdateMe } from '@/api/queries';
+import { stageFile, StagedUploadError, UPLOAD_RULES } from '@/api/services/stagedUpload';
+import { pageTitle } from '@/data/pageTitles';
 import { useLanguage } from '@/hooks/useLanguage';
 import { pathTo, ROUTES } from '@/router/routes';
+import type { UpdateMeRequestBody } from '@api-types/api-contracts';
 
-function getInitials(name: string | undefined, email: string | undefined) {
-  if (name) {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  }
-  return email?.[0]?.toUpperCase() ?? 'U';
-}
+const PHOTO_RULE = UPLOAD_RULES['account-photo'];
 
 export default function EditProfilePage() {
   const { t } = useTranslation();
@@ -34,41 +27,24 @@ export default function EditProfilePage() {
   const { data: meData } = useMe();
   const updateMe = useUpdateMe();
 
-  const [name, setName] = useState(meData?.name ?? '');
+  // Undefined until the user types, so the field shows the server name once it arrives.
+  const [nameDraft, setNameDraft] = useState<string>();
+  const name = nameDraft ?? meData?.name ?? '';
+
   const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoRemoved, setPhotoRemoved] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isStaging, setIsStaging] = useState(false);
 
   const currentPhotoUrl = meData?.photoUrl ?? null;
-  const displayPreview = photoRemoved ? null : (photoPreview ?? currentPhotoUrl);
-  const initials = getInitials(name || meData?.name, meData?.email);
+  const isSaving = isStaging || updateMe.isPending;
 
-  const hasChanges =
-    (name !== '' && name !== (meData?.name ?? '')) || photoFile !== null || photoRemoved;
+  const nameChanged = name !== '' && name !== (meData?.name ?? '');
+  const hasChanges = nameChanged || photoFile !== null || photoRemoved;
 
-  function handlePhotoChange(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) {
-      return;
-    }
-
+  function handlePhotoChange(file: File | null) {
     setPhotoFile(file);
-    setPhotoRemoved(false);
-    const reader = new FileReader();
-    reader.onload = () => {
-      setPhotoPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function handleRemovePhoto() {
-    setPhotoFile(null);
-    setPhotoPreview(null);
-    setPhotoRemoved(true);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    // Clearing only means "remove" when there is a saved photo to remove.
+    setPhotoRemoved(file === null && currentPhotoUrl !== null);
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -79,30 +55,37 @@ export default function EditProfilePage() {
       return;
     }
 
-    const formData = new FormData();
-
-    if (name !== '' && name !== (meData?.name ?? '')) {
-      formData.append('name', name);
-    }
-
-    if (photoFile) {
-      formData.append('photo', photoFile);
-    } else if (photoRemoved) {
-      formData.append('removePhoto', 'true');
+    const payload: UpdateMeRequestBody = {};
+    if (nameChanged) {
+      payload.name = name;
     }
 
     try {
-      await updateMe.mutateAsync(formData);
+      if (photoFile) {
+        setIsStaging(true);
+        try {
+          payload.photo = await stageFile(photoFile, 'account-photo');
+        } finally {
+          setIsStaging(false);
+        }
+      } else if (photoRemoved) {
+        payload.removePhoto = true;
+      }
+      await updateMe.mutateAsync(payload);
       toast.success(t('profile.edit.success'));
       void navigate(pathTo(ROUTES.PROFILE, language));
-    } catch {
-      // Error toast is handled by the axios interceptor
+    } catch (err) {
+      // API errors are already reported by the axios interceptor; the direct S3 upload and
+      // client-side validation are not, so report those here.
+      if (err instanceof StagedUploadError) {
+        toast.error(t(err.i18nKey, err.params));
+      }
     }
   }
 
   return (
     <div className="container mx-auto px-4 py-12 sm:px-6 lg:px-8">
-      <PageMetadata title="Edit Profile | Elytra" noIndex />
+      <PageMetadata title={pageTitle(t('profile.edit.title'))} noIndex />
       <div className="mx-auto max-w-2xl space-y-6">
         <FadeContent>
           <div className="mb-8">
@@ -131,42 +114,20 @@ export default function EditProfilePage() {
                 <CardTitle>{t('profile.edit.photoLabel')}</CardTitle>
                 <CardDescription>{t('profile.edit.photoHint')}</CardDescription>
               </CardHeader>
-              <CardContent className="flex flex-col gap-6 sm:flex-row sm:items-center">
-                <Avatar className="size-24 text-2xl">
-                  {displayPreview ? (
-                    <AvatarImage src={displayPreview} alt={name || 'Profile'} />
-                  ) : null}
-                  <AvatarFallback className="bg-primary/10 text-primary">{initials}</AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col gap-2">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
-                    className="hidden"
-                    onChange={handlePhotoChange}
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <Upload className="me-2 size-4" />
-                      {photoFile || currentPhotoUrl
-                        ? t('profile.edit.changeFile')
-                        : t('profile.edit.chooseFile')}
-                    </Button>
-                    {(photoFile ?? (currentPhotoUrl && !photoRemoved)) && (
-                      <Button type="button" variant="ghost" size="sm" onClick={handleRemovePhoto}>
-                        <X className="me-2 size-4" />
-                        {t('profile.edit.removeFile')}
-                      </Button>
-                    )}
-                  </div>
-                  {photoFile && <p className="text-muted-foreground text-xs">{photoFile.name}</p>}
-                </div>
+              <CardContent>
+                <ImageUpload
+                  value={photoRemoved ? null : currentPhotoUrl}
+                  onChange={handlePhotoChange}
+                  rule={PHOTO_RULE}
+                  chooseLabel={t('profile.edit.chooseFile')}
+                  changeLabel={t('profile.edit.changeFile')}
+                  removeLabel={t('profile.edit.removeFile')}
+                  previewAlt={t('profile.edit.photoPreviewAlt')}
+                  disabled={isSaving}
+                />
+                {photoFile && (
+                  <p className="text-muted-foreground mt-2 truncate text-xs">{photoFile.name}</p>
+                )}
               </CardContent>
             </Card>
           </FadeContent>
@@ -183,7 +144,7 @@ export default function EditProfilePage() {
                     id="name"
                     value={name}
                     onChange={(e) => {
-                      setName(e.target.value);
+                      setNameDraft(e.target.value);
                     }}
                     placeholder={t('profile.edit.namePlaceholder')}
                   />
@@ -205,8 +166,8 @@ export default function EditProfilePage() {
 
           <FadeContent delay={150}>
             <div className="flex justify-end">
-              <Button type="submit" disabled={updateMe.isPending || !hasChanges}>
-                {updateMe.isPending ? t('profile.edit.submitting') : t('profile.edit.submit')}
+              <Button type="submit" disabled={isSaving || !hasChanges}>
+                {isSaving ? t('profile.edit.submitting') : t('profile.edit.submit')}
               </Button>
             </div>
           </FadeContent>

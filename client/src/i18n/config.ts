@@ -1,5 +1,8 @@
 // i18n configuration and language utilities
 
+/** Set when the user explicitly picks a language (LanguageSwitcher); wins over the browser. */
+export const LANGUAGE_PREFERENCE_STORAGE_KEY = 'elytra-language-preference';
+
 export const SUPPORTED_LANGUAGES = ['en', 'he'] as const;
 export type Language = (typeof SUPPORTED_LANGUAGES)[number];
 
@@ -16,9 +19,30 @@ export const isValidLanguage = (lng: string): lng is Language => {
   return SUPPORTED_LANGUAGES.includes(lng as Language);
 };
 
-// Get default language (fallback to English)
+/** The language the user explicitly picked earlier, if any. Storage access may throw. */
+export const getStoredLanguagePreference = (): Language | null => {
+  try {
+    const stored = localStorage.getItem(LANGUAGE_PREFERENCE_STORAGE_KEY);
+    return stored !== null && isValidLanguage(stored) ? stored : null;
+  } catch {
+    return null;
+  }
+};
+
+/** Remembers an explicit language choice. Ignores storage errors (private mode, quota). */
+export const storeLanguagePreference = (lng: Language): void => {
+  try {
+    localStorage.setItem(LANGUAGE_PREFERENCE_STORAGE_KEY, lng);
+  } catch {
+    /* ignore */
+  }
+};
+
+/**
+ * Language for routing: the URL prefix, then the user's stored choice, then the browser
+ * language, then English.
+ */
 export const getDefaultLanguage = (): Language => {
-  // Try to get from URL first
   const path = window.location.pathname;
   const match = /^\/(en|he)(\/|$)/.exec(path);
   const pathLang = match?.[1];
@@ -26,13 +50,16 @@ export const getDefaultLanguage = (): Language => {
     return pathLang;
   }
 
-  // Try browser language
+  const stored = getStoredLanguagePreference();
+  if (stored) {
+    return stored;
+  }
+
   const browserLang = navigator.language.split('-')[0];
   if (browserLang !== undefined && isValidLanguage(browserLang)) {
     return browserLang;
   }
 
-  // Default to English
   return 'en';
 };
 

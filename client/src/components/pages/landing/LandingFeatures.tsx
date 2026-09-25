@@ -1,13 +1,16 @@
 import {
-  Lock,
-  Cloud,
-  Server,
-  Shield,
+  Blocks,
   Database,
+  DatabaseZap,
+  FlaskConical,
+  GitBranch,
   Globe,
+  Lock,
   Mail,
-  ShieldCheck,
-  BarChart3,
+  Network,
+  ScrollText,
+  Server,
+  Upload,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -15,16 +18,20 @@ import { GradientText } from '@/components/animations/text/GradientText';
 import { FadeContent } from '@/components/animations/FadeContent';
 import { FeatureCard } from '@/components/pages/landing/FeatureCard';
 
+/** 12 cards: fills 2, 3 and 4 columns with no empty spaces. Keep the count a multiple of 12. */
 const FEATURES: { icon: LucideIcon; slug: string }[] = [
   { icon: Lock, slug: 'auth' },
-  { icon: Cloud, slug: 's3' },
+  { icon: Upload, slug: 's3' },
   { icon: Server, slug: 'serverless' },
-  { icon: Shield, slug: 'cicd' },
-  { icon: Database, slug: 'state' },
-  { icon: Globe, slug: 'i18n' },
+  { icon: DatabaseZap, slug: 'database' },
+  { icon: Blocks, slug: 'infra' },
+  { icon: Network, slug: 'cdn' },
+  { icon: GitBranch, slug: 'cicd' },
+  { icon: FlaskConical, slug: 'testing' },
   { icon: Mail, slug: 'email' },
-  { icon: ShieldCheck, slug: 'mfa' },
-  { icon: BarChart3, slug: 'monitoring' },
+  { icon: Globe, slug: 'i18n' },
+  { icon: Database, slug: 'state' },
+  { icon: ScrollText, slug: 'monitoring' },
 ];
 
 export function LandingFeatures() {

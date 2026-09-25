@@ -26,6 +26,7 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -184,6 +185,9 @@
   body {
     @apply bg-background text-foreground;
     min-width: 320px;
+    /* Landscape notch: keep content clear of the side insets (viewport-fit=cover). */
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
   }
 
   /* Fluid typography */
@@ -229,4 +233,13 @@
 
 .animation-delay-4000 {
   animation-delay: 4s;
+}
+
+/* Decorative infinite animations stop when the user asks for reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-blob,
+  [class*='animate-[shine'],
+  [class*='animate-[shimmer'] {
+    animation: none;
+  }
 }

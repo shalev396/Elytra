@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom';
 import { PageMetadata } from '@/components/shared/PageMetadata';
+import { pageTitle } from '@/data/pageTitles';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -23,7 +24,7 @@ export default function TermsOfServicePage() {
 
   return (
     <Card>
-      <PageMetadata title="Terms of Service | Elytra" />
+      <PageMetadata title={pageTitle('Terms of Service')} />
       <CardHeader>
         <CardTitle className="text-3xl">{t('legal.terms.title')}</CardTitle>
         <p className="text-sm text-muted-foreground">{t('legal.terms.lastUpdated')}</p>

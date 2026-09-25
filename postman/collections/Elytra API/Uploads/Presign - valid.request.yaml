@@ -1,0 +1,36 @@
+$kind: http-request
+url: '{{baseUrl}}/private/uploads/presign'
+method: POST
+auth:
+  type: inherit
+  credentials:
+    id: 383fc78f-96ef-47d9-81d5-e4c7dada7326
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: '{"purpose":"account-photo","fileName":"test-image.png","mimeType":"image/png"}'
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Returns a presigned POST in the caller staging folder', function () {
+          const json = pm.response.json();
+          pm.expect(json).to.not.have.property('success');
+          pm.expect(json.data.stagingKey).to.match(/^tmp\/staging\/[^/]+\/[^/]+\.png$/);
+          pm.expect(json.data.uploadUrl).to.match(/^https:\/\//);
+          pm.expect(json.data.fields).to.be.an('object');
+          pm.expect(json.data.fields['Content-Type']).to.equal('image/png');
+          pm.expect(json.data.fields.key).to.equal(json.data.stagingKey);
+          pm.expect(json.data.expiresIn).to.equal(900);
+          pm.expect(json.data.maxBytes).to.equal(5 * 1024 * 1024);
+
+          pm.collectionVariables.set('stagingKey', json.data.stagingKey);
+          pm.collectionVariables.set('uploadUrl', json.data.uploadUrl);
+          pm.collectionVariables.set('uploadFields', JSON.stringify(json.data.fields));
+      });
+    language: text/javascript
+order: 1000

@@ -17,7 +17,7 @@ declare module 'axios' {
   }
 }
 
-const baseURL =
+export const baseURL =
   typeof window !== 'undefined' && window.location.hostname.includes('localhost')
     ? 'http://localhost:3000/api'
     : `${typeof window !== 'undefined' ? window.location.origin : ''}/api`;
@@ -60,12 +60,13 @@ axiosInstance.interceptors.response.use(
     const axiosError = error as AxiosError<ApiErrorResponse>;
     const originalRequest = axiosError.config;
 
-    // Auto-refresh on 401 (skip auth endpoints and already-retried requests)
+    // Auto-refresh on 401 (skip public auth endpoints and already-retried requests).
+    // `includes` rather than `startsWith` so absolute URLs match too.
     if (
       axiosError.response?.status === 401 &&
       originalRequest &&
       !originalRequest._retry &&
-      !originalRequest.url?.startsWith('/public/auth/')
+      !originalRequest.url?.includes('/public/auth/')
     ) {
       originalRequest._retry = true;
       const currentRefreshToken = selectRefreshToken();

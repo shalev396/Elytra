@@ -1,0 +1,22 @@
+$kind: http-request
+url: '{{baseUrl}}/private/uploads/presign'
+method: POST
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: '{"purpose":"account-photo","fileName":"test-image.png","mimeType":"image/png"}'
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 401', function () {
+          pm.response.to.have.status(401);
+      });
+
+      pm.test('Response indicates failure', function () {
+          pm.expect(pm.response.json().message).to.be.a('string');
+      });
+    language: text/javascript
+order: 3000

@@ -43,12 +43,36 @@ function decodeUserFromIdToken(idToken: string): User | null {
 interface UserState {
   user: User | null;
   isRestoringSession: boolean;
+  /**
+   * True after the user chose to sign out (log out, delete account). ProtectedRoute then sends
+   * them home instead of to the login page: its redirect renders synchronously with the logout,
+   * before any navigate() the caller issues, so it decides where the user lands.
+   */
+  signedOut: boolean;
 }
 
-const initialState: UserState = {
-  user: null,
-  isRestoringSession: false,
-};
+/**
+ * Computed synchronously from storage so that the very first render already knows whether the
+ * user is signed in. Otherwise ProtectedRoute redirects a reloaded deep link (e.g.
+ * /en/profile/edit) to the login page before App's loadFromStorage effect has a chance to run.
+ */
+const initialState: UserState = (() => {
+  if (typeof window === 'undefined') {
+    return { user: null, isRestoringSession: false, signedOut: false };
+  }
+  const idToken = sessionStorage.getItem(ID_TOKEN_KEY);
+  if (idToken) {
+    const user = decodeUserFromIdToken(idToken);
+    if (user) {
+      return { user, isRestoringSession: false, signedOut: false };
+    }
+    sessionStorage.removeItem(ID_TOKEN_KEY);
+  }
+  if (localStorage.getItem(REFRESH_TOKEN_KEY)) {
+    return { user: null, isRestoringSession: true, signedOut: false };
+  }
+  return { user: null, isRestoringSession: false, signedOut: false };
+})();
 
 // ---------------------------------------------------------------------------
 // Slice
@@ -75,6 +99,7 @@ const userSlice = createSlice({
 
       state.user = decodeUserFromIdToken(idToken);
       state.isRestoringSession = false;
+      state.signedOut = false;
     },
 
     /**
@@ -93,11 +118,13 @@ const userSlice = createSlice({
     },
 
     /**
-     * Clears all auth state and storage.
+     * Clears all auth state and storage. Pass `{ signedOut: true }` when the user chose to leave,
+     * so protected pages redirect home; an expired session (no payload) goes to the login page.
      */
-    logout: (state) => {
+    logout: (state, action: PayloadAction<{ signedOut?: boolean } | undefined>) => {
       state.user = null;
       state.isRestoringSession = false;
+      state.signedOut = action.payload?.signedOut ?? false;
       sessionStorage.removeItem(ID_TOKEN_KEY);
       localStorage.removeItem(REFRESH_TOKEN_KEY);
     },
@@ -139,6 +166,7 @@ export const { setAuthData, updateTokens, logout, loadFromStorage, setRestoringS
 export const selectUser = (state: RootState) => state.user.user;
 export const selectIsAuthenticated = (state: RootState) => state.user.user !== null;
 export const selectIsRestoringSession = (state: RootState) => state.user.isRestoringSession;
+export const selectSignedOut = (state: RootState) => state.user.signedOut;
 
 // Direct storage selectors (used by the axios interceptor outside of React)
 export function selectIdToken(): string | null {

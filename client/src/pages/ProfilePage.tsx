@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -18,6 +17,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { PageMetadata } from '@/components/shared/PageMetadata';
+import { pageTitle } from '@/data/pageTitles';
 import { selectUser, logout } from '@/store/userSlice';
 import { Download, Mail, Pencil, Trash2 } from 'lucide-react';
 import { FadeContent } from '@/components/animations/FadeContent';
@@ -40,7 +40,6 @@ function getInitials(name: string | undefined, email: string | undefined) {
 export default function ProfilePage() {
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const user = useSelector(selectUser);
   const { data: meData } = useMe();
   const { language } = useLanguage();
@@ -83,8 +82,8 @@ export default function ProfilePage() {
     deleteAccountMutation.mutate(undefined, {
       onSuccess: () => {
         setDeleteDialogOpen(false);
-        dispatch(logout());
-        void navigate(pathTo(ROUTES.HOME, language));
+        // ProtectedRoute sends a signed-out user home.
+        dispatch(logout({ signedOut: true }));
       },
       onError: () => {
         toast.error(t('profile.deleteAccount.error'));
@@ -94,7 +93,7 @@ export default function ProfilePage() {
 
   return (
     <div className="container mx-auto px-4 py-12 sm:px-6 lg:px-8">
-      <PageMetadata title="Profile | Elytra" noIndex />
+      <PageMetadata title={pageTitle(t('profile.title'))} noIndex />
       <div className="mx-auto max-w-4xl">
         <FadeContent>
           <div className="mb-8">
@@ -189,7 +188,9 @@ export default function ProfilePage() {
                         <AlertDialogCancel disabled={deleteAccountMutation.isPending}>
                           {t('profile.deleteAccount.cancel')}
                         </AlertDialogCancel>
-                        <AlertDialogAction
+                        {/* A plain Button, not AlertDialogAction: the action closes the dialog on
+                            click, hiding the pending state and any error. onSuccess closes it. */}
+                        <Button
                           variant="destructive"
                           onClick={handleDeleteAccount}
                           disabled={deleteAccountMutation.isPending}
@@ -197,7 +198,7 @@ export default function ProfilePage() {
                           {deleteAccountMutation.isPending
                             ? t('profile.deleteAccount.deleting')
                             : t('profile.deleteAccount.confirm')}
-                        </AlertDialogAction>
+                        </Button>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>

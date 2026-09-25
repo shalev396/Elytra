@@ -56,6 +56,7 @@ export const profile = {
     chooseFile: 'Choose Photo',
     changeFile: 'Change Photo',
     removeFile: 'Remove',
+    photoPreviewAlt: 'Photo preview',
     emailNotice:
       'Submitting this form will send you a confirmation email with your updated account details.',
     submit: 'Save Changes',
