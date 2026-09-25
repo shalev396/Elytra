@@ -15,7 +15,6 @@ flowchart LR
   cf -- "/api/*" --> api[HTTP API]
   api -- "/api/public/*" --> fn[Lambda elytra-stage-api]
   api -- "/api/private/* (Cognito JWT)" --> fn
-  api -- "/api/dev/* (dev, qa only)" --> fn
   fn --> cognito[Cognito user pool]
   fn --> assets
   fn --> ses[SES]
@@ -28,7 +27,7 @@ flowchart LR
 | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Storage`                                                            | Client bucket `DOMAIN_NAME` (Vite build) and assets bucket `DOMAIN_NAME-assets` (layout below). Both block all public access; CloudFront reads them through origin access control.  |
 | `Email`                                                              | SES domain identity for `DOMAIN_NAME`, its three DKIM CNAME records, and the deploy-time wait until SES has verified them (see below).                                              |
-| `Api`                                                                | HTTP API with routes `/api/public/{proxy+}`, `/api/private/{proxy+}` (Cognito JWT authorizer) and `/api/dev/{proxy+}` (dev/qa only), throttled 100/200.                             |
+| `Api`                                                                | HTTP API with routes `/api/public/{proxy+}`, `/api/private/{proxy+}` (Cognito JWT authorizer), throttled 100/200. Nothing else is routed.                                           |
 | `Edge`                                                               | ACM certificate (imported or created), optional WAF attachment, CloudFront distribution, SPA rewrite CloudFront Function, Route 53 alias record (plus `www` with `WWW_ALIAS=true`). |
 | `Auth`                                                               | Cognito user pool (email sign-in, SES sender `authenticator@DOMAIN_NAME`) and app client.                                                                                           |
 | `Compute`                                                            | **One** Lambda function, **one** dependencies layer, **one** codebase layer, its log group (30 days) and least-privilege role.                                                      |
@@ -37,7 +36,7 @@ Besides the API function, the stack creates exactly one helper: the SES verifica
 
 ### Why one function
 
-Auth is verified inside the app (`expressAuth`), and API Gateway attaches its JWT authorizer per route, not per function — so a single function serves every route with the same protection. One function means one warm pool (public traffic keeps logged-in requests warm), one role, one log group and one deploy artifact. The backend deploy's schema sync is a direct invoke of the same function with `{"action":"sync-db"}`, an event API Gateway can never produce.
+Auth is verified inside the app (`expressAuth`), and API Gateway attaches its JWT authorizer per route, not per function — so a single function serves every route with the same protection. One function means one warm pool (public traffic keeps logged-in requests warm), one role, one log group and one deploy artifact. Stage maintenance is a direct invoke of the same function, an event API Gateway can never produce: `{"action":"sync-db"}` (the backend deploy syncs the schema) and `{"action":"reset-db"}` (`npm run reset:db -- <stage>`, run by CI before the test suites; empties the database, S3 user uploads and Cognito users, and is refused on prod). Only lambda:InvokeFunction reaches them, so there are no public destructive endpoints.
 
 Splitting public/private later is ~10 lines (second `lambda.Function` on the same layers, second integration) if you want a public function without S3/SES/Cognito-admin permissions or separate reserved concurrency.
 
@@ -72,7 +71,7 @@ Planned: when `WAF_WEB_ACL_ARN` is not set, the stack will create a web ACL for 
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Account           | From the deploying AWS credentials                                                                                                                                                                                                                           |
 | Hosted zone       | Found in Route 53 by `npm run deploy:backend` at run time: the public zone named `DOMAIN_NAME` or its closest parent (works for `dev.app.example.co.uk`). Passed as `-c hostedZoneId` / `-c hostedZoneName`; never cached in `cdk.context.json` (gitignored) |
-| Database provider | From the URL scheme: `mongodb://` / `mongodb+srv://` → Mongoose, otherwise Sequelize                                                                                                                                                                         |
+| Database provider | From the URL scheme: `mongodb://` / `mongodb+srv://` → Mongoose, `postgres://` / `postgresql://` → Sequelize (PostgreSQL); any other scheme fails at startup                                                                                                 |
 | Cognito ids       | Set on the function by CDK; read from stack outputs locally                                                                                                                                                                                                  |
 | Dev tools         | On for dev/qa, off for prod                                                                                                                                                                                                                                  |
 
@@ -142,7 +141,7 @@ CloudFormation cannot tag bucket policies, Route 53 records, API routes, integra
 
 | Setting                       | dev / qa | prod     |
 | ----------------------------- | -------- | -------- |
-| `/api/dev/*` route + router   | yes      | no       |
+| `reset-db` action             | yes      | refused  |
 | Assets bucket on stack delete | deleted  | retained |
 | User pool on stack delete     | deleted  | retained |
 | User pool deletion protection | off      | on       |

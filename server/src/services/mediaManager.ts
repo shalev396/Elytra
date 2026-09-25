@@ -54,7 +54,7 @@ export async function uploadAndCreateMedia(params: MediaUploadParams): Promise<M
     });
   } catch (error) {
     await deleteFile(uploaded.s3Key).catch((cleanupError: unknown) => {
-      console.warn(`Failed to remove orphaned upload ${uploaded.s3Key}:`, cleanupError);
+      console.warn('Failed to remove orphaned upload %s:', uploaded.s3Key, cleanupError);
     });
     throw error;
   }

@@ -121,6 +121,8 @@ npx cdk bootstrap aws://<ACCOUNT_ID>/<REGION>   # the stack region; us-east-1 by
 
 </details>
 
+`SyncDatabase` also covers `npm run reset:db -- <stage>`, which the test workflows run before each suite: it invokes the same function with `{"action":"reset-db"}` to empty the stage (refused on prod). The reset has no HTTP route, so only credentials with this permission can run it.
+
 `cloudfront:GetInvalidation` is what the frontend deploy's wait polls. The SDK waiter retries on every error, `AccessDenied` included, so without it the deploy looks like a 10-minute hang that ends in a `TimeoutError`.
 
 ### 4. GitHub configuration

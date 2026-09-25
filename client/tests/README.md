@@ -5,14 +5,15 @@
 Run these against a live backend or the local API (`cd server && npm run dev`) + Vite. For the full list of hardcoded URLs to change, see [Getting Started → Change Hardcoded URLs](../../README.md#2-change-hardcoded-urls-and-branding) in the main README.
 
 > [!WARNING]
-> **Every test run wipes the stage the API is bound to.** Before any test starts, the autouse `reset_database` fixture in [`conftest.py`](../conftest.py) calls `POST {API_BASE_URL}/dev/reset`, which deletes **the database, all S3 user uploads and every Cognito user** of that stage.
+> **Resetting a stage deletes everything in it.** The suite itself never resets anything. To start from an empty stage, run the reset first:
 >
-> - `npm run test` against `npm run dev` wipes **dev**.
-> - `npm run test` against `npm run start:local -- --stage qa` wipes **qa**. CI's `_test-local.yml` does exactly this on every PR into qa.
-> - `npm run test:qa` (and CI's `_test-qa.yml`) calls the deployed QA API and wipes **qa**.
-> - Prod has no `/dev` routes, so a run against prod fails at the reset instead of wiping it.
+> ```bash
+> cd server && npm run reset:db -- dev   # or qa; refused for prod
+> ```
 >
-> Only when `E2E_TEST_EMAIL` is set (pre-existing user mode, see [Mail.tm](#mailtm-and-auth-dependent-tests)) is the reset skipped, because it would delete that user.
+> It deletes **the database, all S3 user uploads and every Cognito user** of that stage. It is a direct invoke of the stage's API function (`{"action":"reset-db"}`), not an HTTP route, so it needs AWS credentials for the account; nobody can trigger it through the API. CI runs it before each suite: `_test-local.yml` resets **qa** on every PR into qa, and `_test-qa.yml` resets **qa** before testing the deployed QA site.
+>
+> Don't reset when using a pre-existing account (`E2E_TEST_EMAIL`, see [Mail.tm](#mailtm-and-auth-dependent-tests)): it would delete that user.
 
 ---
 
@@ -43,7 +44,7 @@ Runs pytest via `.venv` with `BASE_URL=http://localhost:5173`, `API_BASE_URL=htt
 
 Tests run in parallel on pytest-xdist workers, one per CPU up to 4 (`E2E_WORKERS=2 npm run test` to change, `E2E_WORKERS=0` for a single process). Each worker drives its own Chromium: private-repo GitHub runners have only 2 vCPUs, and more workers than CPUs (plus Vite and the local API) left pages stuck on the route spinner. `--headed` with 4 workers opens 4 browsers.
 
-The DB reset, the shared test user and the translations export still happen once per run (`_run_once` in `conftest.py`, guarded by a file lock). Tests that change state other tests read (accounts, profile data) are listed in `SHARED_STATE_TESTS` in `conftest.py`; with `--dist loadgroup` they run on one worker, in order. Add a test there when it changes such state.
+The shared test user and the translations export still happen once per run (`_run_once` in `conftest.py`, guarded by a file lock). Tests that change state other tests read (accounts, profile data) are listed in `SHARED_STATE_TESTS` in `conftest.py`; with `--dist loadgroup` they run on one worker, in order. Add a test there when it changes such state.
 
 ### Reduced motion
 
@@ -194,6 +195,6 @@ Tests that create users (sign up, login flow, profile flows) use [Mail.tm](https
 - Network access to api.mail.tm
 - Initial 12s wait for email delivery (first poll)
 
-Optionally set `E2E_TEST_EMAIL`, `E2E_TEST_PASSWORD`, `E2E_TEST_ID_TOKEN`, `E2E_TEST_REFRESH_TOKEN` to use an existing account and skip user creation. Setting `E2E_TEST_EMAIL` also **skips the database reset** (it would delete that account), so the run uses whatever data the stage already has.
+Optionally set `E2E_TEST_EMAIL`, `E2E_TEST_PASSWORD`, `E2E_TEST_ID_TOKEN`, `E2E_TEST_REFRESH_TOKEN` to use an existing account and skip user creation. Don't run `npm run reset:db` in this mode (it would delete that account); the run uses whatever data the stage already has.
 
 Otherwise each run creates one fresh Mail.tm user for the whole run (all workers) and sends one SES confirmation email; `test_signup_flow` and `test_delete_account_flow` each create one more. If SES or Mail.tm rejects the request (quota, 429), `shared_test_user` **fails** the run instead of skipping: a skip would turn every auth-dependent test into a green skip and hide a broken login. The trade-off is that, together with the reset on every run, each run spends SES quota; on a tight quota, use the `E2E_TEST_*` variables.

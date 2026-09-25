@@ -49,7 +49,9 @@ export async function syncDB(): Promise<string[]> {
 
 export async function resetDatabase(): Promise<void> {
   if (environment.env !== 'qa' && environment.env !== 'dev') {
-    throw new Error('resetDatabase can only run on QA or DEV environment');
+    throw new Error(
+      `resetDatabase can only run on the 'dev' or 'qa' stage, not '${environment.env}'`,
+    );
   }
 
   if (environment.databaseProvider === 'mongoose') {

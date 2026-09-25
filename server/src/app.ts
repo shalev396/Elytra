@@ -5,10 +5,8 @@ import {
   notFound,
   expressAuth,
   privateLimiter,
-  devLimiter,
 } from './middlewares/index.js';
-import { publicRouter, privateRouter, devRouter } from './routes/index.js';
-import { environment } from './config/environment.js';
+import { publicRouter, privateRouter } from './routes/index.js';
 
 /** Express 5 leaves `req.body` undefined when a request has no body; handlers can rely on `{}`. */
 const defaultBody: RequestHandler = (req, _res, next) => {
@@ -33,7 +31,9 @@ const parseBody: RequestHandler[] = [
  *
  * - /api/public  → no auth (Cognito sign-up/login flows; rate-limited in routes/public/index.ts)
  * - /api/private → JWT verified in-app by expressAuth (API Gateway also runs a JWT authorizer)
- * - /api/dev     → developer tools, mounted only outside prod (infra also omits the route in prod)
+ *
+ * Stage maintenance (schema sync, test reset) is not HTTP: it runs as a direct Lambda invoke, see
+ * lambda.ts.
  */
 export function createApp(): Express {
   const app = express();
@@ -48,10 +48,6 @@ export function createApp(): Express {
 
   app.use('/api/public', ...parseBody, publicRouter);
   app.use('/api/private', privateLimiter, expressAuth, ...parseBody, privateRouter);
-
-  if (environment.enableDevTools) {
-    app.use('/api/dev', devLimiter, ...parseBody, devRouter);
-  }
 
   app.use(notFound);
   app.use(errorHandler);

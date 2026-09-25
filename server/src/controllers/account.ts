@@ -154,7 +154,7 @@ const updateMe: RequestHandler = async (req, res): Promise<void> => {
     const oldPhotoId = user.photoId;
     if (oldPhotoId !== null && 'photoId' in updateData && updateData.photoId !== oldPhotoId) {
       await deleteMediaById(oldPhotoId).catch((error: unknown) => {
-        console.warn(`Failed to delete replaced photo ${oldPhotoId}:`, error);
+        console.warn('Failed to delete replaced photo %s:', oldPhotoId, error);
       });
     }
 
@@ -165,7 +165,7 @@ const updateMe: RequestHandler = async (req, res): Promise<void> => {
     if (newPhoto !== null) {
       const orphanId = newPhoto.id;
       await deleteMediaById(orphanId).catch((cleanupError: unknown) => {
-        console.warn(`Failed to remove uncommitted photo ${orphanId}:`, cleanupError);
+        console.warn('Failed to remove uncommitted photo %s:', orphanId, cleanupError);
       });
     }
     const status = stagedUploadErrorStatus(error, 500);

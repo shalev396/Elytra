@@ -78,7 +78,7 @@ export class Compute extends Construct {
 
     this.function = new lambda.Function(this, 'Function', {
       functionName,
-      description: 'Elytra API (/api/public, /api/private, /api/dev) and CI sync-db',
+      description: 'Elytra API (/api/public, /api/private) and CI sync-db/reset-db',
       runtime: RUNTIME,
       architecture: ARCHITECTURE,
       handler: 'index.handler',

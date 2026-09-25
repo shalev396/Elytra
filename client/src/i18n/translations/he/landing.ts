@@ -88,7 +88,7 @@ export const landing = {
     database: {
       title: 'מסד הנתונים שלכם',
       description:
-        'PostgreSQL או MySQL דרך Sequelize, או MongoDB דרך Mongoose, נבחר אוטומטית לפי מחרוזת החיבור.',
+        'PostgreSQL דרך Sequelize, או MongoDB דרך Mongoose, נבחר אוטומטית לפי מחרוזת החיבור.',
     },
     infra: {
       title: 'תשתית כקוד',

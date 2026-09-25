@@ -21,11 +21,9 @@ export interface ApiRoutesProps {
  */
 export class Api extends Construct {
   readonly httpApi: apigwv2.HttpApi;
-  private readonly config: StageConfig;
 
   constructor(scope: Construct, id: string, config: StageConfig) {
     super(scope, id);
-    this.config = config;
 
     this.httpApi = new apigwv2.HttpApi(this, 'HttpApi', {
       apiName: resourceName(config.stage, 'api'),
@@ -66,9 +64,6 @@ export class Api extends Construct {
 
     this.httpApi.addRoutes({ path: '/api/public/{proxy+}', methods, integration });
     this.httpApi.addRoutes({ path: '/api/private/{proxy+}', methods, integration, authorizer });
-
-    if (!this.config.isProd) {
-      this.httpApi.addRoutes({ path: '/api/dev/{proxy+}', methods, integration });
-    }
+    // Nothing else: stage maintenance (sync-db, reset-db) is a direct Lambda invoke, never HTTP.
   }
 }

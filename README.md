@@ -60,7 +60,7 @@ Questions in [Discussions](https://github.com/shalev396/Elytra/discussions), bug
 
 ## Getting Started
 
-**You need:** Node.js 22+ (CI uses 24), Python 3 (E2E tests), an AWS account, a Route 53 hosted zone, and a [supported database](docs/infrastructure.md#inputs-and-outputs) (Sequelize: PostgreSQL, MySQL, …; Mongoose: MongoDB, DocumentDB).
+**You need:** Node.js 22+ (CI uses 24), Python 3 (E2E tests), an AWS account, a Route 53 hosted zone, and a [supported database](docs/infrastructure.md#inputs-and-outputs) (PostgreSQL through Sequelize; MongoDB or DocumentDB through Mongoose).
 
 ### 1. Clone
 
@@ -123,7 +123,7 @@ cd client && npm run test:install && npm run test       # Playwright E2E
 ```
 
 > [!WARNING]
-> The E2E suite **wipes the stage the API is bound to** (database, S3 uploads, Cognito users) at the start of every run: `dev` with `npm run dev`, `qa` with `--stage qa` or `npm run test:qa`. Read [Frontend tests](client/tests/README.md) before running it.
+> `cd server && npm run reset:db -- <dev|qa>` **empties that stage** (database, S3 uploads, Cognito users); CI runs it before every test suite. It is a direct Lambda invoke that needs AWS credentials, not an HTTP route, and it refuses prod. Read [Frontend tests](client/tests/README.md) before running it.
 
 PRs to `qa` run local tests; PRs to `main` run tests against live qa.
 

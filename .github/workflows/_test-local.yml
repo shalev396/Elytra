@@ -2,6 +2,8 @@
 # Tests run SEQUENTIALLY: backend first, then frontend.
 # The local API reads Cognito/S3 wiring from the stage stack outputs, so it needs
 # AWS credentials plus the stage's DOMAIN_NAME and DATABASE_URL — nothing else.
+# Each job first empties the stage (DB, S3 user uploads, Cognito users) with `npm run reset:db`,
+# a direct Lambda invoke: there is no HTTP reset route.
 name: Test Local
 
 on:
@@ -40,6 +42,9 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ vars.AWS_ROLE_NAME }}
       - run: npm ci
+        working-directory: server
+      - name: Reset the ${{ inputs.environment }} stage
+        run: npm run reset:db -- ${{ inputs.environment }}
         working-directory: server
       - name: Start local API and run Postman
         run: |
@@ -91,6 +96,9 @@ jobs:
       - name: Install Playwright test dependencies
         run: npm run test:install
         working-directory: client
+      - name: Reset the ${{ inputs.environment }} stage
+        run: npm run reset:db -- ${{ inputs.environment }}
+        working-directory: server
       - name: Start local API and Vite, run Playwright
         run: |
           (cd ../server && npm run start:local -- --stage ${{ inputs.environment }}) &

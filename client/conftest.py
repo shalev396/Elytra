@@ -6,22 +6,21 @@ BASE_URL: npm run test   → http://localhost:5173 (local dev)
 
 Requires: client (and server for auth flows) running at the target URL.
 
-WARNING: every run wipes the database, S3 user uploads and Cognito users of the stage the API
-is bound to (see reset_database and tests/README.md).
+The suite does not reset the stage itself: CI runs `npm run reset:db -- <stage>` (server/) first,
+a direct Lambda invoke that wipes the database, S3 user uploads and Cognito users. See
+tests/README.md.
 
-Parallel runs (pytest-xdist, see tests/scripts/run-tests.ts): session setup (DB reset, shared
-user, translations export) runs once for the whole run, and the tests listed in
+Parallel runs (pytest-xdist, see tests/scripts/run-tests.ts): session setup (shared user,
+translations export) runs once for the whole run, and the tests listed in
 SHARED_STATE_TESTS run on a single worker, in order.
 """
 import base64
 import json
 import os
 import subprocess
-import warnings
 from pathlib import Path
 
 import pytest
-import requests
 from filelock import FileLock
 
 # Tests that change state other tests read (accounts, profile data). In parallel runs they share
@@ -124,38 +123,8 @@ def browser_context_args(browser_context_args):
     return {**browser_context_args, "reduced_motion": "reduce"}
 
 
-@pytest.fixture(scope="session", autouse=True)
-def reset_database(api_base_url, tmp_path_factory):
-    """
-    Wipe the DB, S3 user uploads, and Cognito user pool before the test session.
-
-    DESTRUCTIVE: this empties whatever stage the API at API_BASE_URL is bound to, including qa when
-    the local API was started with `--stage qa` (as CI's _test-local.yml does).
-
-    Calls POST /api/dev/reset (no auth required; the route exists on every stage except prod, so
-    a run against prod fails here instead of wiping it). The reset also re-syncs the DB schema.
-    shared_test_user depends on this fixture, so the reset completes before any user is created.
-    Runs once, before any worker starts its tests.
-    """
-    if os.getenv("E2E_TEST_EMAIL"):
-        # Pre-existing user mode: the reset would delete that Cognito user and every E2E_TEST_*
-        # token with it, so the whole run would fail. Tests then run against existing data.
-        warnings.warn(
-            "E2E_TEST_EMAIL is set: skipping the database reset. Tests run against existing data.",
-            stacklevel=1,
-        )
-        return
-
-    def reset():
-        r = requests.post(f"{api_base_url}/dev/reset", timeout=60)
-        assert r.status_code == 200, f"DB reset failed: {r.status_code} {r.text}"
-        return True
-
-    _run_once(tmp_path_factory, "reset-database", reset)
-
-
 @pytest.fixture(scope="session")
-def shared_test_user(api_base_url, reset_database, tmp_path_factory):
+def shared_test_user(api_base_url, tmp_path_factory):
     """
     One shared test user for the whole run (all workers). All auth-dependent tests should use
     this via authenticated_page or login_page_with_user. Only tests that must create a new user

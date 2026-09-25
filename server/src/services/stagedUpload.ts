@@ -163,7 +163,7 @@ async function discard(stagingKey: string): Promise<void> {
     await deleteFile(stagingKey);
   } catch (error) {
     // The tmp/ lifecycle rule is the backstop; a failed cleanup must not mask the real error.
-    console.warn(`Failed to delete staged upload ${stagingKey}:`, error);
+    console.warn('Failed to delete staged upload %s:', stagingKey, error);
   }
 }
 

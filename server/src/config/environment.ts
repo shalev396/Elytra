@@ -37,9 +37,19 @@ class Environment {
     return this.#databaseUrl;
   }
 
-  /** Derived from the connection string scheme: mongodb:// or mongodb+srv:// → mongoose. */
+  /**
+   * Derived from the connection string scheme: mongodb:// or mongodb+srv:// → Mongoose,
+   * postgres:// or postgresql:// → Sequelize (PostgreSQL, the only dialect and driver bundled).
+   * Anything else fails here with a clear message instead of later as a PostgreSQL connection
+   * error.
+   */
   get databaseProvider(): DatabaseProvider {
-    return /^mongodb(\+srv)?:\/\//i.test(this.#databaseUrl) ? 'mongoose' : 'sequelize';
+    if (/^mongodb(\+srv)?:\/\//i.test(this.#databaseUrl)) return 'mongoose';
+    if (/^postgres(ql)?:\/\//i.test(this.#databaseUrl)) return 'sequelize';
+    const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(this.#databaseUrl)?.[1] ?? '(none)';
+    throw new Error(
+      `Unsupported DATABASE_URL scheme "${scheme}": use mongodb://, mongodb+srv://, postgres:// or postgresql://`,
+    );
   }
 
   get s3AssetsBucketName(): string {
@@ -68,8 +78,8 @@ class Environment {
     return this.#rateLimitEnabled;
   }
 
-  /** Developer tools (/api/dev) exist on every stage except prod. */
-  get enableDevTools(): boolean {
+  /** The destructive reset-db action is allowed on every stage except prod. */
+  get allowsStageReset(): boolean {
     return this.#env !== 'prod';
   }
 }

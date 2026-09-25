@@ -1,14 +1,7 @@
-import { InvokeCommand, LambdaClient, waitUntilFunctionUpdatedV2 } from '@aws-sdk/client-lambda';
-import {
-  DATABASE_URL_PARAMETER,
-  resolveRegion,
-  stackName,
-  SYNC_DB_ACTION,
-} from '../infra/lib/constants.js';
-import { readStackOutputs } from '../infra/lib/stack-outputs.js';
+import { DATABASE_URL_PARAMETER, stackName, SYNC_DB_ACTION } from '../infra/lib/constants.js';
+import { runApiAction } from './api-action.js';
 import {
   cdkContext,
-  fail,
   findHostedZone,
   requireEnv,
   runCdk,
@@ -58,35 +51,8 @@ runCdk(LABEL, `cdk deploy ${stack}`, [
 ]);
 
 // 4. Database schema
-const { apiFunctionName } = await readStackOutputs(stage, ['apiFunctionName']);
-const lambda = new LambdaClient({ region: resolveRegion() });
-console.warn(`[${LABEL}] syncing the database schema through ${apiFunctionName}`);
-await waitUntilFunctionUpdatedV2(
-  { client: lambda, maxWaitTime: 300 },
-  { FunctionName: apiFunctionName },
-);
-const response = await lambda.send(
-  new InvokeCommand({
-    FunctionName: apiFunctionName,
-    Payload: JSON.stringify({ action: SYNC_DB_ACTION }),
-  }),
-);
-const payload = new TextDecoder().decode(response.Payload);
-function statusCodeOf(body: string): unknown {
-  try {
-    return (JSON.parse(body) as { statusCode?: unknown }).statusCode;
-  } catch {
-    return undefined;
-  }
-}
-const statusCode = statusCodeOf(payload);
-if (response.FunctionError !== undefined || statusCode !== 200) {
-  fail(
-    LABEL,
-    `database schema sync failed (FunctionError=${response.FunctionError ?? 'none'}): ${payload}`,
-  );
-}
-console.warn(`[${LABEL}] database schema synced: ${payload}`);
+const synced = await runApiAction(LABEL, stage, SYNC_DB_ACTION);
+console.warn(`[${LABEL}] database schema synced: ${synced}`);
 
 // 5. Cost allocation tags
 await activateCostAllocationTags(LABEL);

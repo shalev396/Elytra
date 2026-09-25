@@ -27,9 +27,6 @@ function limiter(max: number): RateLimitRequestHandler {
 /** Authenticated user APIs (/api/private). */
 export const privateLimiter = limiter(200);
 
-/** Developer tools (/api/dev, every stage except prod). */
-export const devLimiter = limiter(200);
-
 /**
  * Auth endpoints (/api/public/auth: login, signup, forgot-password, …).
  * These hit Cognito/SES and are the primary abuse target — keep tight.

@@ -13,8 +13,8 @@
  * 0 = one process). Each worker drives its own Chromium, so more workers than CPUs starves them.
  * --dist loadgroup keeps the tests conftest.py marks as shared-state on a single worker.
  *
- * WARNING: every run wipes the DB, S3 user uploads and Cognito users of the stage the API is
- * bound to (conftest.py reset_database). See tests/README.md.
+ * The suite does not reset the stage; to start from an empty dev/qa stage, run
+ * `npm run reset:db -- <stage>` in server/ first (CI does). See tests/README.md.
  */
 import { execSync, spawnSync } from 'child_process';
 import * as fs from 'fs';

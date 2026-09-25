@@ -20,7 +20,8 @@ export interface ElytraStackProps extends StackProps {
  * Order (enforced by references and explicit dependencies):
  *   Storage, Email (identity + DKIM), Api (HttpApi only)
  *     → Edge (certificate → distribution → alias record)
- *       → Auth (user pool waits for DKIM + distribution + alias, giving SES time to verify)
+ *       → Auth (the user pool waits for the SES domain verification waiter, so Cognito can send
+ *          from the domain; it does not depend on Edge)
  *         → Compute (one function, two layers) → Api routes
  */
 export class ElytraStack extends Stack {

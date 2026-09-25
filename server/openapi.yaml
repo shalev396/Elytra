@@ -8,7 +8,6 @@ info:
 
     - `/public/auth/*`: public authentication flows (sign-up, login, password reset, token refresh).
     - `/private/*`: requires `Authorization: Bearer <idToken>` from login or refresh.
-    - `/dev/*`: developer tools, available on the dev and qa stages (and locally), never on prod.
 
     All paths are relative to the server base URL (e.g. `/api/public/auth/login`).
 
@@ -36,10 +35,6 @@ tags:
     description: Authenticated account endpoints (profile, profile update, test email, export, account deletion, dashboard)
   - name: Uploads
     description: Presigned browser uploads straight to S3
-  - name: Dev
-    description: |
-      Development-only endpoints for local testing and debugging.
-      Available on the dev and qa stages (and locally); never routed or mounted on prod.
 
 security: []
 
@@ -517,47 +512,6 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  # ── Dev ──────────────────────────────────────────────────────────────────────
-
-  /dev/sync-db:
-    post:
-      tags: [Dev]
-      summary: Sync database schema
-      description: Syncs the database schema (tables or collections and indexes) from the code models. The deploy also runs this.
-      operationId: syncDatabase
-      responses:
-        '200':
-          description: Database synced
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SyncDbResponse'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-        '500':
-          $ref: '#/components/responses/InternalError'
-
-  /dev/reset:
-    post:
-      tags: [Dev]
-      summary: Reset database, uploads and Cognito
-      description: |
-        Drops and re-creates the database schema, deletes every user upload under `media/` and
-        every user in the Cognito user pool. Staged uploads and export ZIPs under `tmp/` expire on
-        their own within a day.
-      operationId: resetDatabase
-      responses:
-        '200':
-          description: Reset complete
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResetResponse'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-        '500':
-          $ref: '#/components/responses/InternalError'
-
 components:
   # ── Security ────────────────────────────────────────────────────────────────
 
@@ -931,38 +885,3 @@ components:
             maxBytes:
               type: integer
               example: 5242880
-
-    # ── Dev ───────────────────────────────────────────────────────────────────
-
-    DatabaseProvider:
-      type: string
-      enum: [sequelize, mongoose]
-
-    SyncDbResponse:
-      type: object
-      required: [data]
-      properties:
-        data:
-          type: object
-          required: [provider, results]
-          properties:
-            provider:
-              $ref: '#/components/schemas/DatabaseProvider'
-            results:
-              type: array
-              items:
-                type: string
-              description: Log messages from the sync
-
-    ResetResponse:
-      type: object
-      required: [data]
-      properties:
-        data:
-          type: object
-          required: [provider, message]
-          properties:
-            provider:
-              $ref: '#/components/schemas/DatabaseProvider'
-            message:
-              type: string

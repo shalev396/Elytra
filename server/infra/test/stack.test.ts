@@ -125,7 +125,7 @@ for (const stage of STAGES) {
       }
     });
 
-    it('routes public, private (JWT) and dev (non-prod only) to the one integration', () => {
+    it('routes only public and private (JWT) to the one integration', () => {
       template.resourceCountIs('AWS::ApiGatewayV2::Integration', 1);
       template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
         RouteKey: 'ANY /api/public/{proxy+}',
@@ -135,10 +135,11 @@ for (const stage of STAGES) {
         RouteKey: 'ANY /api/private/{proxy+}',
         AuthorizationType: 'JWT',
       });
-      const devRoutes = template.findResources('AWS::ApiGatewayV2::Route', {
-        Properties: { RouteKey: 'ANY /api/dev/{proxy+}' },
-      });
-      assert.equal(Object.keys(devRoutes).length, isProd ? 0 : 1);
+      // Stage maintenance (sync-db, reset-db) is a direct Lambda invoke, never an HTTP route.
+      const routeKeys = Object.values(template.findResources('AWS::ApiGatewayV2::Route')).map(
+        (r) => (r['Properties'] as { RouteKey: string }).RouteKey,
+      );
+      assert.deepEqual(routeKeys.sort(), ['ANY /api/private/{proxy+}', 'ANY /api/public/{proxy+}']);
     });
 
     it('names the buckets after the stage domain', () => {
@@ -225,8 +226,10 @@ for (const stage of STAGES) {
             JSON.stringify(r.Properties?.['Bucket']).includes(bucketPrefix),
         );
         const { Statement } = policy?.Properties?.['PolicyDocument'] as { Statement: Statement[] };
-        return Statement.filter((st) =>
-          JSON.stringify(st['Principal']).includes('cloudfront.amazonaws.com'),
+        return Statement.filter(
+          (st) =>
+            (st['Principal'] as { Service?: unknown } | undefined)?.Service ===
+            'cloudfront.amazonaws.com',
         );
       };
 

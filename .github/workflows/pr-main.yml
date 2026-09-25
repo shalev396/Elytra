@@ -11,6 +11,7 @@ on:
       - '.github/workflows/**'
 
 permissions:
+  id-token: write # _test-qa.yml resets QA through the OIDC role
   contents: read
 
 jobs:

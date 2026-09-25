@@ -75,7 +75,8 @@ for (const stage of STAGES) {
       for (const name of names) {
         assert.doesNotMatch(name, /[0-9A-F]{8}$/, `hashed logical id ${name}`);
       }
-      assert.equal(names.includes('DevRoute'), stage !== 'prod');
+      // No HTTP route for stage maintenance (sync-db, reset-db are direct Lambda invokes).
+      assert.ok(!names.includes('DevRoute'), 'no dev route on any stage');
     });
 
     it('has no dangling references and no machine-specific content', () => {

@@ -1,6 +1,6 @@
 $kind: collection
 name: Elytra API
-description: 'Elytra API tests. Setup: resets DB and Cognito. Auth: signup
+description: 'Elytra API tests. Setup: test account (Mail.tm). Auth: signup
   (Mail.tm), login, refresh, password. User: me, export, dashboard. Uploads: presign,
   direct S3 POST, photo update. Run from the repo root with --working-dir . (file bodies).'
 variables:

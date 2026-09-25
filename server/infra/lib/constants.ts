@@ -89,8 +89,18 @@ export const S3_PREFIXES = {
 /** Days before a lifecycle rule deletes a staged upload or an export ZIP. */
 export const TMP_OBJECT_EXPIRATION_DAYS = 1;
 
-/** Direct-invoke event `{ action }` that makes the API function sync the database schema. */
+/**
+ * Direct-invoke events `{ action }` the API function handles besides HTTP. They are reachable
+ * only through lambda:InvokeFunction (CI, or anyone with AWS credentials for the account), never
+ * through the HTTP API.
+ */
+/** Sync the database schema (every deploy, every stage). */
 export const SYNC_DB_ACTION = 'sync-db';
+/** Wipe the stage: database, S3 user uploads, Cognito users. Refused on prod. */
+export const RESET_DB_ACTION = 'reset-db';
+
+export const API_ACTIONS = [SYNC_DB_ACTION, RESET_DB_ACTION] as const;
+export type ApiAction = (typeof API_ACTIONS)[number];
 
 /** Name of the NoEcho CloudFormation parameter carrying DATABASE_URL. */
 export const DATABASE_URL_PARAMETER = 'DatabaseUrl';

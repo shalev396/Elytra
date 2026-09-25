@@ -88,7 +88,7 @@ export const landing = {
     database: {
       title: 'Your Database',
       description:
-        'PostgreSQL or MySQL through Sequelize, or MongoDB through Mongoose, picked automatically from your connection string.',
+        'PostgreSQL through Sequelize, or MongoDB through Mongoose, picked automatically from your connection string.',
     },
     infra: {
       title: 'Infrastructure as Code',

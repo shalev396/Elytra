@@ -1,13 +1,19 @@
 # Reusable workflow: Run tests against live QA environment
 # Tests run SEQUENTIALLY: backend first, then frontend
 # Uses qa environment to get DOMAIN_NAME (qa.elytra.shalev396.com)
+# Each job first empties QA (DB, S3 user uploads, Cognito users) with `npm run reset:db -- qa`, a
+# direct Lambda invoke through the OIDC role: there is no HTTP reset route.
 name: Test QA
 
 on:
   workflow_call:
 
 permissions:
+  id-token: write
   contents: read
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
 
 # Merging into qa starts the QA deploy (push-qa.yml) and, through the open qa -> main PR, this suite,
 # seconds apart. Sharing _deploy.yml's `deploy-${{ inputs.stage }}` group (deploy-qa for qa) makes
@@ -32,6 +38,14 @@ jobs:
         with:
           node-version: 24
       - run: npm ci
+        working-directory: server
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ vars.AWS_ROLE_NAME }}
+      - name: Reset the qa stage
+        run: npm run reset:db -- qa
         working-directory: server
       - name: Run Postman against QA API
         run: npm run test:qa
@@ -59,6 +73,16 @@ jobs:
       - name: Install Playwright test dependencies
         run: npm run test:install
         working-directory: client
+      - run: npm ci
+        working-directory: server
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ vars.AWS_ROLE_NAME }}
+      - name: Reset the qa stage
+        run: npm run reset:db -- qa
+        working-directory: server
       - name: Run Playwright against QA
         run: npm run test:qa
         working-directory: client

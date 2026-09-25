@@ -40,10 +40,3 @@ export type {
 } from '../routes/private/uploads.js';
 
 export type { DashboardResponseData } from '../routes/private/dashboard.js';
-
-export type {
-  SyncDbRequestBody,
-  SyncDbResponseData,
-  ResetDatabaseRequestBody,
-  ResetDatabaseResponseData,
-} from '../routes/dev/index.js';

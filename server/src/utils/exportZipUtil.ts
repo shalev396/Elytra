@@ -5,6 +5,24 @@ import { userDataToCsv } from './csvUtil.js';
 import { runWithConcurrency } from './concurrency.js';
 import { getObjectBuffer, isS3NotFound } from './s3Util.js';
 
+const MAX_ENTRY_NAME_LENGTH = 200;
+
+/**
+ * A ZIP entry name from a user-supplied file name: the last path segment only, with anything but
+ * letters, digits, space, dot, dash, underscore and parentheses replaced, and no leading dots. So a
+ * name like "../../evil.sh" or "C:\x\y.png" can't place a file outside assets/ when the
+ * archive is extracted (zip slip).
+ */
+export function safeEntryName(fileName: string): string {
+  const base = fileName.split(/[/\\]/).pop() ?? '';
+  const cleaned = base
+    .replace(/[^\w .()-]/g, '_')
+    .replace(/^[.\s]+/, '')
+    .trim()
+    .slice(0, MAX_ENTRY_NAME_LENGTH);
+  return cleaned === '' ? 'file' : cleaned;
+}
+
 /** Parallel S3 reads while building an export. */
 const EXPORT_S3_CONCURRENCY = 30;
 
@@ -42,7 +60,7 @@ export async function createUserExportZip(
     const buf = mediaBuffers[i];
     if (m === undefined || buf === undefined || buf === null) continue;
 
-    let assetName = m.fileName;
+    let assetName = safeEntryName(m.fileName);
     if (usedNames.has(assetName)) {
       const ext = assetName.includes('.') ? assetName.slice(assetName.lastIndexOf('.')) : '';
       const base = assetName.slice(0, assetName.length - ext.length);
@@ -53,7 +71,8 @@ export async function createUserExportZip(
       assetName = `${base}_${String(suffix)}${ext}`;
     }
     usedNames.add(assetName);
-    files[`assets/${assetName}`] = new Uint8Array(buf);
+    // A Buffer is a Uint8Array view: no copy.
+    files[`assets/${assetName}`] = buf;
   }
 
   const zipped = zipSync(files, { level: 6 });

@@ -57,9 +57,9 @@ Configure `baseUrl` in each environment file (Local: `postman/environments/Elytr
 
 The collection runs sequentially in this order:
 
-### 1. Setup (9 requests)
+### 1. Setup (8 requests)
 
-Provisions a test account: resets the database, creates a temporary email via Mail.tm, signs up, polls for the verification code, confirms, and logs in. Saves `idToken`, `refreshToken`, and other variables for all subsequent tests.
+Provisions a test account: creates a temporary email via Mail.tm, signs up, polls for the verification code, confirms, and logs in. Saves `idToken`, `refreshToken`, and other variables for all subsequent tests.
 
 ### 2. Auth (27 requests)
 
@@ -148,13 +148,13 @@ Protected routes (`/private/*`, `/private/dashboard`) use the **API Gateway Cogn
 
 Local tests hit the Express app directly (there is no API Gateway locally), so `expressAuth` answers. In QA/prod, the authorizer rejects invalid/missing tokens before the Lambda is invoked, so the response comes from API Gateway, not our app.
 
-## Total: 84 requests
+## Total: 83 requests
 
-- Setup: 9
+- Setup: 8
 - Auth: 27
 - User: 13
 - Uploads: 9
 - Dashboard: 2
 - Flows: 24 (Auth: 18 + User: 6)
 
-Note: The Setup account is not explicitly deleted -- it is cleaned up by the "Reset Database" step at the start of the next run. The Signup flow creates a separate account for flow testing, which is deleted by the Delete Account flow at the end.
+Note: The Setup account is not explicitly deleted -- CI runs `npm run reset:db -- <stage>` (a direct Lambda invoke; there is no HTTP reset route) before each run, which removes it. The Signup flow creates a separate account for flow testing, which is deleted by the Delete Account flow at the end.
