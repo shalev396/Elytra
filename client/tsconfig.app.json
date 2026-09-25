@@ -16,8 +16,7 @@
     "src",
     "vite-env.d.ts",
     "../server/src/types/express-extensions.d.ts",
-    "../server/src/types/env.d.ts",
-    "../server/src/types/archiver.d.ts"
+    "../server/src/types/env.d.ts"
   ],
   "exclude": ["dist", "node_modules"]
 }

@@ -175,7 +175,10 @@ def login_page_with_user(page, app_url: str, user: TestUser) -> None:
     parsed = urlparse(app_url)
     origin = f"{parsed.scheme}://{parsed.netloc}"
     for attempt in range(2):
-        page.goto(f"{origin}/en", wait_until="domcontentloaded")
+        # Storage only needs a same-origin document: a static file writes the tokens without
+        # booting the app, so there is no landing page load, no sleep and no reload.
+        # sessionStorage survives same-origin navigations in this tab.
+        page.goto(f"{origin}/robots.txt", wait_until="domcontentloaded")
         page.evaluate(
             """([{ idToken, refreshToken }]) => {
             sessionStorage.setItem('idToken', idToken);
@@ -183,23 +186,20 @@ def login_page_with_user(page, app_url: str, user: TestUser) -> None:
         }""",
             [{"idToken": user.id_token, "refreshToken": user.refresh_token}],
         )
-        # Brief delay so storage is committed before reload (helps CI)
-        time.sleep(0.5)
-        page.reload(wait_until="networkidle")
-        # Stabilize auth: navigate to dashboard and wait for it so auth is fully applied
-        page.goto(f"{app_url}/dashboard", wait_until="networkidle")
+        # The app boots straight into the dashboard with the tokens in place
+        page.goto(f"{app_url}/dashboard", wait_until="load")
         try:
             page.get_by_role("heading", name="Dashboard").wait_for(state="visible", timeout=20000)
         except Exception:
+            # One retry covers a slow first boot (e.g. Vite compiling on demand); a second failure
+            # is a real auth problem and must fail the test.
             if attempt == 1:
                 raise
-            time.sleep(2)  # Retry: allow auth to settle
             continue
         if "/auth/login" not in page.url:
             return
         if attempt == 1:
             raise RuntimeError("Auth injection failed: still on login after 2 attempts")
-        time.sleep(2)  # Retry: allow auth to settle
 
 
 def navigate_to_profile_via_ui(page, app_url: str, timeout_ms: int = 15000) -> None:

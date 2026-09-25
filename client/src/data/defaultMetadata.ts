@@ -13,7 +13,19 @@ export const DEFAULT_METADATA = {
   image: '/og-default.png',
   robots: 'index, follow' as const,
   ogType: 'website',
+  twitterCard: 'summary_large_image',
 } as const;
+
+/** Open Graph locale per UI language (og:locale). Unknown languages fall back to en_US. */
+export const OG_LOCALES: Record<string, string> = {
+  en: 'en_US',
+  he: 'he_IL',
+};
+
+export function getOgLocale(language: string): string {
+  const base = language.split('-')[0] ?? language;
+  return OG_LOCALES[base] ?? 'en_US';
+}
 
 /** Base URL for canonical and og:url. Use VITE_APP_URL if set, else origin at build time. */
 export function getBaseUrl(): string {

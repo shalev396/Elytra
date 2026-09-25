@@ -1,4 +1,4 @@
-import axiosInstance, { api } from '@/api/instance';
+import { api } from '@/api/instance';
 import type { ApiRequestConfig } from '@/types';
 import type {
   ApiSuccessResponse,
@@ -7,6 +7,8 @@ import type {
   DashboardResponseData,
   DeleteUserResponseData,
   TestEmailResponseData,
+  UpdateMeRequestBody,
+  ExportMyDataResponseData,
 } from '@api-types/api-contracts';
 
 export async function getMe(
@@ -26,13 +28,17 @@ export async function getDashboard(
   return response.data;
 }
 
+/**
+ * Updates the signed-in user. A new photo must be staged first with `stageFile()`; pass the
+ * returned `{ stagingKey, fileName }` as `photo`.
+ */
 export async function updateMe(
-  formData: FormData,
+  payload: UpdateMeRequestBody,
   config?: ApiRequestConfig,
 ): Promise<ApiSuccessResponse<UpdateMeResponseData>> {
   const response = await api.put<ApiSuccessResponse<UpdateMeResponseData>>(
     '/private/me',
-    formData,
+    payload,
     config,
   );
   return response.data;
@@ -49,47 +55,29 @@ export async function sendTestEmail(
   return response.data;
 }
 
-/** Response type returned by the export endpoint - allows future format changes */
-const EXPORT_RESPONSE_TYPE = 'application/zip';
-
 /**
- * Requests the user data export (ZIP). The API returns the binary file directly.
- * Uses X-Response-Type header to detect response format (future-proof).
- * Triggers a download in the browser and resolves when done.
+ * Requests the user data export and starts the download.
+ *
+ * The API builds the ZIP, stores it in S3 and returns a short-lived presigned URL: the file never
+ * passes back through the API, whose Lambda responses are capped at 6291556 bytes. The download
+ * is started with a temporary anchor; the object's Content-Disposition keeps the filename even
+ * though the URL is cross-origin.
  */
 export async function exportMyData(config?: ApiRequestConfig): Promise<void> {
-  const response = await axiosInstance.get<Blob>('/private/me/export', {
-    ...config,
-    responseType: 'blob',
-  });
-  const headers = response.headers as { 'x-response-type'?: string; 'content-type'?: string };
-  const xResponseType = headers['x-response-type'];
-  const contentType: string | undefined = headers['content-type'];
-  const contentTypeBase =
-    typeof contentType === 'string' ? (contentType.split(';')[0]?.trim() ?? undefined) : undefined;
-  const responseType = xResponseType ?? contentTypeBase;
-  if (
-    responseType !== EXPORT_RESPONSE_TYPE &&
-    (typeof responseType !== 'string' || !responseType.includes('zip'))
-  ) {
-    throw new Error(`Unexpected export response type: ${responseType ?? 'unknown'}`);
-  }
-  const blob = response.data;
-  const contentDisposition = (response.headers as { 'content-disposition'?: string })[
-    'content-disposition'
-  ];
-  const filenameMatch = contentDisposition?.match(/filename="?([^";\n]+)"?/);
-  const filename = filenameMatch?.[1] ?? `user-export-${Date.now()}.zip`;
-
-  const url = URL.createObjectURL(blob);
+  const response = await api.get<ApiSuccessResponse<ExportMyDataResponseData>>(
+    '/private/me/export',
+    config,
+  );
+  const { downloadUrl, filename } = response.data.data;
   const link = document.createElement('a');
-  link.href = url;
+  link.href = downloadUrl;
   link.download = filename;
+  link.target = '_blank';
+  link.rel = 'noopener';
   link.style.display = 'none';
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  URL.revokeObjectURL(url);
 }
 
 export async function deleteAccount(

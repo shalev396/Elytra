@@ -1,7 +1,6 @@
 """
 Edit Profile page (profile/edit) visual regression tests.
 """
-import pytest
 from playwright.sync_api import Page, expect
 
 from tests.config import NORMAL_TIMEOUT
@@ -12,8 +11,7 @@ from tests.viewports import DESKTOP_VIEWPORT
 def test_edit_profile_visual(page: Page, app_url: str, authenticated_page: Page):
     """Asserts the edit profile page loads at desktop viewport when authenticated."""
     navigate_to_profile_via_ui(page, app_url, timeout_ms=NORMAL_TIMEOUT)
-    if "/auth/login" in page.url:
-        pytest.skip("Authentication fixture not available")
+    assert "/auth/login" not in page.url, "Authentication failed: redirected to login page"
     page.get_by_role("link", name="Edit Profile").click(timeout=NORMAL_TIMEOUT)
     page.wait_for_load_state("networkidle")
     page.set_viewport_size(DESKTOP_VIEWPORT)

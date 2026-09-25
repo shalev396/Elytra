@@ -12,6 +12,7 @@ import jwt from 'jsonwebtoken';
 import { User } from '../classes/index.js';
 import { environment } from '../config/environment.js';
 import type { CognitoJwtPayload } from '../types/express.js';
+import type { EmptySuccessResponseData } from '../types/response.js';
 import type {
   SignupRequestBody,
   SignupResponseData,
@@ -24,6 +25,8 @@ import type {
   RefreshTokenRequestBody,
   RefreshTokenResponseData,
 } from '../routes/public/auth/index.js';
+
+const EMPTY: EmptySuccessResponseData = {};
 
 const cognitoClient = new CognitoIdentityProviderClient({
   region: environment.awsRegion,
@@ -84,7 +87,7 @@ const confirmSignup: RequestHandler = async (req, res): Promise<void> => {
       }),
     );
 
-    res.success({});
+    res.success(EMPTY);
   } catch (error) {
     console.error('Confirmation error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Email verification failed';
@@ -111,13 +114,13 @@ const resendConfirmation: RequestHandler = async (req, res): Promise<void> => {
       }),
     );
 
-    res.success({});
+    res.success(EMPTY);
   } catch (error: unknown) {
     console.error('Resend confirmation error:', error);
 
     if (error instanceof Error) {
       if (error.name === 'UserNotFoundException') {
-        res.success({});
+        res.success(EMPTY);
         return;
       }
 
@@ -222,13 +225,13 @@ const forgotPassword: RequestHandler = async (req, res): Promise<void> => {
       }),
     );
 
-    res.success({});
+    res.success(EMPTY);
   } catch (error: unknown) {
     console.error('Forgot password error:', error);
 
     if (error instanceof Error) {
       if (error.name === 'UserNotFoundException') {
-        res.success({});
+        res.success(EMPTY);
         return;
       }
 
@@ -262,7 +265,7 @@ const resetPassword: RequestHandler = async (req, res): Promise<void> => {
       }),
     );
 
-    res.success({});
+    res.success(EMPTY);
   } catch (error: unknown) {
     console.error('Reset password error:', error);
 

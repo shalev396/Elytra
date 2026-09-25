@@ -5,28 +5,75 @@ BASE_URL: npm run test   → http://localhost:5173 (local dev)
           npm run test:qa → https://qa.elytra.shalev396.com (QA)
 
 Requires: client (and server for auth flows) running at the target URL.
+
+The suite does not reset the stage itself: CI runs `npm run reset:db -- <stage>` (server/) first,
+a direct Lambda invoke that wipes the database, S3 user uploads and Cognito users. See
+tests/README.md.
+
+Parallel runs (pytest-xdist, see tests/scripts/run-tests.ts): session setup (shared user,
+translations export) runs once for the whole run, and the tests listed in
+SHARED_STATE_TESTS run on a single worker, in order.
 """
 import base64
+import json
 import os
 import subprocess
 from pathlib import Path
 
 import pytest
+from filelock import FileLock
+
+# Tests that change state other tests read (accounts, profile data). In parallel runs they share
+# one worker, so they never overlap each other.
+SHARED_STATE_TESTS = ("tests/e2e/flows/",)
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_collection_modifyitems(items):
+    for item in items:
+        if item.nodeid.startswith(SHARED_STATE_TESTS):
+            item.add_marker(pytest.mark.xdist_group("shared-state"))
+
+
+def _run_once(tmp_path_factory, name: str, produce):
+    """
+    Run `produce` once per test run and return its (JSON) result, also with pytest-xdist.
+
+    Without workers it just runs. With workers, the first one to take the lock runs it and saves
+    the result; the others wait on the lock, then reuse the saved result.
+    """
+    if os.getenv("PYTEST_XDIST_WORKER") is None:
+        return produce()
+    run_dir = tmp_path_factory.getbasetemp().parent  # shared by all workers of this run
+    result_file = run_dir / f"{name}.json"
+    with FileLock(str(run_dir / f"{name}.lock")):
+        if result_file.exists():
+            return json.loads(result_file.read_text(encoding="utf-8"))
+        result = produce()
+        result_file.write_text(json.dumps(result), encoding="utf-8")
+        return result
 
 
 @pytest.fixture(scope="session", autouse=True)
-def ensure_translations_exported():
+def ensure_translations_exported(tmp_path_factory):
     """Ensure translations.json exists before any test (for test_translations)."""
-    fixtures_dir = Path(__file__).resolve().parent / "tests" / "fixtures"
-    translations_path = fixtures_dir / "translations.json"
-    if not translations_path.exists():
-        script = Path(__file__).resolve().parent / "tests" / "scripts" / "export-translations.ts"
-        subprocess.run(
-            ["npx", "tsx", str(script)],
-            cwd=Path(__file__).resolve().parent,
-            check=True,
-            capture_output=True,
-        )
+
+    def export():
+        fixtures_dir = Path(__file__).resolve().parent / "tests" / "fixtures"
+        translations_path = fixtures_dir / "translations.json"
+        if not translations_path.exists():
+            script = Path(__file__).resolve().parent / "tests" / "scripts" / "export-translations.ts"
+            subprocess.run(
+                ["npx", "tsx", str(script)],
+                cwd=Path(__file__).resolve().parent,
+                check=True,
+                capture_output=True,
+                # npx is npx.cmd on Windows, which only starts through a shell.
+                shell=os.name == "nt",
+            )
+        return True
+
+    _run_once(tmp_path_factory, "translations", export)
 
 
 @pytest.fixture(scope="session")
@@ -43,8 +90,20 @@ def base_url(request):
 
 @pytest.fixture(scope="session")
 def api_base_url():
-    """Base URL for the backend API."""
+    """Base URL for the backend API (root, without the public/private prefix)."""
     return os.getenv("API_BASE_URL", "http://localhost:3000/api")
+
+
+@pytest.fixture(scope="session")
+def public_api_base_url(api_base_url):
+    """Base URL for the public API (auth)."""
+    return f"{api_base_url}/public"
+
+
+@pytest.fixture(scope="session")
+def private_api_base_url(api_base_url):
+    """Base URL for the private API (account; needs an id token)."""
+    return f"{api_base_url}/private"
 
 
 @pytest.fixture
@@ -54,24 +113,36 @@ def app_url(base_url):
 
 
 @pytest.fixture(scope="session")
-def shared_test_user(api_base_url):
+def browser_context_args(browser_context_args):
     """
-    One shared test user for the whole run. All auth-dependent tests should use this via
-    authenticated_page or login_page_with_user. Only tests that must create a new user
+    Every test browser prefers reduced motion, so animations (FadeContent, background effects,
+    count-ups) render in their final state. CI browsers have no GPU and little CPU; animations
+    there slow pages down and make contrast checks flaky. Tests of those effects opt back in with
+    @pytest.mark.browser_context_args(reduced_motion="no-preference").
+    """
+    return {**browser_context_args, "reduced_motion": "reduce"}
+
+
+@pytest.fixture(scope="session")
+def shared_test_user(api_base_url, tmp_path_factory):
+    """
+    One shared test user for the whole run (all workers). All auth-dependent tests should use
+    this via authenticated_page or login_page_with_user. Only tests that must create a new user
     (e.g. signup, delete account) should use create_test_user.
     Uses env vars if set, else creates once. Uses 0 SES emails if E2E_TEST_* are all set.
-    """
-    from tests.helpers.mailtm import get_test_user_from_env, create_test_user
 
-    user = get_test_user_from_env()
-    if user:
-        return user
-    try:
-        return create_test_user(api_base_url)
-    except RuntimeError as e:
-        if "429" in str(e) or "limit" in str(e).lower():
-            pytest.skip(f"SES/rate limit: set E2E_TEST_EMAIL, E2E_TEST_PASSWORD, etc. to use existing account. {e}")
-        raise
+    Creating the user fails (instead of skipping) on SES or rate-limit errors: a skip would hide
+    every auth-dependent test behind green skips. To avoid spending SES quota, set E2E_TEST_*.
+    """
+    from tests.helpers.mailtm import TestUser, create_test_user, get_test_user_from_env
+
+    def create():
+        user = get_test_user_from_env()
+        if user:
+            return user._asdict()
+        return create_test_user(api_base_url)._asdict()
+
+    return TestUser(**_run_once(tmp_path_factory, "shared-test-user", create))
 
 
 @pytest.hookimpl(hookwrapper=True)

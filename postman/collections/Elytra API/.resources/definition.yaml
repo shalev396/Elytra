@@ -1,7 +1,8 @@
 $kind: collection
 name: Elytra API
-description: 'Elytra API tests. Setup: resets DB and Cognito. Auth: signup
-  (Mail.tm), login, refresh, password. User: me, dashboard.'
+description: 'Elytra API tests. Setup: test account (Mail.tm). Auth: signup
+  (Mail.tm), login, refresh, password. User: me, export, dashboard. Uploads: presign,
+  direct S3 POST, photo update. Run from the repo root with --working-dir . (file bodies).'
 variables:
   baseUrl: https://qa.elytra.shalev396.com/api
   testEmail: ''
@@ -18,6 +19,9 @@ variables:
   pollRetryCount: '0'
   resetCode: ''
   newPassword: ''
+  stagingKey: ''
+  uploadUrl: ''
+  uploadFields: '{}'
 auth:
   - id: c77fdf1d-2d72-4d5b-8112-f48266aefdfc
     type: bearer

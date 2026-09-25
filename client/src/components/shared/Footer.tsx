@@ -19,7 +19,7 @@ export default function Footer() {
 
   return (
     <footer className="border-t border-border/60 bg-muted/30" role="contentinfo">
-      <div className="container mx-auto px-4 py-6 sm:px-6 lg:px-8">
+      <div className="container mx-auto px-4 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-8">
         {/* Mobile: stacked layout — links (two rows) → disclaimer → logo + copyright */}
         <div className="flex flex-col items-center gap-4 text-sm text-muted-foreground sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-x-6 sm:gap-y-3">
           {/* Links: wrap into rows (e.g. two rows on mobile) */}

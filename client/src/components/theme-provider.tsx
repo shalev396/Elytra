@@ -3,6 +3,13 @@ import { FAVICON } from '@/data/favicon';
 import type { Theme } from './theme-context';
 import { ThemeProviderContext } from './theme-context';
 
+// Hex of --background in index.css. Browsers and the Home Screen web app tint system UI with it.
+// Keep in sync with the theme-color tags in index.html and public/manifest.webmanifest.
+const THEME_COLOR: Record<Theme, string> = {
+  light: '#fafcff',
+  dark: '#04050d',
+};
+
 interface ThemeProviderProps {
   children: React.ReactNode;
   storageKey?: string;
@@ -34,6 +41,14 @@ export function ThemeProvider({
     const root = window.document.documentElement;
     root.classList.remove('light', 'dark');
     root.classList.add(theme);
+  }, [theme]);
+
+  // index.html ships one theme-color tag per OS color scheme (media queries). Once the app has
+  // a theme, it wins over the OS scheme, so every tag gets the same color.
+  useEffect(() => {
+    document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach((meta) => {
+      meta.setAttribute('content', THEME_COLOR[theme]);
+    });
   }, [theme]);
 
   // Sync favicon with theme (light vs dark) — same paths as LogoIcon (single source of truth)

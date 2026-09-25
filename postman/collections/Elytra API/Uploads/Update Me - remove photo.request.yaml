@@ -1,0 +1,24 @@
+$kind: http-request
+url: '{{baseUrl}}/private/me'
+method: PUT
+auth:
+  type: inherit
+  credentials:
+    id: 383fc78f-96ef-47d9-81d5-e4c7dada7326
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: '{"removePhoto":true}'
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('The photo is gone', function () {
+          pm.expect(pm.response.json().data.photoUrl).to.equal(null);
+      });
+    language: text/javascript
+order: 7000

@@ -8,9 +8,17 @@
  *   npx tsx tests/scripts/run-tests.ts run       - Run pytest (local)
  *   npx tsx tests/scripts/run-tests.ts run --headed - Run with visible browser (non-headless)
  *   npx tsx tests/scripts/run-tests.ts run --qa  - Run pytest against QA URLs
+ *
+ * Tests run in parallel on E2E_WORKERS pytest-xdist workers (default: one per CPU, at most 4;
+ * 0 = one process). Each worker drives its own Chromium, so more workers than CPUs starves them.
+ * --dist loadgroup keeps the tests conftest.py marks as shared-state on a single worker.
+ *
+ * The suite does not reset the stage; to start from an empty dev/qa stage, run
+ * `npm run reset:db -- <stage>` in server/ first (CI does). See tests/README.md.
  */
 import { execSync, spawnSync } from 'child_process';
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -84,6 +92,16 @@ function cmdRun(): void {
     process.exit(1);
   }
 
+  // Private-repo GitHub runners have 2 vCPUs: more workers than CPUs leaves pages stuck on the
+  // route spinner and hung pages time out even their failure screenshots.
+  const workers = Number(process.env['E2E_WORKERS'] ?? Math.min(4, os.availableParallelism()));
+  if (!Number.isInteger(workers) || workers < 0) {
+    console.error(`E2E_WORKERS must be a whole number >= 0, got "${process.env['E2E_WORKERS']}".`);
+    process.exit(1);
+  }
+
+  // --browser is passed only here: pytest.ini must not repeat it, or pytest-playwright
+  // parameterizes every test once per occurrence and the whole suite runs twice.
   const args = [
     '-m',
     'pytest',
@@ -96,6 +114,10 @@ function cmdRun(): void {
     '--html=artifacts/report.html',
     '--self-contained-html',
   ];
+
+  if (workers > 0) {
+    args.push('-n', String(workers), '--dist', 'loadgroup');
+  }
 
   if (headed) {
     args.push('--headed');

@@ -2,7 +2,18 @@
 
 [← Back to main README](../../README.md)
 
-Run these against a live backend or serverless offline + Vite. For the full list of hardcoded URLs to change, see [Getting Started → Change Hardcoded URLs](../../README.md#2-change-hardcoded-urls-and-branding) in the main README.
+Run these against a live backend or the local API (`cd server && npm run dev`) + Vite. For the full list of hardcoded URLs to change, see [Getting Started → Change Hardcoded URLs](../../README.md#2-change-hardcoded-urls-and-branding) in the main README.
+
+> [!WARNING]
+> **Resetting a stage deletes everything in it.** The suite itself never resets anything. To start from an empty stage, run the reset first:
+>
+> ```bash
+> cd server && npm run reset:db -- dev   # or qa; refused for prod
+> ```
+>
+> It deletes **the database, all S3 user uploads and every Cognito user** of that stage. It is a direct invoke of the stage's API function (`{"action":"reset-db"}`), not an HTTP route, so it needs AWS credentials for the account; nobody can trigger it through the API. CI runs it before each suite: `_test-local.yml` resets **qa** on every PR into qa, and `_test-qa.yml` resets **qa** before testing the deployed QA site.
+>
+> Don't reset when using a pre-existing account (`E2E_TEST_EMAIL`, see [Mail.tm](#mailtm-and-auth-dependent-tests)): it would delete that user.
 
 ---
 
@@ -27,7 +38,31 @@ This creates `.venv`, installs dependencies, and Playwright Chromium. Cross-plat
 npm run test
 ```
 
-Runs pytest via `.venv` with `BASE_URL=http://localhost:5173`, `API_BASE_URL=http://localhost:3000/api`. Translations are exported automatically before tests (conftest fixture).
+Runs pytest via `.venv` with `BASE_URL=http://localhost:5173`, `API_BASE_URL=http://localhost:3000/api`. Translations are exported automatically before tests (conftest fixture). The local API turns off rate limiting, so a full run never hits a 429 from the app itself.
+
+### Parallel workers
+
+Tests run in parallel on pytest-xdist workers, one per CPU up to 4 (`E2E_WORKERS=2 npm run test` to change, `E2E_WORKERS=0` for a single process). Each worker drives its own Chromium: private-repo GitHub runners have only 2 vCPUs, and more workers than CPUs (plus Vite and the local API) left pages stuck on the route spinner. `--headed` with 4 workers opens 4 browsers.
+
+The shared test user and the translations export still happen once per run (`_run_once` in `conftest.py`, guarded by a file lock). Tests that change state other tests read (accounts, profile data) are listed in `SHARED_STATE_TESTS` in `conftest.py`; with `--dist loadgroup` they run on one worker, in order. Add a test there when it changes such state.
+
+### Reduced motion
+
+Every test browser prefers reduced motion (`browser_context_args` in `conftest.py`), so animations such as `FadeContent` render in their final state. CI browsers have no GPU and little CPU; animations there slow pages down and make axe contrast checks flaky. A test of an animation opts back in with:
+
+```python
+@pytest.mark.browser_context_args(reduced_motion="no-preference")
+def test_fade_in(page): ...
+```
+
+Accessibility tests also call `wait_for_fade_in(page)` from `tests/helpers/animations.py` right before `Axe().run`, so axe never measures contrast mid-fade or scans a route that is still showing its loading spinner.
+
+### Rules for writing tests
+
+- **Never add `--browser` to `pytest.ini`.** `run-tests.ts` already passes `--browser chromium`; pytest-playwright parameterizes each test once per occurrence, so a second copy runs the whole suite twice.
+- **Never set context-wide extra HTTP headers** (`browser_context_args` `extra_http_headers`, `context.set_extra_http_headers`). They are sent to every origin, including S3: the browser then preflights the presigned upload with headers the bucket's CORS rules don't allow, and every UI upload fails. Add a header to the requests that need it through `page.route` / `context.route`.
+- **Prefer `wait_until="load"` plus a content selector over `networkidle`.** Long-lived requests and request storms keep `networkidle` from ever firing, and on a busy CPU it can fire before a lazy route chunk is even requested.
+- **Fail, don't skip, on auth problems.** Use `assert "/auth/login" not in page.url, "Authentication failed: redirected to login page"` so a broken login shows up red, not as green skips.
 
 ## Scripts
 
@@ -65,9 +100,9 @@ For QA runs, set `BASE_URL=https://qa.yourdomain.com` and `API_BASE_URL=https://
 | Privacy         | `/legal/privacy`        | ✓     | ✓             | ✓      | ✓          | ✓        |
 | Terms           | `/legal/terms`          | ✓     | ✓             | ✓      | ✓          | ✓        |
 | 404             | invalid routes          | ✓     | ✓             | ✓      | ✓          | ✓        |
-| App             | —                       | —     | —             | —      | —          | —        |
+| App             | —                       | ✓     | —             | —      | —          | —        |
 
-_(App: translations, translation_pages; no page-specific tests.)_
+_(App: translations, translation_pages, and `smoke.py`: Home Screen meta tags, manifest and icons, the failing-logo request loop, `theme-color` following the theme.)_
 
 ---
 
@@ -102,11 +137,11 @@ _(App: translations, translation_pages; no page-specific tests.)_
 | `test_signup_flow`                                     | Create temp email → sign up via API → confirm → tokens obtained              |
 | `test_login_flow`                                      | Shared user logs in → Dashboard loads                                        |
 | `test_forgot_password_form_submits`                    | Forgot-password form accepts email and submits (redirect to forgot or reset) |
-| `test_forgot_password_redirects_to_reset`              | Forgot → reset page with email prefilled; skips if Cognito not configured    |
+| `test_forgot_password_redirects_to_reset`              | Forgot → reset page with email prefilled; fails if the redirect never occurs |
 | `test_edit_profile_flow`                               | Login → Profile → Edit Profile → change name → save → back to Profile        |
-| `test_export_data_flow`                                | Login → Profile → Export data → success toast                                |
+| `test_export_data_flow`                                | Login → Profile → Export data → success toast and a `.zip` download starts   |
 | `test_guest_redirects_to_dashboard_when_authenticated` | Logged-in user visits login → redirected to Dashboard                        |
-| `test_delete_account_flow`                             | Login → Profile → Delete Account → confirm → logged out                      |
+| `test_delete_account_flow`                             | Login → Profile → Delete Account → confirm → home page, tokens cleared       |
 
 ---
 
@@ -131,7 +166,7 @@ tests/
     legal_terms/        /legal/terms
     page_404/           invalid routes
     flows/              critical.py (cross-page: signup, login, edit-profile, delete, etc.)
-    app/                translations.py, translation_pages.py
+    app/                smoke.py, translations.py, translation_pages.py
   scripts/
   helpers/
   fixtures/
@@ -160,4 +195,6 @@ Tests that create users (sign up, login flow, profile flows) use [Mail.tm](https
 - Network access to api.mail.tm
 - Initial 12s wait for email delivery (first poll)
 
-Optionally set `E2E_TEST_EMAIL`, `E2E_TEST_PASSWORD`, `E2E_TEST_ID_TOKEN`, `E2E_TEST_REFRESH_TOKEN` to use an existing account and skip user creation.
+Optionally set `E2E_TEST_EMAIL`, `E2E_TEST_PASSWORD`, `E2E_TEST_ID_TOKEN`, `E2E_TEST_REFRESH_TOKEN` to use an existing account and skip user creation. Don't run `npm run reset:db` in this mode (it would delete that account); the run uses whatever data the stage already has.
+
+Otherwise each run creates one fresh Mail.tm user for the whole run (all workers) and sends one SES confirmation email; `test_signup_flow` and `test_delete_account_flow` each create one more. If SES or Mail.tm rejects the request (quota, 429), `shared_test_user` **fails** the run instead of skipping: a skip would turn every auth-dependent test into a green skip and hide a broken login. The trade-off is that, together with the reset on every run, each run spends SES quota; on a tight quota, use the `E2E_TEST_*` variables.

@@ -1,11 +1,16 @@
 import { UserModel } from './User.js';
 import { MediaModel } from './Media.js';
 
+let defined = false;
+
 /**
  * Defines all Sequelize associations between models.
- * Must be called after all models are initialized and before sync.
+ * Must be called after all models are initialized and before sync. Idempotent: initDB and
+ * syncSequelize both call it, and Sequelize rejects registering the same alias twice.
  */
 export function defineAssociations(): void {
+  if (defined) return;
+  defined = true;
   // User hasOne Media as photo (User.photoId -> Media.id)
   UserModel.belongsTo(MediaModel, {
     foreignKey: 'photoId',

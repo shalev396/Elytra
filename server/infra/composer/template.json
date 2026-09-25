@@ -1,0 +1,1501 @@
+{
+	"AWSTemplateFormatVersion": "2010-09-09",
+	"Description": "Elytra (dev): CloudFront, S3, HTTP API + Lambda, Cognito, SES",
+	"Metadata": {
+		"AWS::Composer::Groups": {
+			"Edge": {
+				"Label": "Edge",
+				"Members": [
+					"EmailIdentity",
+					"DkimRecord1",
+					"DkimRecord2",
+					"DkimRecord3",
+					"VerificationLogGroup",
+					"VerificationFunctionServiceRole",
+					"VerificationWaitHandle4fe83d68",
+					"DomainVerified4fe83d68",
+					"Certificate",
+					"OriginAccessControl",
+					"SpaRewrite",
+					"Distribution",
+					"AliasRecord"
+				]
+			},
+			"Api": {
+				"Label": "Api",
+				"Members": [
+					"HttpApi"
+				]
+			},
+			"Compute": {
+				"Label": "Compute",
+				"Members": [
+					"DependenciesLayer",
+					"CodebaseLayer",
+					"LogGroup",
+					"FunctionServiceRole"
+				]
+			},
+			"Storage": {
+				"Label": "Storage",
+				"Members": [
+					"ClientBucket",
+					"AssetsBucket"
+				]
+			},
+			"Auth": {
+				"Label": "Auth",
+				"Members": [
+					"UserPool",
+					"UserPoolClient"
+				]
+			}
+		}
+	},
+	"Parameters": {
+		"DatabaseUrl": {
+			"Type": "String",
+			"Description": "DATABASE_URL connection string. Passed at deploy time; never stored in the template.",
+			"MinLength": 1,
+			"NoEcho": true
+		}
+	},
+	"Mappings": {
+		"AWSCloudFrontPartitionHostedZoneIdMap": {
+			"aws": {
+				"zoneId": "Z2FDTNDATAQYW2"
+			},
+			"aws-cn": {
+				"zoneId": "Z3RFFRIM2A3IF5"
+			}
+		}
+	},
+	"Resources": {
+		"ClientBucket": {
+			"Type": "AWS::S3::Bucket",
+			"Properties": {
+				"BucketEncryption": {
+					"ServerSideEncryptionConfiguration": [
+						{
+							"ServerSideEncryptionByDefault": {
+								"SSEAlgorithm": "AES256"
+							}
+						}
+					]
+				},
+				"BucketName": {
+					"Fn::Join": [
+						"",
+						[
+							"dev.example.com"
+						]
+					]
+				},
+				"PublicAccessBlockConfiguration": {
+					"BlockPublicAcls": true,
+					"BlockPublicPolicy": true,
+					"IgnorePublicAcls": true,
+					"RestrictPublicBuckets": true
+				},
+				"Tags": [
+					{
+						"Key": "Project",
+						"Value": "elytra"
+					},
+					{
+						"Key": "Stage",
+						"Value": "dev"
+					}
+				]
+			},
+			"UpdateReplacePolicy": "Delete",
+			"DeletionPolicy": "Delete"
+		},
+		"ClientBucketPolicy": {
+			"Type": "AWS::S3::BucketPolicy",
+			"Properties": {
+				"Bucket": {
+					"Ref": "ClientBucket"
+				},
+				"PolicyDocument": {
+					"Statement": [
+						{
+							"Action": "s3:*",
+							"Condition": {
+								"Bool": {
+									"aws:SecureTransport": "false"
+								}
+							},
+							"Effect": "Deny",
+							"Principal": {
+								"AWS": "*"
+							},
+							"Resource": [
+								{
+									"Fn::GetAtt": [
+										"ClientBucket",
+										"Arn"
+									]
+								},
+								{
+									"Fn::Join": [
+										"",
+										[
+											{
+												"Fn::GetAtt": [
+													"ClientBucket",
+													"Arn"
+												]
+											},
+											"/*"
+										]
+									]
+								}
+							]
+						},
+						{
+							"Action": [
+								"s3:GetObject",
+								"s3:ListBucket"
+							],
+							"Condition": {
+								"StringEquals": {
+									"AWS:SourceArn": {
+										"Fn::Join": [
+											"",
+											[
+												"arn:",
+												{
+													"Ref": "AWS::Partition"
+												},
+												":cloudfront::",
+												{
+													"Ref": "AWS::AccountId"
+												},
+												":distribution/",
+												{
+													"Ref": "Distribution"
+												}
+											]
+										]
+									}
+								}
+							},
+							"Effect": "Allow",
+							"Principal": {
+								"Service": "cloudfront.amazonaws.com"
+							},
+							"Resource": [
+								{
+									"Fn::GetAtt": [
+										"ClientBucket",
+										"Arn"
+									]
+								},
+								{
+									"Fn::Join": [
+										"",
+										[
+											{
+												"Fn::GetAtt": [
+													"ClientBucket",
+													"Arn"
+												]
+											},
+											"/*"
+										]
+									]
+								}
+							]
+						}
+					],
+					"Version": "2012-10-17"
+				}
+			}
+		},
+		"AssetsBucket": {
+			"Type": "AWS::S3::Bucket",
+			"Properties": {
+				"BucketEncryption": {
+					"ServerSideEncryptionConfiguration": [
+						{
+							"ServerSideEncryptionByDefault": {
+								"SSEAlgorithm": "AES256"
+							}
+						}
+					]
+				},
+				"BucketName": {
+					"Fn::Join": [
+						"",
+						[
+							"dev.example.com-assets"
+						]
+					]
+				},
+				"CorsConfiguration": {
+					"CorsRules": [
+						{
+							"AllowedHeaders": [
+								"*"
+							],
+							"AllowedMethods": [
+								"GET",
+								"HEAD",
+								"POST"
+							],
+							"AllowedOrigins": [
+								"http://localhost:5173",
+								"https://dev.example.com"
+							],
+							"ExposedHeaders": [
+								"ETag"
+							],
+							"MaxAge": 3600
+						}
+					]
+				},
+				"LifecycleConfiguration": {
+					"Rules": [
+						{
+							"Id": "DeleteOldVersions",
+							"NoncurrentVersionExpiration": {
+								"NoncurrentDays": 30
+							},
+							"Status": "Enabled"
+						},
+						{
+							"ExpirationInDays": 1,
+							"Id": "DeleteExportZips",
+							"Prefix": "tmp/exports/",
+							"Status": "Enabled"
+						},
+						{
+							"ExpirationInDays": 1,
+							"Id": "DeleteStagedUploads",
+							"Prefix": "tmp/staging/",
+							"Status": "Enabled"
+						}
+					]
+				},
+				"PublicAccessBlockConfiguration": {
+					"BlockPublicAcls": true,
+					"BlockPublicPolicy": true,
+					"IgnorePublicAcls": true,
+					"RestrictPublicBuckets": true
+				},
+				"Tags": [
+					{
+						"Key": "Project",
+						"Value": "elytra"
+					},
+					{
+						"Key": "Stage",
+						"Value": "dev"
+					}
+				],
+				"VersioningConfiguration": {
+					"Status": "Enabled"
+				}
+			},
+			"UpdateReplacePolicy": "Delete",
+			"DeletionPolicy": "Delete"
+		},
+		"AssetsBucketPolicy": {
+			"Type": "AWS::S3::BucketPolicy",
+			"Properties": {
+				"Bucket": {
+					"Ref": "AssetsBucket"
+				},
+				"PolicyDocument": {
+					"Statement": [
+						{
+							"Action": "s3:*",
+							"Condition": {
+								"Bool": {
+									"aws:SecureTransport": "false"
+								}
+							},
+							"Effect": "Deny",
+							"Principal": {
+								"AWS": "*"
+							},
+							"Resource": [
+								{
+									"Fn::GetAtt": [
+										"AssetsBucket",
+										"Arn"
+									]
+								},
+								{
+									"Fn::Join": [
+										"",
+										[
+											{
+												"Fn::GetAtt": [
+													"AssetsBucket",
+													"Arn"
+												]
+											},
+											"/*"
+										]
+									]
+								}
+							]
+						},
+						{
+							"Action": "s3:GetObject",
+							"Condition": {
+								"StringEquals": {
+									"AWS:SourceArn": {
+										"Fn::Join": [
+											"",
+											[
+												"arn:",
+												{
+													"Ref": "AWS::Partition"
+												},
+												":cloudfront::",
+												{
+													"Ref": "AWS::AccountId"
+												},
+												":distribution/",
+												{
+													"Ref": "Distribution"
+												}
+											]
+										]
+									}
+								}
+							},
+							"Effect": "Allow",
+							"Principal": {
+								"Service": "cloudfront.amazonaws.com"
+							},
+							"Resource": {
+								"Fn::Join": [
+									"",
+									[
+										{
+											"Fn::GetAtt": [
+												"AssetsBucket",
+												"Arn"
+											]
+										},
+										"/*"
+									]
+								]
+							}
+						}
+					],
+					"Version": "2012-10-17"
+				}
+			}
+		},
+		"EmailIdentity": {
+			"Type": "AWS::SES::EmailIdentity",
+			"Properties": {
+				"DkimSigningAttributes": {
+					"NextSigningKeyLength": "RSA_2048_BIT"
+				},
+				"EmailIdentity": "dev.example.com",
+				"Tags": [
+					{
+						"Key": "Project",
+						"Value": "elytra"
+					},
+					{
+						"Key": "Stage",
+						"Value": "dev"
+					}
+				]
+			}
+		},
+		"DkimRecord1": {
+			"Type": "AWS::Route53::RecordSet",
+			"Properties": {
+				"HostedZoneId": "Z0000000000000FIXTURE",
+				"Name": {
+					"Fn::Join": [
+						"",
+						[
+							{
+								"Fn::GetAtt": [
+									"EmailIdentity",
+									"DkimDNSTokenName1"
+								]
+							},
+							"."
+						]
+					]
+				},
+				"ResourceRecords": [
+					{
+						"Fn::GetAtt": [
+							"EmailIdentity",
+							"DkimDNSTokenValue1"
+						]
+					}
+				],
+				"TTL": "300",
+				"Type": "CNAME"
+			}
+		},
+		"DkimRecord2": {
+			"Type": "AWS::Route53::RecordSet",
+			"Properties": {
+				"HostedZoneId": "Z0000000000000FIXTURE",
+				"Name": {
+					"Fn::Join": [
+						"",
+						[
+							{
+								"Fn::GetAtt": [
+									"EmailIdentity",
+									"DkimDNSTokenName2"
+								]
+							},
+							"."
+						]
+					]
+				},
+				"ResourceRecords": [
+					{
+						"Fn::GetAtt": [
+							"EmailIdentity",
+							"DkimDNSTokenValue2"
+						]
+					}
+				],
+				"TTL": "300",
+				"Type": "CNAME"
+			}
+		},
+		"DkimRecord3": {
+			"Type": "AWS::Route53::RecordSet",
+			"Properties": {
+				"HostedZoneId": "Z0000000000000FIXTURE",
+				"Name": {
+					"Fn::Join": [
+						"",
+						[
+							{
+								"Fn::GetAtt": [
+									"EmailIdentity",
+									"DkimDNSTokenName3"
+								]
+							},
+							"."
+						]
+					]
+				},
+				"ResourceRecords": [
+					{
+						"Fn::GetAtt": [
+							"EmailIdentity",
+							"DkimDNSTokenValue3"
+						]
+					}
+				],
+				"TTL": "300",
+				"Type": "CNAME"
+			}
+		},
+		"VerificationLogGroup": {
+			"Type": "AWS::Logs::LogGroup",
+			"Properties": {
+				"LogGroupName": "/aws/lambda/elytra-dev-ses-verification",
+				"RetentionInDays": 30,
+				"Tags": [
+					{
+						"Key": "Project",
+						"Value": "elytra"
+					},
+					{
+						"Key": "Stage",
+						"Value": "dev"
+					}
+				]
+			},
+			"UpdateReplacePolicy": "Delete",
+			"DeletionPolicy": "Delete"
+		},
+		"VerificationFunctionServiceRole": {
+			"Type": "AWS::IAM::Role",
+			"Properties": {
+				"AssumeRolePolicyDocument": {
+					"Statement": [
+						{
+							"Action": "sts:AssumeRole",
+							"Effect": "Allow",
+							"Principal": {
+								"Service": "lambda.amazonaws.com"
+							}
+						}
+					],
+					"Version": "2012-10-17"
+				},
+				"ManagedPolicyArns": [
+					{
+						"Fn::Join": [
+							"",
+							[
+								"arn:",
+								{
+									"Ref": "AWS::Partition"
+								},
+								":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+							]
+						]
+					}
+				],
+				"Tags": [
+					{
+						"Key": "Project",
+						"Value": "elytra"
+					},
+					{
+						"Key": "Stage",
+						"Value": "dev"
+					}
+				]
+			}
+		},
+		"ServiceRoleDefaultPolicy": {
+			"Type": "AWS::IAM::Policy",
+			"Properties": {
+				"PolicyDocument": {
+					"Statement": [
+						{
+							"Action": "ses:GetEmailIdentity",
+							"Effect": "Allow",
+							"Resource": "arn:aws:ses:us-east-1:123456789012:identity/dev.example.com"
+						},
+						{
+							"Action": "lambda:InvokeFunction",
+							"Effect": "Allow",
+							"Resource": "arn:aws:lambda:us-east-1:123456789012:function:elytra-dev-ses-verification"
+						}
+					],
+					"Version": "2012-10-17"
+				},
+				"PolicyName": "EmailVerificationFunctionServiceRoleDefaultPolicy3B1FBDEB",
+				"Roles": [
+					{
+						"Ref": "VerificationFunctionServiceRole"
+					}
+				]
+			}
+		},
+		"VerificationFunction": {
+			"Type": "AWS::Lambda::Function",
+			"Properties": {
+				"Architectures": [
+					"arm64"
+				],
+				"Code": {
+					"S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+					"S3Key": "asset.zip"
+				},
+				"Description": "Deploy-time wait until SES has verified DOMAIN_NAME",
+				"FunctionName": "elytra-dev-ses-verification",
+				"Handler": "index.handler",
+				"LoggingConfig": {
+					"LogGroup": {
+						"Ref": "VerificationLogGroup"
+					}
+				},
+				"MemorySize": 256,
+				"Role": {
+					"Fn::GetAtt": [
+						"VerificationFunctionServiceRole",
+						"Arn"
+					]
+				},
+				"Runtime": "nodejs24.x",
+				"Tags": [
+					{
+						"Key": "Project",
+						"Value": "elytra"
+					},
+					{
+						"Key": "Stage",
+						"Value": "dev"
+					}
+				],
+				"Timeout": 900
+			},
+			"DependsOn": [
+				"ServiceRoleDefaultPolicy",
+				"VerificationFunctionServiceRole"
+			]
+		},
+		"VerificationWaitHandle4fe83d68": {
+			"Type": "AWS::CloudFormation::WaitConditionHandle"
+		},
+		"VerificationCheck": {
+			"Type": "Custom::SesDomainVerification",
+			"Properties": {
+				"ServiceToken": {
+					"Fn::GetAtt": [
+						"VerificationFunction",
+						"Arn"
+					]
+				},
+				"ServiceTimeout": "300",
+				"DomainName": "dev.example.com",
+				"WaitHandleUrl": {
+					"Ref": "VerificationWaitHandle4fe83d68"
+				}
+			},
+			"DependsOn": [
+				"DkimRecord1",
+				"DkimRecord2",
+				"DkimRecord3",
+				"EmailIdentity"
+			],
+			"UpdateReplacePolicy": "Delete",
+			"DeletionPolicy": "Delete"
+		},
+		"DomainVerified4fe83d68": {
+			"Type": "AWS::CloudFormation::WaitCondition",
+			"Properties": {
+				"Count": 1,
+				"Handle": {
+					"Ref": "VerificationWaitHandle4fe83d68"
+				},
+				"Timeout": "43200"
+			},
+			"DependsOn": [
+				"VerificationCheck"
+			]
+		},
+		"HttpApi": {
+			"Type": "AWS::ApiGatewayV2::Api",
+			"Properties": {
+				"CorsConfiguration": {
+					"AllowCredentials": true,
+					"AllowHeaders": [
+						"Content-Type",
+						"Authorization"
+					],
+					"AllowMethods": [
+						"GET",
+						"POST",
+						"PUT",
+						"PATCH",
+						"DELETE",
+						"OPTIONS",
+						"HEAD"
+					],
+					"AllowOrigins": [
+						"http://localhost:5173",
+						"https://dev.example.com"
+					],
+					"MaxAge": 86400
+				},
+				"Name": "elytra-dev-api",
+				"ProtocolType": "HTTP",
+				"Tags": {
+					"Project": "elytra",
+					"Stage": "dev",
+					"composer:used-by": {
+						"Ref": "Distribution"
+					}
+				}
+			}
+		},
+		"HttpApiDefaultStage": {
+			"Type": "AWS::ApiGatewayV2::Stage",
+			"Properties": {
+				"ApiId": {
+					"Ref": "HttpApi"
+				},
+				"AutoDeploy": true,
+				"DefaultRouteSettings": {
+					"ThrottlingBurstLimit": 200,
+					"ThrottlingRateLimit": 100
+				},
+				"StageName": "$default",
+				"Tags": {
+					"Project": "elytra",
+					"Stage": "dev"
+				}
+			}
+		},
+		"PublicRouteIntegration": {
+			"Type": "AWS::ApiGatewayV2::Integration",
+			"Properties": {
+				"ApiId": {
+					"Ref": "HttpApi"
+				},
+				"IntegrationType": "AWS_PROXY",
+				"IntegrationUri": {
+					"Fn::GetAtt": [
+						"Function",
+						"Arn"
+					]
+				},
+				"PayloadFormatVersion": "2.0"
+			}
+		},
+		"PublicRouteIntegrationPermission": {
+			"Type": "AWS::Lambda::Permission",
+			"Properties": {
+				"Action": "lambda:InvokeFunction",
+				"FunctionName": {
+					"Fn::GetAtt": [
+						"Function",
+						"Arn"
+					]
+				},
+				"Principal": "apigateway.amazonaws.com",
+				"SourceArn": {
+					"Fn::Join": [
+						"",
+						[
+							"arn:aws:execute-api:us-east-1:123456789012:",
+							{
+								"Ref": "HttpApi"
+							},
+							"/*/*/api/public/{proxy+}"
+						]
+					]
+				}
+			}
+		},
+		"PublicRoute": {
+			"Type": "AWS::ApiGatewayV2::Route",
+			"Properties": {
+				"ApiId": {
+					"Ref": "HttpApi"
+				},
+				"AuthorizationType": "NONE",
+				"RouteKey": "ANY /api/public/{proxy+}",
+				"Target": {
+					"Fn::Join": [
+						"",
+						[
+							"integrations/",
+							{
+								"Ref": "PublicRouteIntegration"
+							}
+						]
+					]
+				}
+			}
+		},
+		"PrivateRouteIntegrationPermission": {
+			"Type": "AWS::Lambda::Permission",
+			"Properties": {
+				"Action": "lambda:InvokeFunction",
+				"FunctionName": {
+					"Fn::GetAtt": [
+						"Function",
+						"Arn"
+					]
+				},
+				"Principal": "apigateway.amazonaws.com",
+				"SourceArn": {
+					"Fn::Join": [
+						"",
+						[
+							"arn:aws:execute-api:us-east-1:123456789012:",
+							{
+								"Ref": "HttpApi"
+							},
+							"/*/*/api/private/{proxy+}"
+						]
+					]
+				}
+			}
+		},
+		"PrivateRoute": {
+			"Type": "AWS::ApiGatewayV2::Route",
+			"Properties": {
+				"ApiId": {
+					"Ref": "HttpApi"
+				},
+				"AuthorizationType": "JWT",
+				"AuthorizerId": {
+					"Ref": "HttpApiCognitoAuthorizer"
+				},
+				"RouteKey": "ANY /api/private/{proxy+}",
+				"Target": {
+					"Fn::Join": [
+						"",
+						[
+							"integrations/",
+							{
+								"Ref": "PublicRouteIntegration"
+							}
+						]
+					]
+				}
+			}
+		},
+		"HttpApiCognitoAuthorizer": {
+			"Type": "AWS::ApiGatewayV2::Authorizer",
+			"Properties": {
+				"ApiId": {
+					"Ref": "HttpApi"
+				},
+				"AuthorizerType": "JWT",
+				"IdentitySource": [
+					"$request.header.Authorization"
+				],
+				"JwtConfiguration": {
+					"Audience": [
+						{
+							"Ref": "UserPoolClient"
+						}
+					],
+					"Issuer": {
+						"Fn::Join": [
+							"",
+							[
+								"https://cognito-idp.us-east-1.amazonaws.com/",
+								{
+									"Ref": "UserPool"
+								}
+							]
+						]
+					}
+				},
+				"Name": "CognitoAuthorizer"
+			}
+		},
+		"Certificate": {
+			"Type": "AWS::CertificateManager::Certificate",
+			"Properties": {
+				"DomainName": "dev.example.com",
+				"DomainValidationOptions": [
+					{
+						"DomainName": "dev.example.com",
+						"HostedZoneId": "Z0000000000000FIXTURE"
+					}
+				],
+				"Tags": [
+					{
+						"Key": "Project",
+						"Value": "elytra"
+					},
+					{
+						"Key": "Stage",
+						"Value": "dev"
+					},
+					{
+						"Key": "composer:used-by",
+						"Value": {
+							"Ref": "Distribution"
+						}
+					}
+				],
+				"ValidationMethod": "DNS"
+			}
+		},
+		"OriginAccessControl": {
+			"Type": "AWS::CloudFront::OriginAccessControl",
+			"Properties": {
+				"OriginAccessControlConfig": {
+					"Name": "elytradevEdgeOriginAccessControl03DD9C68",
+					"OriginAccessControlOriginType": "s3",
+					"SigningBehavior": "always",
+					"SigningProtocol": "sigv4",
+					"Description": {
+						"Fn::Sub": "Used by ${Distribution}"
+					}
+				}
+			}
+		},
+		"SpaRewrite": {
+			"Type": "AWS::CloudFront::Function",
+			"Properties": {
+				"AutoPublish": true,
+				"FunctionCode": "// CloudFront Function (viewer request, default behavior only — /api/* and /media/* never run it).\n// The client bucket is private, so there is no S3 website ErrorDocument to fall back on:\n// extension-less paths are client-side routes and get the SPA shell.\nfunction handler(event) {\n  var request = event.request;\n  var lastSegment = request.uri.substring(request.uri.lastIndexOf('/') + 1);\n  if (lastSegment.indexOf('.') === -1) {\n    request.uri = '/index.html';\n  }\n  return request;\n}\n",
+				"FunctionConfig": {
+					"Comment": "elytra-dev-spa-rewrite",
+					"Runtime": "cloudfront-js-2.0"
+				},
+				"Name": "elytra-dev-spa-rewrite",
+				"Tags": [
+					{
+						"Key": "Project",
+						"Value": "elytra"
+					},
+					{
+						"Key": "Stage",
+						"Value": "dev"
+					}
+				]
+			}
+		},
+		"Distribution": {
+			"Type": "AWS::CloudFront::Distribution",
+			"Properties": {
+				"DistributionConfig": {
+					"Aliases": [
+						"dev.example.com"
+					],
+					"CacheBehaviors": [
+						{
+							"AllowedMethods": [
+								"GET",
+								"HEAD",
+								"OPTIONS",
+								"PUT",
+								"PATCH",
+								"POST",
+								"DELETE"
+							],
+							"CachePolicyId": "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
+							"Compress": true,
+							"OriginRequestPolicyId": "b689b0a8-53d0-40ab-baf2-68738e2966ac",
+							"PathPattern": "/api/*",
+							"TargetOriginId": "elytradevEdgeDistributionOrigin205C5DC26",
+							"ViewerProtocolPolicy": "redirect-to-https"
+						},
+						{
+							"CachePolicyId": "658327ea-f89d-4fab-a63d-7e88639e58f6",
+							"Compress": true,
+							"OriginRequestPolicyId": "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf",
+							"PathPattern": "/media/*",
+							"ResponseHeadersPolicyId": "67f7725c-6f97-4210-82d7-5512b31e9d03",
+							"TargetOriginId": "elytradevEdgeDistributionOrigin3E6CD6FEA",
+							"ViewerProtocolPolicy": "redirect-to-https"
+						}
+					],
+					"Comment": "Elytra dev",
+					"DefaultCacheBehavior": {
+						"CachePolicyId": "658327ea-f89d-4fab-a63d-7e88639e58f6",
+						"Compress": true,
+						"FunctionAssociations": [
+							{
+								"EventType": "viewer-request",
+								"FunctionARN": {
+									"Fn::GetAtt": [
+										"SpaRewrite",
+										"FunctionARN"
+									]
+								}
+							}
+						],
+						"ResponseHeadersPolicyId": "67f7725c-6f97-4210-82d7-5512b31e9d03",
+						"TargetOriginId": "elytradevEdgeDistributionOrigin1124C1764",
+						"ViewerProtocolPolicy": "redirect-to-https"
+					},
+					"DefaultRootObject": "index.html",
+					"Enabled": true,
+					"HttpVersion": "http2and3",
+					"IPV6Enabled": true,
+					"Origins": [
+						{
+							"DomainName": {
+								"Fn::GetAtt": [
+									"ClientBucket",
+									"RegionalDomainName"
+								]
+							},
+							"Id": "elytradevEdgeDistributionOrigin1124C1764",
+							"OriginAccessControlId": {
+								"Fn::GetAtt": [
+									"OriginAccessControl",
+									"Id"
+								]
+							},
+							"S3OriginConfig": {
+								"OriginAccessIdentity": ""
+							}
+						},
+						{
+							"CustomOriginConfig": {
+								"OriginProtocolPolicy": "https-only",
+								"OriginSSLProtocols": [
+									"TLSv1.2"
+								]
+							},
+							"DomainName": {
+								"Fn::Join": [
+									"",
+									[
+										{
+											"Ref": "HttpApi"
+										},
+										".execute-api.us-east-1.",
+										{
+											"Ref": "AWS::URLSuffix"
+										}
+									]
+								]
+							},
+							"Id": "elytradevEdgeDistributionOrigin205C5DC26"
+						},
+						{
+							"DomainName": {
+								"Fn::GetAtt": [
+									"AssetsBucket",
+									"RegionalDomainName"
+								]
+							},
+							"Id": "elytradevEdgeDistributionOrigin3E6CD6FEA",
+							"OriginAccessControlId": {
+								"Fn::GetAtt": [
+									"OriginAccessControl",
+									"Id"
+								]
+							},
+							"S3OriginConfig": {
+								"OriginAccessIdentity": ""
+							}
+						}
+					],
+					"ViewerCertificate": {
+						"AcmCertificateArn": {
+							"Ref": "Certificate"
+						},
+						"MinimumProtocolVersion": "TLSv1.2_2021",
+						"SslSupportMethod": "sni-only"
+					}
+				},
+				"Tags": [
+					{
+						"Key": "Project",
+						"Value": "elytra"
+					},
+					{
+						"Key": "Stage",
+						"Value": "dev"
+					}
+				]
+			}
+		},
+		"AliasRecord": {
+			"Type": "AWS::Route53::RecordSet",
+			"Properties": {
+				"AliasTarget": {
+					"DNSName": {
+						"Fn::GetAtt": [
+							"Distribution",
+							"DomainName"
+						]
+					},
+					"HostedZoneId": {
+						"Fn::FindInMap": [
+							"AWSCloudFrontPartitionHostedZoneIdMap",
+							{
+								"Ref": "AWS::Partition"
+							},
+							"zoneId"
+						]
+					}
+				},
+				"HostedZoneId": "Z0000000000000FIXTURE",
+				"Name": "dev.example.com.",
+				"Type": "A"
+			}
+		},
+		"UserPool": {
+			"Type": "AWS::Cognito::UserPool",
+			"Properties": {
+				"AccountRecoverySetting": {
+					"RecoveryMechanisms": [
+						{
+							"Name": "verified_email",
+							"Priority": 1
+						}
+					]
+				},
+				"AdminCreateUserConfig": {
+					"AllowAdminCreateUserOnly": false
+				},
+				"AutoVerifiedAttributes": [
+					"email"
+				],
+				"DeletionProtection": "INACTIVE",
+				"EmailConfiguration": {
+					"EmailSendingAccount": "DEVELOPER",
+					"From": "authenticator@dev.example.com",
+					"SourceArn": "arn:aws:ses:us-east-1:123456789012:identity/dev.example.com"
+				},
+				"EmailVerificationMessage": "<!doctype html>\n<!--\n  CUSTOMIZATION — edit the values below and find-replace each throughout the file.\n  Used for both sign-up confirmation and forgot-password (Cognito uses one template).\n  Do NOT remove {####} — Cognito replaces it with the verification code.\n  \n  COLOR_BG         #faf9fc   page background\n  COLOR_CARD       #ffffff   card background\n  COLOR_TEXT       #26262b   heading, body text\n  COLOR_MUTED      #6b7280   secondary text\n  COLOR_BORDER     #eae8ef   borders, code box\n  COLOR_ACCENT     #8b5cf6   gradient start, code\n  COLOR_ACCENT_ALT #6366f1   gradient end\n  COLOR_CODE_BG    #f5f3f8   code box background\n  COLOR_FOOTER     #9ca3af   footer\n  SHADOW           rgba(0, 0, 0, 0.06)\n-->\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>Elytra — Verify your email</title>\n  </head>\n  <body\n    style=\"\n      margin: 0;\n      padding: 0;\n      font-family:\n        -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\n      background-color: #faf9fc;\n      color: #26262b;\n      -webkit-font-smoothing: antialiased;\n    \"\n  >\n    <!-- Outer table: full viewport, centers content vertically and horizontally -->\n    <table\n      role=\"presentation\"\n      width=\"100%\"\n      height=\"100%\"\n      cellspacing=\"0\"\n      cellpadding=\"0\"\n      style=\"background-color: #faf9fc; min-height: 100vh; height: 100vh\"\n    >\n      <tr>\n        <td align=\"center\" valign=\"middle\" style=\"padding: 5vh 5%; height: 100%\">\n          <table\n            role=\"presentation\"\n            width=\"100%\"\n            cellspacing=\"0\"\n            cellpadding=\"0\"\n            style=\"\n              max-width: 480px;\n              background-color: #ffffff;\n              border-radius: 10px;\n              border: 1px solid #eae8ef;\n              box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);\n            \"\n          >\n            <tr>\n              <td style=\"padding: 40px 32px; max-width: 480px\">\n                <!-- Header with gradient bar -->\n                <div\n                  style=\"\n                    height: 4px;\n                    background: linear-gradient(90deg, #8b5cf6, #6366f1);\n                    border-radius: 2px 2px 0 0;\n                    margin: -40px -32px 24px -32px;\n                  \"\n                ></div>\n\n                <h1 style=\"margin: 0 0 8px 0; font-size: 24px; font-weight: 600; color: #26262b\">\n                  Verify your email\n                </h1>\n                <p style=\"margin: 0 0 24px 0; font-size: 15px; color: #6b7280; line-height: 1.5\">\n                  Use the code below to verify your request.\n                </p>\n\n                <!-- Code box: Cognito replaces {####} with the verification code -->\n                <table\n                  role=\"presentation\"\n                  width=\"100%\"\n                  cellspacing=\"0\"\n                  cellpadding=\"0\"\n                  style=\"margin-bottom: 24px\"\n                >\n                  <tr>\n                    <td\n                      style=\"\n                        background-color: #f5f3f8;\n                        border-radius: 8px;\n                        padding: 20px;\n                        text-align: center;\n                        border: 1px solid #eae8ef;\n                      \"\n                    >\n                      <span\n                        style=\"\n                          font-size: 28px;\n                          font-weight: 700;\n                          letter-spacing: 0.15em;\n                          color: #8b5cf6;\n                          font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;\n                        \"\n                        >{####}</span\n                      >\n                    </td>\n                  </tr>\n                </table>\n\n                <p style=\"margin: 0 0 8px 0; font-size: 14px; color: #6b7280; line-height: 1.5\">\n                  This code expires in 24 hours. If you did not request this, you can safely ignore\n                  this email.\n                </p>\n\n                <!-- Footer -->\n                <p style=\"margin: 32px 0 0 0; font-size: 13px; color: #9ca3af\">— Elytra</p>\n              </td>\n            </tr>\n          </table>\n        </td>\n      </tr>\n    </table>\n  </body>\n</html>\n",
+				"EmailVerificationSubject": "Elytra — Verify your email",
+				"Policies": {
+					"PasswordPolicy": {
+						"MinimumLength": 8,
+						"RequireLowercase": true,
+						"RequireNumbers": true,
+						"RequireSymbols": true,
+						"RequireUppercase": true
+					}
+				},
+				"Schema": [
+					{
+						"Mutable": false,
+						"Name": "email",
+						"Required": true
+					},
+					{
+						"Mutable": true,
+						"Name": "name",
+						"Required": false
+					}
+				],
+				"SmsVerificationMessage": "The verification code to your new account is {####}",
+				"UserPoolName": "elytra-dev-users",
+				"UserPoolTags": {
+					"Project": "elytra",
+					"Stage": "dev"
+				},
+				"UserPoolTier": "ESSENTIALS",
+				"UsernameAttributes": [
+					"email"
+				],
+				"VerificationMessageTemplate": {
+					"DefaultEmailOption": "CONFIRM_WITH_CODE",
+					"EmailMessage": "<!doctype html>\n<!--\n  CUSTOMIZATION — edit the values below and find-replace each throughout the file.\n  Used for both sign-up confirmation and forgot-password (Cognito uses one template).\n  Do NOT remove {####} — Cognito replaces it with the verification code.\n  \n  COLOR_BG         #faf9fc   page background\n  COLOR_CARD       #ffffff   card background\n  COLOR_TEXT       #26262b   heading, body text\n  COLOR_MUTED      #6b7280   secondary text\n  COLOR_BORDER     #eae8ef   borders, code box\n  COLOR_ACCENT     #8b5cf6   gradient start, code\n  COLOR_ACCENT_ALT #6366f1   gradient end\n  COLOR_CODE_BG    #f5f3f8   code box background\n  COLOR_FOOTER     #9ca3af   footer\n  SHADOW           rgba(0, 0, 0, 0.06)\n-->\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>Elytra — Verify your email</title>\n  </head>\n  <body\n    style=\"\n      margin: 0;\n      padding: 0;\n      font-family:\n        -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\n      background-color: #faf9fc;\n      color: #26262b;\n      -webkit-font-smoothing: antialiased;\n    \"\n  >\n    <!-- Outer table: full viewport, centers content vertically and horizontally -->\n    <table\n      role=\"presentation\"\n      width=\"100%\"\n      height=\"100%\"\n      cellspacing=\"0\"\n      cellpadding=\"0\"\n      style=\"background-color: #faf9fc; min-height: 100vh; height: 100vh\"\n    >\n      <tr>\n        <td align=\"center\" valign=\"middle\" style=\"padding: 5vh 5%; height: 100%\">\n          <table\n            role=\"presentation\"\n            width=\"100%\"\n            cellspacing=\"0\"\n            cellpadding=\"0\"\n            style=\"\n              max-width: 480px;\n              background-color: #ffffff;\n              border-radius: 10px;\n              border: 1px solid #eae8ef;\n              box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);\n            \"\n          >\n            <tr>\n              <td style=\"padding: 40px 32px; max-width: 480px\">\n                <!-- Header with gradient bar -->\n                <div\n                  style=\"\n                    height: 4px;\n                    background: linear-gradient(90deg, #8b5cf6, #6366f1);\n                    border-radius: 2px 2px 0 0;\n                    margin: -40px -32px 24px -32px;\n                  \"\n                ></div>\n\n                <h1 style=\"margin: 0 0 8px 0; font-size: 24px; font-weight: 600; color: #26262b\">\n                  Verify your email\n                </h1>\n                <p style=\"margin: 0 0 24px 0; font-size: 15px; color: #6b7280; line-height: 1.5\">\n                  Use the code below to verify your request.\n                </p>\n\n                <!-- Code box: Cognito replaces {####} with the verification code -->\n                <table\n                  role=\"presentation\"\n                  width=\"100%\"\n                  cellspacing=\"0\"\n                  cellpadding=\"0\"\n                  style=\"margin-bottom: 24px\"\n                >\n                  <tr>\n                    <td\n                      style=\"\n                        background-color: #f5f3f8;\n                        border-radius: 8px;\n                        padding: 20px;\n                        text-align: center;\n                        border: 1px solid #eae8ef;\n                      \"\n                    >\n                      <span\n                        style=\"\n                          font-size: 28px;\n                          font-weight: 700;\n                          letter-spacing: 0.15em;\n                          color: #8b5cf6;\n                          font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;\n                        \"\n                        >{####}</span\n                      >\n                    </td>\n                  </tr>\n                </table>\n\n                <p style=\"margin: 0 0 8px 0; font-size: 14px; color: #6b7280; line-height: 1.5\">\n                  This code expires in 24 hours. If you did not request this, you can safely ignore\n                  this email.\n                </p>\n\n                <!-- Footer -->\n                <p style=\"margin: 32px 0 0 0; font-size: 13px; color: #9ca3af\">— Elytra</p>\n              </td>\n            </tr>\n          </table>\n        </td>\n      </tr>\n    </table>\n  </body>\n</html>\n",
+					"EmailSubject": "Elytra — Verify your email",
+					"SmsMessage": "The verification code to your new account is {####}"
+				}
+			},
+			"DependsOn": [
+				"DomainVerified4fe83d68"
+			],
+			"UpdateReplacePolicy": "Delete",
+			"DeletionPolicy": "Delete"
+		},
+		"UserPoolClient": {
+			"Type": "AWS::Cognito::UserPoolClient",
+			"Properties": {
+				"AccessTokenValidity": 60,
+				"AllowedOAuthFlowsUserPoolClient": false,
+				"ClientName": "elytra-dev-client",
+				"EnableTokenRevocation": true,
+				"ExplicitAuthFlows": [
+					"ALLOW_USER_PASSWORD_AUTH",
+					"ALLOW_USER_SRP_AUTH",
+					"ALLOW_REFRESH_TOKEN_AUTH"
+				],
+				"GenerateSecret": false,
+				"IdTokenValidity": 60,
+				"PreventUserExistenceErrors": "ENABLED",
+				"ReadAttributes": [
+					"email",
+					"email_verified",
+					"name"
+				],
+				"RefreshTokenValidity": 43200,
+				"SupportedIdentityProviders": [
+					"COGNITO"
+				],
+				"TokenValidityUnits": {
+					"AccessToken": "minutes",
+					"IdToken": "minutes",
+					"RefreshToken": "minutes"
+				},
+				"UserPoolId": {
+					"Ref": "UserPool"
+				},
+				"WriteAttributes": [
+					"email",
+					"name"
+				]
+			},
+			"DependsOn": [
+				"DomainVerified4fe83d68"
+			]
+		},
+		"DependenciesLayer": {
+			"Type": "AWS::Lambda::LayerVersion",
+			"Properties": {
+				"CompatibleArchitectures": [
+					"arm64"
+				],
+				"CompatibleRuntimes": [
+					"nodejs24.x"
+				],
+				"Content": {
+					"S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+					"S3Key": "asset.zip"
+				},
+				"Description": "Production node_modules for the API",
+				"LayerName": "elytra-dev-dependencies"
+			}
+		},
+		"CodebaseLayer": {
+			"Type": "AWS::Lambda::LayerVersion",
+			"Properties": {
+				"CompatibleArchitectures": [
+					"arm64"
+				],
+				"CompatibleRuntimes": [
+					"nodejs24.x"
+				],
+				"Content": {
+					"S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+					"S3Key": "asset.zip"
+				},
+				"Description": "Bundled API code (src/)",
+				"LayerName": "elytra-dev-codebase"
+			}
+		},
+		"LogGroup": {
+			"Type": "AWS::Logs::LogGroup",
+			"Properties": {
+				"LogGroupName": "/aws/lambda/elytra-dev-api",
+				"RetentionInDays": 30,
+				"Tags": [
+					{
+						"Key": "Project",
+						"Value": "elytra"
+					},
+					{
+						"Key": "Stage",
+						"Value": "dev"
+					}
+				]
+			},
+			"UpdateReplacePolicy": "Delete",
+			"DeletionPolicy": "Delete"
+		},
+		"FunctionServiceRole": {
+			"Type": "AWS::IAM::Role",
+			"Properties": {
+				"AssumeRolePolicyDocument": {
+					"Statement": [
+						{
+							"Action": "sts:AssumeRole",
+							"Effect": "Allow",
+							"Principal": {
+								"Service": "lambda.amazonaws.com"
+							}
+						}
+					],
+					"Version": "2012-10-17"
+				},
+				"ManagedPolicyArns": [
+					{
+						"Fn::Join": [
+							"",
+							[
+								"arn:",
+								{
+									"Ref": "AWS::Partition"
+								},
+								":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+							]
+						]
+					}
+				],
+				"Tags": [
+					{
+						"Key": "Project",
+						"Value": "elytra"
+					},
+					{
+						"Key": "Stage",
+						"Value": "dev"
+					}
+				]
+			}
+		},
+		"FunctionServiceRoleDefaultPolicy": {
+			"Type": "AWS::IAM::Policy",
+			"Properties": {
+				"PolicyDocument": {
+					"Statement": [
+						{
+							"Action": [
+								"cognito-idp:AdminDeleteUser",
+								"cognito-idp:ListUsers"
+							],
+							"Effect": "Allow",
+							"Resource": {
+								"Fn::GetAtt": [
+									"UserPool",
+									"Arn"
+								]
+							}
+						},
+						{
+							"Action": [
+								"s3:DeleteObject",
+								"s3:GetObject",
+								"s3:PutObject"
+							],
+							"Effect": "Allow",
+							"Resource": [
+								{
+									"Fn::Join": [
+										"",
+										[
+											{
+												"Fn::GetAtt": [
+													"AssetsBucket",
+													"Arn"
+												]
+											},
+											"/media/*"
+										]
+									]
+								},
+								{
+									"Fn::Join": [
+										"",
+										[
+											{
+												"Fn::GetAtt": [
+													"AssetsBucket",
+													"Arn"
+												]
+											},
+											"/tmp/*"
+										]
+									]
+								}
+							]
+						},
+						{
+							"Action": "s3:ListBucket",
+							"Condition": {
+								"StringLike": {
+									"s3:prefix": [
+										"media",
+										"media/*",
+										"tmp",
+										"tmp/*"
+									]
+								}
+							},
+							"Effect": "Allow",
+							"Resource": {
+								"Fn::GetAtt": [
+									"AssetsBucket",
+									"Arn"
+								]
+							}
+						},
+						{
+							"Action": "ses:SendEmail",
+							"Condition": {
+								"StringEquals": {
+									"ses:FromAddress": "noreply@dev.example.com"
+								}
+							},
+							"Effect": "Allow",
+							"Resource": "arn:aws:ses:us-east-1:123456789012:identity/*"
+						}
+					],
+					"Version": "2012-10-17"
+				},
+				"PolicyName": "ComputeFunctionServiceRoleDefaultPolicyF9A0CF0F",
+				"Roles": [
+					{
+						"Ref": "FunctionServiceRole"
+					}
+				]
+			}
+		},
+		"Function": {
+			"Type": "AWS::Lambda::Function",
+			"Properties": {
+				"Architectures": [
+					"arm64"
+				],
+				"Code": {
+					"S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+					"S3Key": "asset.zip"
+				},
+				"Description": "Elytra API (/api/public, /api/private) and CI sync-db/reset-db",
+				"Environment": {
+					"Variables": {
+						"ENV": "dev",
+						"DOMAIN_NAME": "dev.example.com",
+						"DATABASE_URL": {
+							"Ref": "DatabaseUrl"
+						},
+						"S3_ASSETS_BUCKET_NAME": {
+							"Ref": "AssetsBucket"
+						},
+						"COGNITO_USER_POOL_ID": {
+							"Ref": "UserPool"
+						},
+						"COGNITO_CLIENT_ID": {
+							"Ref": "UserPoolClient"
+						},
+						"NODE_OPTIONS": "--enable-source-maps"
+					}
+				},
+				"FunctionName": "elytra-dev-api",
+				"Handler": "index.handler",
+				"Layers": [
+					{
+						"Ref": "CodebaseLayer"
+					},
+					{
+						"Ref": "DependenciesLayer"
+					}
+				],
+				"LoggingConfig": {
+					"LogGroup": {
+						"Ref": "LogGroup"
+					}
+				},
+				"MemorySize": 1024,
+				"Role": {
+					"Fn::GetAtt": [
+						"FunctionServiceRole",
+						"Arn"
+					]
+				},
+				"Runtime": "nodejs24.x",
+				"Tags": [
+					{
+						"Key": "Project",
+						"Value": "elytra"
+					},
+					{
+						"Key": "Stage",
+						"Value": "dev"
+					}
+				],
+				"Timeout": 60
+			},
+			"DependsOn": [
+				"FunctionServiceRoleDefaultPolicy",
+				"FunctionServiceRole"
+			]
+		}
+	},
+	"Outputs": {
+		"S3ClientBucketName": {
+			"Value": {
+				"Ref": "ClientBucket"
+			}
+		},
+		"CloudFrontDistributionId": {
+			"Value": {
+				"Ref": "Distribution"
+			}
+		},
+		"ApiFunctionName": {
+			"Value": {
+				"Ref": "Function"
+			}
+		},
+		"CognitoUserPoolId": {
+			"Value": {
+				"Ref": "UserPool"
+			}
+		},
+		"CognitoClientId": {
+			"Value": {
+				"Ref": "UserPoolClient"
+			}
+		},
+		"S3AssetsBucketName": {
+			"Value": {
+				"Ref": "AssetsBucket"
+			}
+		}
+	}
+}

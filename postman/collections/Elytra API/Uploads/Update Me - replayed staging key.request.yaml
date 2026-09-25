@@ -1,0 +1,24 @@
+$kind: http-request
+url: '{{baseUrl}}/private/me'
+method: PUT
+auth:
+  type: inherit
+  credentials:
+    id: 383fc78f-96ef-47d9-81d5-e4c7dada7326
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: '{"photo":{"stagingKey":"{{stagingKey}}","fileName":"test-image.png"}}'
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('A consumed staging key is gone (404)', function () {
+          pm.response.to.have.status(404);
+      });
+
+      pm.test('Response indicates failure', function () {
+          pm.expect(pm.response.json().message).to.include('Staged upload not found');
+      });
+    language: text/javascript
+order: 6000

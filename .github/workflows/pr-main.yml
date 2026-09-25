@@ -1,4 +1,4 @@
-# PR to main: lint, build, then run tests against live QA environment
+# PR to main: lint, build, then tests against the live QA environment
 name: PR to Main
 
 on:
@@ -11,6 +11,7 @@ on:
       - '.github/workflows/**'
 
 permissions:
+  id-token: write # _test-qa.yml resets QA through the OIDC role
   contents: read
 
 jobs:

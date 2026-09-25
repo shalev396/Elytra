@@ -12,15 +12,15 @@ scripts:
           pm.response.to.have.status(200);
       });
 
-      pm.test('Response is ZIP download', function () {
-          pm.expect(pm.response.headers.get('Content-Type')).to.include('application/zip');
-          pm.expect(pm.response.headers.get('Content-Disposition')).to.include('attachment');
+      pm.test('Response carries a presigned download URL', function () {
+          pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');
+          const json = pm.response.json();
+          pm.expect(json).to.not.have.property('success');
+          pm.expect(json.data.downloadUrl).to.be.a('string');
+          pm.expect(json.data.downloadUrl).to.match(/^https:\/\//);
+          pm.expect(json.data.filename).to.match(/^user-export-\d+\.zip$/);
       });
 
-      pm.test('Response body is non-empty', function () {
-          pm.expect(pm.response.size().body).to.be.above(0);
-      });
-
-      console.log('Flow complete - export ZIP received');
+      console.log('Flow complete - export download URL received');
     language: text/javascript
 order: 3000
