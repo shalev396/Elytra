@@ -300,6 +300,14 @@ for (const stage of STAGES) {
       });
     });
 
+    it('pins the API role name (Atlas MONGODB-AWS user is keyed on its ARN)', () => {
+      template.hasResourceProperties('AWS::IAM::Role', { RoleName: `elytra-${stage}-api` });
+      template.hasResourceProperties('AWS::Lambda::Function', {
+        FunctionName: `elytra-${stage}-api`,
+        Role: { 'Fn::GetAtt': [Match.stringLikeRegexp('^ComputeFunctionRole'), 'Arn'] },
+      });
+    });
+
     it('uses fully qualified (trailing dot) record names', () => {
       for (const r of Object.values(resources).filter(
         (x) => x.Type === 'AWS::Route53::RecordSet',

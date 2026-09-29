@@ -43,6 +43,7 @@ const FIXTURE_LAYER_DIR = join(SERVER_ROOT, 'infra', 'fixtures', 'layer');
  */
 export class Compute extends Construct {
   readonly function: lambda.Function;
+  readonly role: iam.Role;
 
   constructor(scope: Construct, id: string, props: ComputeProps) {
     super(scope, id);
@@ -76,8 +77,19 @@ export class Compute extends Construct {
       removalPolicy: RemovalPolicy.DESTROY,
     });
 
+    // Fixed role name: Atlas maps this role ARN to a MONGODB-AWS database user, so it must not
+    // change when the construct is replaced.
+    this.role = new iam.Role(this, 'FunctionRole', {
+      roleName: functionName,
+      assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
+      ],
+    });
+
     this.function = new lambda.Function(this, 'Function', {
       functionName,
+      role: this.role,
       description: 'Elytra API (/api/public, /api/private) and CI sync-db/reset-db',
       runtime: RUNTIME,
       architecture: ARCHITECTURE,
