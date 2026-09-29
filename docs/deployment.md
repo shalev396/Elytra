@@ -129,16 +129,16 @@ npx cdk bootstrap aws://<ACCOUNT_ID>/<REGION>   # the stack region; us-east-1 by
 
 **Settings → Secrets and variables → Actions.** The same list, ready to copy, is [`server/.env.example`](../server/.env.example).
 
-| Where                                           | Name              | Value                                                                                                                                   |
-| ----------------------------------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Repository secret                               | `AWS_ACCOUNT_ID`  | Account id — only builds the OIDC role ARN                                                                                              |
-| Repository variable                             | `AWS_ROLE_NAME`   | Name of the GitHub OIDC role from step 3                                                                                                |
-| Environment variable (`dev`, `qa`, `prod` each) | `DOMAIN_NAME`     | e.g. `dev.example.com`                                                                                                                  |
-| Environment secret (`dev`, `qa`, `prod` each)   | `DATABASE_URL`    | That stage's connection string                                                                                                          |
-| Repository secret (optional)                    | `CERTIFICATE_ARN` | `us-east-1` ACM certificate covering every stage domain. Required when `AWS_REGION` is not `us-east-1`; otherwise the stack creates one |
-| Repository secret (optional)                    | `WAF_WEB_ACL_ARN` | Global web ACL to attach to every stage                                                                                                 |
-| Repository variable (optional)                  | `AWS_REGION`      | Stack region; `us-east-1` when unset                                                                                                    |
-| Environment variable (optional)                 | `WWW_ALIAS`       | `true` also serves `www.DOMAIN_NAME` (see below)                                                                                        |
+| Where                                           | Name              | Value                                                                                                                                         |
+| ----------------------------------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Repository secret                               | `AWS_ACCOUNT_ID`  | Account id — only builds the OIDC role ARN                                                                                                    |
+| Repository variable                             | `AWS_ROLE_NAME`   | Name of the GitHub OIDC role from step 3                                                                                                      |
+| Environment variable (`dev`, `qa`, `prod` each) | `DOMAIN_NAME`     | e.g. `dev.example.com`                                                                                                                        |
+| Environment secret (`dev`, `qa`, `prod` each)   | `DATABASE_URL`    | That stage's connection string (Atlas: IAM URL without credentials, see [infrastructure](infrastructure.md#mongodb-atlas-iam-authentication)) |
+| Repository secret (optional)                    | `CERTIFICATE_ARN` | `us-east-1` ACM certificate covering every stage domain. Required when `AWS_REGION` is not `us-east-1`; otherwise the stack creates one       |
+| Repository secret (optional)                    | `WAF_WEB_ACL_ARN` | Global web ACL to attach to every stage                                                                                                       |
+| Repository variable (optional)                  | `AWS_REGION`      | Stack region; `us-east-1` when unset                                                                                                          |
+| Environment variable (optional)                 | `WWW_ALIAS`       | `true` also serves `www.DOMAIN_NAME` (see below)                                                                                              |
 
 That is the whole configuration. A stage that needs its own certificate or web ACL can override the repository secret with an environment secret of the same name; GitHub gives the environment value precedence.
 

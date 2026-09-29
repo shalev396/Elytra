@@ -78,22 +78,22 @@ export function applyNagSuppressions(stack: Stack, config: StageConfig): void {
 
   // Compute
   ack(
-    'Compute/Function/ServiceRole',
+    'Compute/FunctionRole',
     'AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]',
     'AWSLambdaBasicExecutionRole only grants writing to the function log group.',
   );
   ack(
-    'Compute/Function/ServiceRole/DefaultPolicy',
+    'Compute/FunctionRole/DefaultPolicy',
     `AwsSolutions-IAM5[Resource::<${logicalId('Storage/AssetsBucket/Resource')}.Arn>/media/*]`,
     'Object access is limited to the media/ prefix where user uploads live; keys are generated per upload.',
   );
   ack(
-    'Compute/Function/ServiceRole/DefaultPolicy',
+    'Compute/FunctionRole/DefaultPolicy',
     `AwsSolutions-IAM5[Resource::<${logicalId('Storage/AssetsBucket/Resource')}.Arn>/tmp/*]`,
     'Object access is limited to the tmp/ prefix (staged uploads, export ZIPs); keys are generated per request and expire after a day.',
   );
   ack(
-    'Compute/Function/ServiceRole/DefaultPolicy',
+    'Compute/FunctionRole/DefaultPolicy',
     `AwsSolutions-IAM5[Resource::arn:aws:ses:${stack.region}:${stack.account}:identity/*]`,
     'SES authorizes SendEmail against sender and (in sandbox) recipient identities; the statement is pinned to ses:FromAddress = noreply@DOMAIN_NAME.',
   );
