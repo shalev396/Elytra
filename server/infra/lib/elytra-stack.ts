@@ -85,6 +85,7 @@ export class ElytraStack extends Stack {
     new CfnOutput(this, OUTPUTS.clientBucketName, { value: storage.clientBucket.bucketName });
     new CfnOutput(this, OUTPUTS.distributionId, { value: edge.distribution.distributionId });
     new CfnOutput(this, OUTPUTS.apiFunctionName, { value: compute.function.functionName });
+    new CfnOutput(this, OUTPUTS.apiRoleArn, { value: compute.role.roleArn });
     new CfnOutput(this, OUTPUTS.userPoolId, { value: auth.userPool.userPoolId });
     new CfnOutput(this, OUTPUTS.userPoolClientId, { value: auth.userPoolClient.userPoolClientId });
     new CfnOutput(this, OUTPUTS.assetsBucketName, { value: storage.assetsBucket.bucketName });

@@ -55,6 +55,8 @@ export const OUTPUTS = {
   distributionId: 'CloudFrontDistributionId',
   /** Backend deploy: database schema sync invoke */
   apiFunctionName: 'ApiFunctionName',
+  /** Atlas: MONGODB-AWS database user */
+  apiRoleArn: 'ApiRoleArn',
   /** Local dev server */
   userPoolId: 'CognitoUserPoolId',
   /** Local dev server */

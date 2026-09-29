@@ -5,7 +5,7 @@
  *
  * Every resource of the real stack is kept, with its real type and properties. The drawing only:
  *   1. renames hashed logical IDs after their constructs, without the top-level construct
- *      (Compute/Function/ServiceRole → FunctionServiceRole, an API route → PublicRoute)
+ *      (Email/VerificationFunction/ServiceRole → VerificationFunctionServiceRole, an API route → PublicRoute)
  *   2. drops what differs between machines, so every OS generates the same file: CDK path
  *      metadata, the bootstrap-version parameter and rule, asset hashes, CRLF line endings
  *   3. works around what Composer cannot draw:

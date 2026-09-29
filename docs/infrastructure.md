@@ -84,6 +84,7 @@ Planned: when `WAF_WEB_ACL_ARN` is not set, the stack will create a web ACL for 
 | `S3ClientBucketName`                   | CI frontend upload                                          |
 | `CloudFrontDistributionId`             | CI cache invalidation                                       |
 | `ApiFunctionName`                      | CI database schema sync                                     |
+| `ApiRoleArn`                           | Atlas database user (MONGODB-AWS, see below)                |
 | `CognitoUserPoolId`, `CognitoClientId` | Local API server ([`src/local.ts`](../server/src/local.ts)) |
 | `S3AssetsBucketName`                   | Local API server                                            |
 
@@ -113,6 +114,24 @@ With origin access control, S3 answers a missing key with **403** unless the cal
 ## Database network access
 
 Lambda has no fixed outbound IP. With MongoDB Atlas, **Network Access must allow `0.0.0.0/0`**, or the deploy's schema sync fails with `MongooseServerSelectionError`. Rely on the database user's credentials (and TLS) instead of an IP allowlist.
+
+## MongoDB Atlas IAM authentication
+
+With Atlas, the function authenticates as its execution role instead of a password (`MONGODB-AWS`). The role name is fixed to `elytra-<stage>-api` (output `ApiRoleArn`), so its ARN survives stack updates. `DATABASE_URL` then carries no credentials:
+
+```
+mongodb+srv://<cluster-host>/<database>?authSource=%24external&authMechanism=MONGODB-AWS&retryWrites=true&w=majority
+```
+
+The driver (with its optional `aws4` and `@aws-sdk/credential-providers` dependencies) signs an STS request with whatever AWS credentials the process has (Lambda role, CI OIDC role, local SSO profile) and Atlas checks the caller against its database users. No IAM policy is involved; each identity needs an Atlas database user of type **AWS IAM → IAM Role**:
+
+| Identity                       | Atlas roles                                                                              |
+| ------------------------------ | ---------------------------------------------------------------------------------------- |
+| `elytra-<stage>-api`           | `readWrite` + `dbAdmin` on that stage's database only                                    |
+| CI OIDC role (`AWS_ROLE_NAME`) | `readWriteAnyDatabase` + `dbAdminAnyDatabase` (`_test-local` runs the API on the runner) |
+| Local SSO role                 | `readWriteAnyDatabase` + `dbAdminAnyDatabase`                                            |
+
+Register an assumed role by its ARN **without the IAM path**: the SSO role `arn:aws:iam::<account>:role/aws-reserved/sso.amazonaws.com/<region>/AWSReservedSSO_…` becomes `arn:aws:iam::<account>:role/AWSReservedSSO_…`. Locally, run `aws sso login` when the session expires. Atlas checks each new connection with STS, so the connection opened at cold start is reused across invocations.
 
 ## Waiting for SES before Cognito
 
