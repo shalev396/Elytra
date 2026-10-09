@@ -129,16 +129,17 @@ npx cdk bootstrap aws://<ACCOUNT_ID>/<REGION>   # the stack region; us-east-1 by
 
 **Settings → Secrets and variables → Actions.** The same list, ready to copy, is [`server/.env.example`](../server/.env.example).
 
-| Where                                           | Name              | Value                                                                                                                                         |
-| ----------------------------------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| Repository secret                               | `AWS_ACCOUNT_ID`  | Account id — only builds the OIDC role ARN                                                                                                    |
-| Repository variable                             | `AWS_ROLE_NAME`   | Name of the GitHub OIDC role from step 3                                                                                                      |
-| Environment variable (`dev`, `qa`, `prod` each) | `DOMAIN_NAME`     | e.g. `dev.example.com`                                                                                                                        |
-| Environment secret (`dev`, `qa`, `prod` each)   | `DATABASE_URL`    | That stage's connection string (Atlas: IAM URL without credentials, see [infrastructure](infrastructure.md#mongodb-atlas-iam-authentication)) |
-| Repository secret (optional)                    | `CERTIFICATE_ARN` | `us-east-1` ACM certificate covering every stage domain. Required when `AWS_REGION` is not `us-east-1`; otherwise the stack creates one       |
-| Repository secret (optional)                    | `WAF_WEB_ACL_ARN` | Global web ACL to attach to every stage                                                                                                       |
-| Repository variable (optional)                  | `AWS_REGION`      | Stack region; `us-east-1` when unset                                                                                                          |
-| Environment variable (optional)                 | `WWW_ALIAS`       | `true` also serves `www.DOMAIN_NAME` (see below)                                                                                              |
+| Where                                           | Name                  | Value                                                                                                                                              |
+| ----------------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Repository secret                               | `AWS_ACCOUNT_ID`      | Account id — only builds the OIDC role ARN                                                                                                         |
+| Repository variable                             | `AWS_ROLE_NAME`       | Name of the GitHub OIDC role from step 3                                                                                                           |
+| Environment variable (`dev`, `qa`, `prod` each) | `DOMAIN_NAME`         | e.g. `dev.example.com`. Also the basic-auth username on gated stages ([Staging access](staging-access.md)); no separate username variable          |
+| Environment secret (`dev`, `qa`, `prod` each)   | `DATABASE_URL`        | That stage's connection string (Atlas: IAM URL without credentials, see [infrastructure](infrastructure.md#mongodb-atlas-iam-authentication))      |
+| Repository secret (optional)                    | `CERTIFICATE_ARN`     | `us-east-1` ACM certificate covering every stage domain. Required when `AWS_REGION` is not `us-east-1`; otherwise the stack creates one            |
+| Repository secret (optional)                    | `WAF_WEB_ACL_ARN`     | Global web ACL to attach to every stage, same value for all of them. Here: the shared `shalev396-shared-acl` ([Staging access](staging-access.md)) |
+| Environment secret (`dev`, `qa` only)           | `BASIC_AUTH_PASSWORD` | Password for that host. Username is that stage's `DOMAIN_NAME`. Browser tests on the deployed site send it. `/api/` is not gated. No prod value    |
+| Repository variable (optional)                  | `AWS_REGION`          | Stack region; `us-east-1` when unset                                                                                                               |
+| Environment variable (optional)                 | `WWW_ALIAS`           | `true` also serves `www.DOMAIN_NAME` (see below)                                                                                                   |
 
 That is the whole configuration. A stage that needs its own certificate or web ACL can override the repository secret with an environment secret of the same name; GitHub gives the environment value precedence.
 
@@ -149,7 +150,8 @@ That is the whole configuration. A stage that needs its own certificate or web A
 ```bash
 aws sso login                       # or any credentials for the account
 cd server
-cp .env.example .env.dev            # DOMAIN_NAME, DATABASE_URL (+ optional region/certificate/WAF)
+cp .env.example .env.dev            # DOMAIN_NAME, DATABASE_URL (+ optional region/certificate, WAF_WEB_ACL_ARN;
+                                    # BASIC_AUTH_PASSWORD on dev/qa is only read by the QA browser tests)
 npm run deploy:backend -- dev       # stack + database schema
 npm run deploy:frontend -- dev      # client (needs `npm install` in client/ too)
 ```

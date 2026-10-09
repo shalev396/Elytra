@@ -23,6 +23,8 @@ void i18n
       },
     },
     resources,
+    // i18next 25.8–25.10 logs a Locize support notice on init; this is the documented opt-out.
+    showSupportNotice: false,
   });
 
 // Set HTML dir and lang attributes based on language

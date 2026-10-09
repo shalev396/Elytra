@@ -119,8 +119,17 @@ def browser_context_args(browser_context_args):
     count-ups) render in their final state. CI browsers have no GPU and little CPU; animations
     there slow pages down and make contrast checks flaky. Tests of those effects opt back in with
     @pytest.mark.browser_context_args(reduced_motion="no-preference").
+
+    Against a deployed dev/qa site with BASIC_AUTH_PASSWORD set, it also answers the WAF gate's
+    basic-auth challenge (tests/helpers/basic_auth.py).
     """
-    return {**browser_context_args, "reduced_motion": "reduce"}
+    from tests.helpers.basic_auth import gate_http_credentials
+
+    args = {**browser_context_args, "reduced_motion": "reduce"}
+    credentials = gate_http_credentials()
+    if credentials is not None:
+        args["http_credentials"] = credentials
+    return args
 
 
 @pytest.fixture(scope="session")

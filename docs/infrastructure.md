@@ -54,14 +54,14 @@ Both layers are built by [`scripts/build-layers.ts`](../server/scripts/build-lay
 
 **Inputs (per stage):**
 
-| Input             | Required                           | Notes                                                                                                                |
-| ----------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `DOMAIN_NAME`     | yes                                | Must sit inside a Route 53 public hosted zone; also the client bucket name (`<DOMAIN_NAME>-assets` for assets)       |
-| `DATABASE_URL`    | yes                                | NoEcho CloudFormation parameter (see below)                                                                          |
-| `AWS_REGION`      | no — defaults to `us-east-1`       | Region of the whole stack                                                                                            |
-| `CERTIFICATE_ARN` | only if `AWS_REGION` ≠ `us-east-1` | ACM certificate for `DOMAIN_NAME`, always in `us-east-1`. Used as-is whenever it is set                              |
-| `WAF_WEB_ACL_ARN` | no                                 | Existing global (CloudFront scope) web ACL to attach; no WAF when unset                                              |
-| `WWW_ALIAS`       | no                                 | `true` also serves `www.DOMAIN_NAME` from the same distribution ([Deployment](deployment.md#4-github-configuration)) |
+| Input             | Required                           | Notes                                                                                                                                                 |
+| ----------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DOMAIN_NAME`     | yes                                | Must sit inside a Route 53 public hosted zone; also the client bucket name (`<DOMAIN_NAME>-assets` for assets)                                        |
+| `DATABASE_URL`    | yes                                | NoEcho CloudFormation parameter (see below)                                                                                                           |
+| `AWS_REGION`      | no — defaults to `us-east-1`       | Region of the whole stack                                                                                                                             |
+| `CERTIFICATE_ARN` | only if `AWS_REGION` ≠ `us-east-1` | ACM certificate for `DOMAIN_NAME`, always in `us-east-1`. Used as-is whenever it is set                                                               |
+| `WAF_WEB_ACL_ARN` | no                                 | Existing global (CloudFront scope) web ACL to attach; no WAF when unset. The dev/qa basic-auth gate lives there ([Staging access](staging-access.md)) |
+| `WWW_ALIAS`       | no                                 | `true` also serves `www.DOMAIN_NAME` from the same distribution ([Deployment](deployment.md#4-github-configuration))                                  |
 
 Certificate rule, checked before synth: `CERTIFICATE_ARN` set → use it (it must be a `us-east-1` ACM ARN). Not set → the stack creates and DNS-validates one, which is only possible when the stack itself is in `us-east-1`; any other region fails with an explanation.
 
