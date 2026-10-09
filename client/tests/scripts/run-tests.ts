@@ -13,6 +13,10 @@
  * 0 = one process). Each worker drives its own Chromium, so more workers than CPUs starves them.
  * --dist loadgroup keeps the tests conftest.py marks as shared-state on a single worker.
  *
+ * --qa also loads server/.env.qa (shell and CI variables win), derives BASE_URL and API_BASE_URL
+ * from DOMAIN_NAME when they are unset, and requires BASIC_AUTH_PASSWORD for the WAF gate on the
+ * qa pages. Local runs never need the password.
+ *
  * The suite does not reset the stage; to start from an empty dev/qa stage, run
  * `npm run reset:db -- <stage>` in server/ first (CI does). See tests/README.md.
  */
@@ -73,13 +77,28 @@ function cmdRun(): void {
 
   let baseUrl: string;
   let apiBaseUrl: string;
+  let basicAuthPassword = '';
 
   if (qa) {
-    baseUrl = process.env['BASE_URL'] ?? '';
-    apiBaseUrl = process.env['API_BASE_URL'] ?? '';
+    const envFile = path.join(ROOT, '..', 'server', '.env.qa');
+    if (fs.existsSync(envFile)) {
+      process.loadEnvFile(envFile); // never overrides variables already set (CI wins)
+    }
+
+    const domain = process.env['DOMAIN_NAME']?.trim() ?? '';
+    baseUrl = process.env['BASE_URL'] ?? (domain ? `https://${domain}` : '');
+    apiBaseUrl = process.env['API_BASE_URL'] ?? (domain ? `https://${domain}/api` : '');
     if (!baseUrl || !apiBaseUrl) {
-      console.error('QA mode requires BASE_URL and API_BASE_URL environment variables.');
-      console.error('These are set automatically in CI from the qa environment secrets.');
+      console.error('QA mode requires BASE_URL and API_BASE_URL, or DOMAIN_NAME to derive them.');
+      console.error('CI sets them from the qa environment; locally, use server/.env.qa.');
+      process.exit(1);
+    }
+
+    // The WAF gate asks for basic auth on every qa page (not /api/); the username is the host.
+    basicAuthPassword = process.env['BASIC_AUTH_PASSWORD']?.trim() ?? '';
+    if (!basicAuthPassword) {
+      console.error('QA mode requires BASIC_AUTH_PASSWORD (the qa basic-auth password).');
+      console.error('CI reads the qa environment secret; locally, set it in server/.env.qa.');
       process.exit(1);
     }
   } else {
@@ -134,6 +153,7 @@ function cmdRun(): void {
       ...process.env,
       BASE_URL: baseUrl,
       API_BASE_URL: apiBaseUrl,
+      BASIC_AUTH_PASSWORD: basicAuthPassword,
     },
   });
 }

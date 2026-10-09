@@ -60,7 +60,7 @@ Accessibility tests also call `wait_for_fade_in(page)` from `tests/helpers/anima
 ### Rules for writing tests
 
 - **Never add `--browser` to `pytest.ini`.** `run-tests.ts` already passes `--browser chromium`; pytest-playwright parameterizes each test once per occurrence, so a second copy runs the whole suite twice.
-- **Never set context-wide extra HTTP headers** (`browser_context_args` `extra_http_headers`, `context.set_extra_http_headers`). They are sent to every origin, including S3: the browser then preflights the presigned upload with headers the bucket's CORS rules don't allow, and every UI upload fails. Add a header to the requests that need it through `page.route` / `context.route`.
+- **Never set context-wide extra HTTP headers** (`browser_context_args` `extra_http_headers`, `context.set_extra_http_headers`). They are sent to every origin, including S3: the browser then preflights the presigned upload with headers the bucket's CORS rules don't allow, and every UI upload fails. Add a header to the requests that need it through `page.route` / `context.route`. The WAF gate's basic auth goes through origin-scoped `http_credentials` instead (see [URLs and Environment Variables](#urls-and-environment-variables)).
 - **Prefer `wait_until="load"` plus a content selector over `networkidle`.** Long-lived requests and request storms keep `networkidle` from ever firing, and on a busy CPU it can fire before a lazy route chunk is even requested.
 - **Fail, don't skip, on auth problems.** Use `assert "/auth/login" not in page.url, "Authentication failed: redirected to login page"` so a broken login shows up red, not as green skips.
 
@@ -76,10 +76,12 @@ Accessibility tests also call `wait_for_fade_in(page)` from `tests/helpers/anima
 
 Tests use `BASE_URL` (frontend) and `API_BASE_URL` (backend). Defaults:
 
-- **Local** (`npm run test`): `BASE_URL=http://localhost:5173`, `API_BASE_URL=http://localhost:3000/api`
-- **QA** (`npm run test:qa`): Set `BASE_URL` and `API_BASE_URL` in your environment. The template documents `https://qa.elytra.shalev396.com` in [`client/conftest.py`](../conftest.py) (comment only); replace with your QA domain.
+- **Local** (`npm run test`): `BASE_URL=http://localhost:5173`, `API_BASE_URL=http://localhost:3000/api`. No basic-auth password needed.
+- **QA** (`npm run test:qa`): loads the gitignored `server/.env.qa` without overriding variables already set (shell and CI win). `BASE_URL` and `API_BASE_URL` default to `https://<DOMAIN_NAME>` and `https://<DOMAIN_NAME>/api`. The template documents `https://qa.elytra.shalev396.com` in [`client/conftest.py`](../conftest.py) (comment only); replace with your QA domain.
 
-For QA runs, set `BASE_URL=https://qa.yourdomain.com` and `API_BASE_URL=https://qa.yourdomain.com/api` (or use your QA domain). In CI, the workflow sets these from `secrets.DOMAIN_NAME`.
+QA also needs `BASIC_AUTH_PASSWORD`, the password of the WAF gate in front of the qa pages ([Staging access](../../docs/staging-access.md)); the run exits without it. The username is the host (`DOMAIN_NAME`), and `/api/` is not gated. Locally, put it in `server/.env.qa`; never commit it. In CI, the workflow sets `BASE_URL` and `API_BASE_URL` from `vars.DOMAIN_NAME` and `BASIC_AUTH_PASSWORD` from the `qa` environment secret. The deploy reads `WAF_WEB_ACL_ARN` (repository secret) to attach the gate.
+
+Every browser context answers the gate's 401 challenge itself (`browser_context_args` in `conftest.py`, [`tests/helpers/basic_auth.py`](helpers/basic_auth.py)), only for the site's origin and only when challenged, so Bearer calls and S3 uploads are untouched. A test that calls `browser.new_context` itself must pass `http_credentials=gate_http_credentials()` when it returns a value.
 
 ---
 
